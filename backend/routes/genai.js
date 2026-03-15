@@ -16,8 +16,9 @@ router.post("/analyze", async (req, res) => {
     } = req.body;
 
     // Call Python FastAPI
+    const aiBaseUrl = process.env.AI_SERVICE_URL || "http://localhost:8001";
     const aiRes = await axios.post(
-      "http://localhost:8001/analyze",
+      `${aiBaseUrl}/analyze`,
       {
         method,
         url,

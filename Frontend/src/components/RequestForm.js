@@ -53,8 +53,9 @@ const RequestForm = () => {
     }
 
     try {
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
       const res = await axios.post(
-        "http://localhost:5000/api/request",
+        `${backendUrl}/api/request`,
         { url, method, body: parsedBody },
         { headers: { Authorization: `Bearer ${token}` } }
       );
