@@ -310,7 +310,8 @@ export default function PostmanClone() {
       // NEW: send backend auth in custom header
       const backendToken = localStorage.getItem("authToken");
 
-      const res = await fetch("/api/request", {
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
+      const res = await fetch(`${backendUrl}/api/request`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
