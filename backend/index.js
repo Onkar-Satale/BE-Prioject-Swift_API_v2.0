@@ -11,7 +11,6 @@ import historyRoutes from "./routes/history.js";
 import User from "./models/User.js";
 import genaiRoutes from "./routes/genai.js";
 
-
 const app = express();
 const SECRET = process.env.JWT_SECRET || "MY_SECRET_KEY";
 
