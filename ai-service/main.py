@@ -136,7 +136,7 @@ API Response:
                 {"role": "user", "content": prompt}
             ],
             temperature=0.5,
-            max_completion_tokens=400
+            max_tokens=400
         )
 
         explanation = res.choices[0].message.content
@@ -335,7 +335,7 @@ Response Body: {req.response}
                 {"role": "user", "content": prompt}
             ],
             temperature=0.5,
-            max_completion_tokens=400
+            max_tokens=400
         )
         ai_text_raw = res.choices[0].message.content
 
