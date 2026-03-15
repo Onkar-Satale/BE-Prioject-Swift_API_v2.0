@@ -1,4 +1,4 @@
-// import 'dotenv/config';
+import 'dotenv/config';
 import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
@@ -13,13 +13,13 @@ import genaiRoutes from "./routes/genai.js";
 
 
 const app = express();
-const SECRET = "MY_SECRET_KEY";
+const SECRET = process.env.JWT_SECRET || "MY_SECRET_KEY";
 
+const mongoURI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/postman-clone";
 mongoose
-  .connect("mongodb://127.0.0.1:27017/postman-clone")
+  .connect(mongoURI)
   .then(() => console.log("✅ MongoDB connected"))
   .catch((err) => console.error("❌ MongoDB error:", err));
-
 
 // -----------------------------
 // Middleware
@@ -121,5 +121,5 @@ app.use("/api/history", historyRoutes);
 // -----------------------------
 // Start server
 // -----------------------------
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));

@@ -156,7 +156,8 @@ export default function BotSidebar({
     setInput("");
 
     try {
-      const response = await fetch("http://localhost:8001/bot", {
+      const aiBaseUrl = process.env.REACT_APP_AI_SERVICE_URL || "http://localhost:8001";
+      const response = await fetch(`${aiBaseUrl}/bot`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -318,7 +319,8 @@ export default function BotSidebar({
     };
 
     try {
-      const res = await fetch("http://localhost:8001/analyze", {
+      const aiBaseUrl = process.env.REACT_APP_AI_SERVICE_URL || "http://localhost:8001";
+      const res = await fetch(`${aiBaseUrl}/analyze`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)

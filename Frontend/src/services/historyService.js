@@ -1,4 +1,4 @@
-const HISTORY_API = "http://localhost:5000/api/history";
+const HISTORY_API = `${process.env.REACT_APP_BACKEND_URL || "http://localhost:5000"}/api/history`;
 
 // GET all history
 export const getHistory = async () => {
