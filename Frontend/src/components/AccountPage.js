@@ -273,7 +273,8 @@ export default function AccountPage() {
     }
 
     try {
-      const res = await fetch("http://localhost:5000/api/auth/me", {
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
+      const res = await fetch(`${backendUrl}/api/auth/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -296,7 +297,8 @@ export default function AccountPage() {
   const fetchHistory = async () => {
     if (!getToken()) return; // guest users have no backend history
     try {
-      const res = await fetch("https://postman-clone-backend-5h4d.onrender.com/api/history", {
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
+      const res = await fetch(`${backendUrl}/api/history`, {
         headers: { Authorization: `Bearer ${getToken()}` },
       });
       const data = await res.json();
@@ -333,7 +335,8 @@ export default function AccountPage() {
   const fetchRequestCount = async () => {
     if (!user) return;
     try {
-      const res = await fetch("http://localhost:5000/api/auth/me", {
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
+      const res = await fetch(`${backendUrl}/api/auth/me`, {
         headers: { Authorization: `Bearer ${getToken()}` },
       });
       const data = await res.json();
