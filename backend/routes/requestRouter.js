@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
 const router = express.Router();
-const SECRET = "MY_SECRET_KEY";
+const SECRET = process.env.JWT_SECRET || "MY_SECRET_KEY";
 
 // Middleware to authenticate user
 const authenticate = (req, res, next) => {
