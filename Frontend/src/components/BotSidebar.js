@@ -156,18 +156,23 @@ export default function BotSidebar({
     setInput("");
 
     try {
-      const aiBaseUrl = process.env.REACT_APP_AI_SERVICE_URL || "http://localhost:8001";
-      const response = await fetch(`${aiBaseUrl}/bot`, {
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
+      const token = localStorage.getItem("authToken");
+
+      const response = await fetch(`${backendUrl}/api/ai/bot`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": token ? `Bearer ${token}` : "" 
+        },
         body: JSON.stringify({
-          userId: "user123",
+          userId: "user123", // the backend will overwrite this securely based on the token
           message: input,
 
           // 🔹 ADDED: recent API context for smarter answers
           currentApiContext: currentApiContext,
 
-          // existing placeholder (unchanged)
+          // existing placeholder
           requestHistory: []
         })
       });
@@ -303,6 +308,7 @@ export default function BotSidebar({
     if (featureLoading) return; // prevent spam clicks
     setShowPanel(false);
     setFeatureLoading(true);
+    setMessages(prev => [...prev, { from: "bot", text: "AI is thinking... 🤔", isTemp: true }]);
 
     const payload = {
       method: currentApiContext.method,
@@ -319,10 +325,15 @@ export default function BotSidebar({
     };
 
     try {
-      const aiBaseUrl = process.env.REACT_APP_AI_SERVICE_URL || "http://localhost:8001";
-      const res = await fetch(`${aiBaseUrl}/analyze`, {
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
+      const token = localStorage.getItem("authToken");
+
+      const res = await fetch(`${backendUrl}/api/ai/analyze`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": token ? `Bearer ${token}` : "" 
+        },
         body: JSON.stringify(payload)
       });
 
@@ -330,13 +341,13 @@ export default function BotSidebar({
       const textToDisplay = data.text || "⚠️ Explanation unavailable.";
 
       setMessages(prev => [
-        ...prev,
+        ...prev.filter(msg => !msg.isTemp),
         { from: "bot", text: textToDisplay }
       ]);
 
     } catch (err) {
       setMessages(prev => [
-        ...prev,
+        ...prev.filter(msg => !msg.isTemp),
         { from: "bot", text: `❌ Error calling ${feature}: ${err.message}` }
       ]);
     } finally {

@@ -332,28 +332,15 @@ export default function AccountPage() {
     fetchUser();
   }, []);
 
-  const fetchRequestCount = async () => {
-    if (!user) return;
-    try {
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
-      const res = await fetch(`${backendUrl}/api/auth/me`, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
-      const data = await res.json();
-      if (res.ok || data.user) {
-        setRequestsCount(data.user.reqCount || 0); // set per-user count
-      }
-    } catch (err) {
-      console.error("Failed to fetch request count:", err);
-    }
-  };
+  // Removed redundant fetchRequestCount
 
   useEffect(() => {
     if (user) {
-      fetchHistory();       // function call is conditional ✅
-      fetchRequestCount();  // function call is conditional ✅
+      fetchHistory();
+      // Set the requests count based on user.reqCount or history length
+      setRequestsCount(Math.max(user.reqCount || 0, history.length));
     }
-  }, [user]);
+  }, [user, history.length]);
 
   if (loading) return <p>Loading user data...</p>;
   if (errorMsg) return <p style={{ color: "red" }}>{errorMsg}</p>;

@@ -24,7 +24,7 @@ mongoose
 // Middleware
 // -----------------------------
 app.use(cors());
-app.use(express.json({ limit: "50mb" }));
+app.use(express.json({ limit: "5mb" }));
 
 // -----------------------------
 // Base route
@@ -58,6 +58,10 @@ app.post("/api/request", async (req, res) => {
     if (!url || !method)
       return res.status(400).json({ error: "URL and Method are required" });
 
+    if (url.includes("localhost") || url.includes("127.0.0.1") || url.startsWith("file://")) {
+      return res.status(403).json({ error: "Access to internal networks is forbidden." });
+    }
+
     const start = Date.now();
     let apiResponse;
 
@@ -66,6 +70,7 @@ app.post("/api/request", async (req, res) => {
         url,
         method,
         headers: headers || {},
+        timeout: 15000,
       };
 
       // ONLY attach body for these methods
@@ -84,19 +89,23 @@ app.post("/api/request", async (req, res) => {
 
     // Save history in DB only if user is logged in
     if (userId) {
-      await User.findByIdAndUpdate(userId, {
+      User.findByIdAndUpdate(userId, {
         $push: {
           history: {
-            url,
-            method,
-            status: apiResponse.status || "ERR",
-            duration,
-            responseBody: apiResponse.data || {},
-            time: new Date(),
-          },
+            $each: [{
+              url,
+              method,
+              status: apiResponse.status || "ERR",
+              duration,
+              responseBody: apiResponse.data || {},
+              time: new Date(),
+            }],
+            $slice: -100
+          }
         },
-      });
-      console.log("Saved history for user:", userId, url);
+        $inc: { reqCount: 1 }
+      }).catch(err => console.error("History save error:", err));
+      console.log("Triggered history save for user:", userId, url);
     }
 
     res.json({
@@ -116,6 +125,7 @@ app.post("/api/request", async (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/history", historyRoutes);
+app.use("/api/ai", genaiRoutes);
 
 // -----------------------------
 // Start server

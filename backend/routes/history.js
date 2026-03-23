@@ -36,7 +36,7 @@ router.get("/", verifyToken, async (req, res) => {
   try {
     console.log("Fetching history for user:", req.userId);
 
-    const user = await User.findById(req.userId);
+    const user = await User.findById(req.userId, { history: { $slice: -50 } });
     if (!user) {
       console.warn("User not found for ID:", req.userId);
       return res.status(404).json({ error: "User not found" });

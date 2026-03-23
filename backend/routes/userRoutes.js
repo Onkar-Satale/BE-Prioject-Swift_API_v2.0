@@ -40,7 +40,10 @@ router.post("/", authenticate, async (req, res) => {
       time: new Date(),
     };
 
-    await User.findByIdAndUpdate(req.userId, { $push: { history: historyEntry } });
+    await User.findByIdAndUpdate(req.userId, { 
+      $push: { history: historyEntry },
+      $inc: { reqCount: 1 }
+    });
 
     res.status(200).json({ message: "History updated successfully", entry: historyEntry });
   } catch (err) {

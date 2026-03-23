@@ -41,7 +41,17 @@ export default function PostmanClone() {
   // const [status, setStatus] = useState(null);
   // const [activeTab, setActiveTab] = useState("Params");
   const [history, setHistory] = useState([]);
-  const [activePanel, setActivePanel] = useState(null);
+  const [activePanel, setActivePanel] = useState(
+    localStorage.getItem("activePanel") || null
+  );
+
+  useEffect(() => {
+    if (activePanel) {
+      localStorage.setItem("activePanel", activePanel);
+    } else {
+      localStorage.removeItem("activePanel");
+    }
+  }, [activePanel]);
   const [viewMode, setViewMode] = useState("pretty");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -181,9 +191,13 @@ export default function PostmanClone() {
   useEffect(() => {
     loadUserHistory(); // fetch history
 
-    // Only clear response, keep last request data intact
-    if (!lastResponse) setResponse("");
-    if (!lastResponse) setStatus(null);
+    if (!lastResponse) {
+      setResponse("");
+      setStatus(null);
+    } else {
+      setResponse(lastResponse);
+      if (lastRequest) setStatus(lastRequest.status ?? null);
+    }
 
     // Prefill last request if it exists
     if (lastRequest) {
@@ -686,7 +700,11 @@ export default function PostmanClone() {
 
           </div>
           <div className="response-body" style={{ overflow: "auto", maxHeight: "585px" }}>
-            {!response ? (
+            {loading ? (
+              <div style={{ padding: "20px", color: "#888", display: "flex", alignItems: "center", gap: "10px" }}>
+                <span>⏳ Waiting for response...</span>
+              </div>
+            ) : !response ? (
               <p>No response yet</p>
             )
               : viewMode === "raw" ? (

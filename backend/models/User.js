@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import crypto from "crypto";
 
 // ---------------------------
 // History Schema
@@ -26,28 +25,9 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true },
     password: { type: String }, // optional
     reqCount: { type: Number, default: 0 }, // <-- add this
-    hash: String,
-    salt: String,
     history: { type: [historySchema], default: [] },
   },
   { timestamps: true }
 );
-
-// ---------------------------
-// Crypto-based password methods
-// ---------------------------
-userSchema.methods.setPassword = function (password) {
-  this.salt = crypto.randomBytes(16).toString("hex");
-  this.hash = crypto
-    .pbkdf2Sync(password, this.salt, 1000, 64, "sha512")
-    .toString("hex");
-};
-
-userSchema.methods.validatePassword = function (password) {
-  const hash = crypto
-    .pbkdf2Sync(password, this.salt, 1000, 64, "sha512")
-    .toString("hex");
-  return this.hash === hash;
-};
 
 export default mongoose.model("User", userSchema);
