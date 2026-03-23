@@ -1,213 +1,154 @@
-🚀 Swift API – Smart API Testing and Development Tool
+# 🚀 Swift API – Smart API Testing and Development Tool
 
-Swift API is a full-stack web application designed to streamline API testing and development.
+![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
+![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
+![NodeJS](https://img.shields.io/badge/node.js-6DA55F?style=for-the-badge&logo=node.js&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)
+![MongoDB](https://img.shields.io/badge/MongoDB-%234ea94b.svg?style=for-the-badge&logo=mongodb&logoColor=white)
 
-It allows developers to send requests, view responses, manage API workflows, and now includes an AI-powered debugging assistant that helps identify and explain API errors.
+**Swift API** is a full-stack web application designed to streamline API testing and development. 
 
-The platform combines developer productivity tools with intelligent assistance, making API development faster and easier.
+It allows developers to send requests, view responses, manage API workflows, and now includes an **AI-powered debugging assistant** that helps identify and explain API errors. The platform combines developer productivity tools with intelligent assistance, making API development faster and easier.
 
-✨ Features
+---
 
-📨 Send HTTP Requests
-Send API requests using GET, POST, PUT, DELETE methods with custom headers and body.
+## ✨ Features
 
-📚 Request History
-Automatically saves previously sent requests so developers can reuse them quickly.
+- **📨 Send HTTP Requests:** Send API requests using `GET`, `POST`, `PUT`, `DELETE` methods with custom headers and body.
+- **📚 Request History:** Automatically saves previously sent requests so developers can reuse them quickly.
+- **🗂️ Collections Management:** Organize APIs into collections to structure testing workflows.
+- **✨ JSON Syntax Highlighting:** Pretty formatted JSON responses for easy debugging and readability.
+- **🔒 Authentication Support:** Supports JWT tokens and Bearer authentication for secured API testing.
+- **🖥️ Modern Developer Interface:** Clean and responsive frontend built with React for an intuitive experience.
+- **⚡ Fast Backend Architecture:** Powered by Node.js and Express.js for efficient request processing.
+- **💾 Persistent Storage:** Uses MongoDB to store request history, collections, and user data.
+- **👥 Multi-User Support:** Developers can register and log in securely to manage their personal API workflows.
+- **🔧 Extendable Developer Tool:** The architecture is designed so developers can easily add new API testing utilities.
 
-🗂️ Collections Management
-Organize APIs into collections to structure testing workflows.
+---
 
-✨ JSON Syntax Highlighting
-Pretty formatted JSON responses for easy debugging and readability.
+## 🤖 NEW: AI-Powered API Debugging Assistant
 
-🔒 Authentication Support
-Supports JWT tokens and Bearer authentication for secured API testing.
+Swift API now includes an AI debugging assistant powered by **GenAI using the Groq API** and a **Python FastAPI backend**. This intelligent assistant helps developers quickly understand and fix API errors during testing.
 
-🖥️ Modern Developer Interface
-Clean and responsive frontend built with React for an intuitive experience.
+### 🧠 AI Assistant Capabilities:
+- **🔍 Root Cause Analysis:** Analyzes API errors and suggests the possible reason behind the failure.
+- **📖 Simple Error Explanation:** Converts complex backend error messages into developer-friendly explanations.
+- **🛠️ Suggested Fixes:** Provides guidance on how to resolve API issues.
+- **⚡ Faster Debugging Workflow:** Reduces time spent searching documentation or StackOverflow.
+- **💬 Interactive AI Help Button:** Developers can click the AI Help button when an error occurs and receive intelligent insights.
 
-⚡ Fast Backend Architecture
-Powered by Node.js and Express.js for efficient request processing.
+### AI Backend Architecture
 
-💾 Persistent Storage
-Uses MongoDB to store request history, collections, and user data.
+```mermaid
+graph TD;
+    Frontend[Frontend React] -->|Request| Backend[Node.js Express Backend];
+    Backend -->|Analyze Error| AI[Python FastAPI AI Service];
+    AI -->|Prompt generation| Groq[Groq LLM API];
+    Groq -->|Insight| AI;
+    AI -->|AI Response| Backend;
+    Backend -->|Formatted Help| Frontend;
+```
 
-👥 Multi-User Support
-Developers can register and log in securely to manage their personal API workflows.
+---
 
-🔧 Extendable Developer Tool
-The architecture is designed so developers can easily add new API testing utilities.
+## 🧠 Tech Stack
 
-🤖 NEW: AI-Powered API Debugging Assistant
+**Frontend**
+- React, JavaScript, HTML, CSS, CSS Modules
 
-Swift API now includes an AI debugging assistant powered by GenAI using the Groq API and Python FastAPI backend.
+**Backend**
+- Node.js, Express.js, JWT (JSON Web Token)
 
-This intelligent assistant helps developers quickly understand and fix API errors during testing.
+**AI Service**
+- Python, FastAPI, Groq API (LLM Integration)
 
-🧠 AI Assistant Capabilities
+**Database**
+- MongoDB
 
-🔍 Root Cause Analysis
-Analyzes API errors and suggests the possible reason behind the failure.
+**Development Tools**
+- npm, Postman (for backend testing), VS Code
 
-📖 Simple Error Explanation
-Converts complex backend error messages into developer-friendly explanations.
+---
 
-🛠️ Suggested Fixes
-Provides guidance on how to resolve API issues.
+## ⚙️ Setup & Installation
 
-⚡ Faster Debugging Workflow
-Reduces time spent searching documentation or StackOverflow.
-
-💬 Interactive AI Help Button
-Developers can click the AI Help button when an error occurs and receive intelligent insights.
-
-AI Backend Architecture
-
-Frontend (React)
-⬇
-Node.js Express Backend
-⬇
-Python FastAPI AI Service
-⬇
-Groq LLM API
-
-This architecture allows the system to analyze errors and generate smart responses using large language models.
-
-🧠 Tech Stack
-Frontend
-
-React
-JavaScript
-HTML
-CSS
-
-Backend
-
-Node.js
-Express.js
-
-AI Service
-
-Python
-FastAPI
-Groq API (LLM Integration)
-
-Database
-
-MongoDB
-
-Styling
-
-CSS Modules
-
-Authentication
-
-JWT (JSON Web Token)
-
-Development Tools
-
-Node.js
-npm
-Postman (for backend testing)
-VS Code
-
-⚙️ Setup & Installation
-Clone the repository
+### 1. Clone the repository
+```bash
 git clone https://github.com/Onkar-Satale/Swift_API_mern-.git
 cd Swift_API_mern-
-Install dependencies
-Backend
+```
+
+### 2. Install dependencies & Start Backend
+```bash
 cd backend
 npm install
-Frontend
-cd ../Frontend
+npm start
+```
+*Server will run on: `http://localhost:5000`*
+
+### 3. Install dependencies & Start Frontend
+Open a new terminal session and run:
+```bash
+cd Frontend
 npm install
-Run the development server
-Start Backend
-cd backend
 npm start
+```
+*Frontend will run on: `http://localhost:3000`*
 
-Server will run on
+### 4. Install dependencies & Start AI Service
+Open a third terminal session and run the python service (ensure you set the `GROQ_API_KEY` in your `.env`):
+```bash
+cd ai-service
+# Create a virtual environment
+python -m venv venv
+# Activate virtual environment
+# On Windows: venv\Scripts\activate
+# On Mac/Linux: source venv/bin/activate
 
-http://localhost:5000
-Start Frontend
-cd ../Frontend
-npm start
+pip install -r requirements.txt
+python -m uvicorn main:app --port 8001
+```
+*AI Service will run on `http://127.0.0.1:8001`*
 
-Frontend will run on
+---
 
-http://localhost:3000
+## 📝 Usage
 
-The application reloads automatically when you modify source files.
+1. **🖊️ Register/Login:** Sign up or log in as a developer.
+2. **🔗 Enter an API endpoint:** Paste the URL you wish to test.
+3. **⚙️ Select Request Method:** Choose between `GET`, `POST`, `PUT`, or `DELETE`.
+4. **📦 Configure Request:** Add headers and a request body if needed.
+5. **📤 Send Request:** Execute the request and view the formatted JSON response.
+6. **💾 Save and Reuse:** Save the request to a collection or access it through your Request History.
+7. **🤖 AI Debugging:** If an API error (e.g., 400, 500) occurs, click the **AI Assistant Help** button to get an intelligent breakdown and debugging suggestions!
 
-📝 Usage
+---
 
-🖊️ Sign up or log in as a developer
+## 🤝 Contribution
 
-🔗 Enter an API endpoint
+Contributions are always welcome to improve **Swift API**!
 
-⚙️ Select request method (GET / POST / PUT / DELETE)
+1. **Fork the repository** 🍴
+2. **Create a new branch** 🌿
+   ```bash
+   git checkout -b feature-name
+   ```
+3. **Commit changes** 🛠️
+   ```bash
+   git commit -m "Add feature XYZ"
+   ```
+4. **Push changes** 🚀
+   ```bash
+   git push origin feature-name
+   ```
+5. **Open a Pull Request on GitHub** 🔃
 
-📦 Add headers and request body if needed
+---
 
-📤 Send request and view response in formatted JSON
+## 🌐 Links & About
 
-💾 Save the request to a collection
+- **Repository:** [https://github.com/Onkar-Satale/Swift_API_mern-](https://github.com/Onkar-Satale/Swift_API_mern-)
 
-📚 Access request history anytime
+**Swift API** is designed for developers and teams to simplify API testing, debugging, and workflow management. With the integration of GenAI-powered debugging assistance, the platform goes beyond a simple Postman clone and becomes a smart developer productivity tool. It is lightweight, fast, customizable, and continuously evolving to support modern backend development workflows.
 
-🤖 If an API error occurs, click AI Assistant to get debugging help and explanations.
-
-🖼️ Demo Screenshots
-Signup Page
-
-Screenshot 2025-11-28 220117
-
-Login Page
-
-Screenshot 2025-11-28 220107
-
-Account Page
-
-Screenshot 2025-11-28 220036
-
-API Testing (Pretty View)
-
-Screenshot 2025-11-28 220626
-
-API Testing (Raw View)
-
-Screenshot 2025-11-28 220641
-
-🤝 Contribution
-
-Contributions are welcome.
-
-🍴 Fork the repository.
-
-🌿 Create a new branch
-
-git checkout -b feature-name
-
-🛠️ Commit changes
-
-git commit -m "Add feature XYZ"
-
-🚀 Push changes
-
-git push origin feature-name
-
-🔃 Open a Pull Request on GitHub.
-
-🌐 Links
-
-Repository
-https://github.com/Onkar-Satale/Swift_API_mern-
-
-💡 About
-
-Swift API is designed for developers and teams to simplify API testing, debugging, and workflow management.
-
-With the integration of GenAI-powered debugging assistance, the platform goes beyond a simple Postman clone and becomes a smart developer productivity tool.
-
-It is lightweight, fast, customizable, and continuously evolving to support modern backend development workflows.
