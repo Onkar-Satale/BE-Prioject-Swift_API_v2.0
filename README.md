@@ -50,7 +50,31 @@ graph TD;
     Backend -->|Formatted Help| Frontend;
 ```
 
+
 ---
+
+## 📸 Screenshots
+
+### 🔑 Login Page
+![Login Page](assets/Login.png)
+
+### 📝 Signup Page
+![Signup Page](assets/Signup.png)
+
+### 🧾 Headers / Request Configuration
+![Headers Config](assets/Headers.png)
+
+### 👁️ Testing API Requests
+![Testing API Requests](assets/Testing.png)
+
+### 👤 Account / Profile Page
+![Account Page](assets/Account.png)
+
+### 🤖 AI-Powered Debugging
+![GenAI Assistant](assets/Genai.png)
+
+---
+
 
 ## 🧠 Tech Stack
 
