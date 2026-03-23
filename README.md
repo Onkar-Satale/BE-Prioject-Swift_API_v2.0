@@ -173,6 +173,10 @@ Contributions are always welcome to improve **Swift API**!
 ## 🌐 Links & About
 
 - **Repository:** [https://github.com/Onkar-Satale/Swift_API_mern-](https://github.com/Onkar-Satale/Swift_API_mern-)
+- Frontend (Vercel): https://swift-api-iota.vercel.app/
+- Backend (Render): https://swift-api-lz1n.onrender.com/
+- GenAI Service (Render): https://swift-api-genai.onrender.com/
+- Repository: https://github.com/Onkar-Satale/Swift_API_mern-
 
 **Swift API** is designed for developers and teams to simplify API testing, debugging, and workflow management. With the integration of GenAI-powered debugging assistance, the platform goes beyond a simple Postman clone and becomes a smart developer productivity tool. It is lightweight, fast, customizable, and continuously evolving to support modern backend development workflows.
 
