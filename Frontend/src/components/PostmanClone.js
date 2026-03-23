@@ -42,14 +42,14 @@ export default function PostmanClone() {
   // const [activeTab, setActiveTab] = useState("Params");
   const [history, setHistory] = useState([]);
   const [activePanel, setActivePanel] = useState(
-    localStorage.getItem("activePanel") || null
+    sessionStorage.getItem("activePanel") || null
   );
 
   useEffect(() => {
     if (activePanel) {
-      localStorage.setItem("activePanel", activePanel);
+      sessionStorage.setItem("activePanel", activePanel);
     } else {
-      localStorage.removeItem("activePanel");
+      sessionStorage.removeItem("activePanel");
     }
   }, [activePanel]);
   const [viewMode, setViewMode] = useState("pretty");
@@ -168,10 +168,10 @@ export default function PostmanClone() {
   // RESTORE LAST RESPONSE
   // ----------------------------
   const [lastResponse, setLastResponse] = useState(
-    JSON.parse(localStorage.getItem("lastResponse") || "null")
+    JSON.parse(sessionStorage.getItem("lastResponse") || "null")
   );
   const [lastRequest, setLastRequest] = useState(
-    JSON.parse(localStorage.getItem("lastRequest") || "null")
+    JSON.parse(sessionStorage.getItem("lastRequest") || "null")
   );
 
   // -------------------------------------------
@@ -378,8 +378,8 @@ export default function PostmanClone() {
       setResponse(respBody);
       setLastResponse(respBody);
       setLastRequest({ url, method, body: bodyPayload, status: data.status ?? res.status ?? "OK" });
-      localStorage.setItem("lastResponse", JSON.stringify(respBody));
-      localStorage.setItem(
+      sessionStorage.setItem("lastResponse", JSON.stringify(respBody));
+      sessionStorage.setItem(
         "lastRequest",
         JSON.stringify({ url, method, body: bodyPayload, status: data.status ?? res.status ?? "OK" })
       );

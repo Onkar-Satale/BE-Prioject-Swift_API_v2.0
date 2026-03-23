@@ -16,7 +16,7 @@ const RequestForm = () => {
 
   // Restore last request and response on mount
   useEffect(() => {
-    const saved = localStorage.getItem("lastRequest");
+    const saved = sessionStorage.getItem("lastRequest");
     if (saved) {
       const parsed = JSON.parse(saved);
       setUrl(parsed.url || "");
@@ -62,8 +62,8 @@ const RequestForm = () => {
 
       setResponse(res.data);
 
-      // Save last request + response to localStorage
-      localStorage.setItem(
+      // Save last request + response to sessionStorage
+      sessionStorage.setItem(
         "lastRequest",
         JSON.stringify({
           url,

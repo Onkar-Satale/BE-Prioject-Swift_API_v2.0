@@ -26,19 +26,19 @@ export const PostmanProvider = ({ children }) => {
     { from: "bot", text: "Hi 👋 I’m your API assistant. Send a request and I’ll explain errors." }
   ]);
 
-  // Persist to localStorage whenever state changes
+  // Persist to sessionStorage whenever state changes
   useEffect(() => {
     const stateToSave = {
       method, url, headersObj, paramsObj, rawBody, activeTab,
       auth,
       response, status, messages
     };
-    localStorage.setItem("postmanCloneState", JSON.stringify(stateToSave));
+    sessionStorage.setItem("postmanCloneState", JSON.stringify(stateToSave));
   }, [method, url, headersObj, paramsObj, rawBody, activeTab, auth, response, status, messages]);
 
-  // Load from localStorage on mount
+  // Load from sessionStorage on mount
   useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem("postmanCloneState") || "{}");
+    const saved = JSON.parse(sessionStorage.getItem("postmanCloneState") || "{}");
     if (saved.method) setMethod(saved.method);
     if (saved.url) setUrl(saved.url);
     if (saved.headersObj) setHeadersObj(saved.headersObj);

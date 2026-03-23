@@ -36,4 +36,8 @@ export const getUserId = () => localStorage.getItem("userId");
 export const logout = () => {
   localStorage.removeItem("authToken");
   localStorage.removeItem("userId");
+  sessionStorage.removeItem("postmanCloneState");
+  sessionStorage.removeItem("lastRequest");
+  sessionStorage.removeItem("lastResponse");
+  sessionStorage.removeItem("activePanel");
 };
