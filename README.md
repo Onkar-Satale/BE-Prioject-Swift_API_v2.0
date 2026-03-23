@@ -38,6 +38,8 @@ Swift API now includes an AI debugging assistant powered by **GenAI using the Gr
 - **⚡ Faster Debugging Workflow:** Reduces time spent searching documentation or StackOverflow.
 - **💬 Interactive AI Help Button:** Developers can click the AI Help button when an error occurs and receive intelligent insights.
 
+---
+
 ### AI Backend Architecture
 
 ```mermaid
