@@ -52,26 +52,31 @@ graph TD;
 
 
 ---
-
 ## 📸 Screenshots
 
 ### 🔑 Login Page
-![Login Page](assets/Login.png)
+<img src="assets/Login.png" width="700" height="400" />
+*Secure login using JWT and password hashing.*
 
 ### 📝 Signup Page
-![Signup Page](assets/Signup.png)
+<img src="assets/Signup.png" width="700" height="400" />
+*User registration page with validation.*
 
 ### 🧾 Headers / Request Configuration
-![Headers Config](assets/Headers.png)
+<img src="assets/Headers.png" width="700" height="400" />
+*Configure headers for API requests.*
 
 ### 👁️ Testing API Requests
-![Testing API Requests](assets/Testing.png)
+<img src="assets/Testing.png" width="700" height="400" />
+*Send API requests and view formatted responses.*
 
 ### 👤 Account / Profile Page
-![Account Page](assets/Account.png)
+<img src="assets/Account.png" width="700" height="400" />
+*User account page showing profile and settings.*
 
 ### 🤖 AI-Powered Debugging
-![GenAI Assistant](assets/Genai.png)
+<img src="assets/Genai.png" width="700" height="400" />
+*AI assistant analyzing API errors and suggesting fixes.*
 
 ---
 
@@ -176,7 +181,6 @@ Contributions are always welcome to improve **Swift API**!
 - Frontend (Vercel): https://swift-api-iota.vercel.app/
 - Backend (Render): https://swift-api-lz1n.onrender.com/
 - GenAI Service (Render): https://swift-api-genai.onrender.com/
-- Repository: https://github.com/Onkar-Satale/Swift_API_mern-
 
 **Swift API** is designed for developers and teams to simplify API testing, debugging, and workflow management. With the integration of GenAI-powered debugging assistance, the platform goes beyond a simple Postman clone and becomes a smart developer productivity tool. It is lightweight, fast, customizable, and continuously evolving to support modern backend development workflows.
 
