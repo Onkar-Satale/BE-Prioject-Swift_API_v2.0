@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import ReactJson from "react-json-view";
-import { RequestContext } from "../context/RequestContext";
+
 import MethodDropdown from "./MethodDropdown";
 import HeadersTab from "./HeadersTab";
 import BodyTab from "./BodyTab";
@@ -14,10 +14,8 @@ import RequestBar from "./RequestBar";
 import BotSidebar from "./BotSidebar";
 import AuthorizationTab from "./AuthorizationTab";
 import { useContext } from "react";
-import { PostmanContext } from "../context/PostmanContext"; // 🔹 add this
-
-
-
+import { PostmanContext } from "../context/PostmanContext";
+import { showToast } from "../utils/toast";
 
 
 export default function PostmanClone() {
@@ -59,7 +57,6 @@ export default function PostmanClone() {
   // const [headersObj, setHeadersObj] = useState([
   //   { key: "", value: "" }
   // ]);
-  const { setRequestCount } = useContext(RequestContext);
 
   const navigate = useNavigate();
   const responseRef = useRef(null);
@@ -158,11 +155,11 @@ export default function PostmanClone() {
       localStorage.setItem("currentUserId", userId);
 
       const savedCount = localStorage.getItem(`requestCount_${userId}`);
-      setRequestCount(savedCount ? parseInt(savedCount) : 0);
+      // Removed setRequestCount logic }
     } catch (err) {
       console.error("Failed to decode token:", err);
     }
-  }, [setRequestCount]);
+  }, []);
 
   // ----------------------------
   // RESTORE LAST RESPONSE
@@ -324,7 +321,7 @@ export default function PostmanClone() {
       // NEW: send backend auth in custom header
       const backendToken = localStorage.getItem("authToken");
 
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
+      const backendUrl = process.env.REACT_APP_BACKEND_URL;
       const res = await fetch(`${backendUrl}/api/request`, {
         method: "POST",
         headers: {
@@ -362,14 +359,12 @@ export default function PostmanClone() {
 
 
       const respBody = data.body ?? data.result ?? data;
-      setRequestCount(prev => {
-        const newCount = prev + 1;
-        const currentUserId = localStorage.getItem("currentUserId");
-        if (currentUserId) {
-          localStorage.setItem(`requestCount_${currentUserId}`, newCount);
-        }
-        return newCount;
-      });
+      const currentUserId = localStorage.getItem("currentUserId");
+      if (currentUserId) {
+        const savedCount = localStorage.getItem(`requestCount_${currentUserId}`);
+        const total = (savedCount ? parseInt(savedCount) : 0) + 1;
+        localStorage.setItem(`requestCount_${currentUserId}`, total);
+      }
 
 
       // ----------------------------
@@ -402,11 +397,20 @@ export default function PostmanClone() {
         response: respBody || { error: "No response body available" }
       });
 
+      // OPTIMISTIC UI UPDATE: Instantly show in history without waiting for DB fetch
+      setHistory(prev => [
+        {
+          _id: data.historyId || "temp-" + Date.now(),
+          method,
+          url: finalUrl,
+          status: statusCode,
+          duration,
+          time: new Date().toISOString()
+        },
+        ...prev
+      ]);
 
-
-
-
-      await loadUserHistory(); // refresh history after request
+      // Re-fetch skipped here to prevent UI flash, optimistic update handles it.
     } catch (err) {
       console.error("Request failed:", err);
       setErrorMsg("Request failed: " + err.message);
@@ -424,19 +428,29 @@ export default function PostmanClone() {
   // -------------------------------------------
   const handleHistoryDelete = async (historyId) => {
     try {
+      // OPTIMISTIC UI: Remove from list instantly
+      setHistory(prev => prev.filter(item => item._id !== historyId));
+      
       await deleteHistoryItem(historyId); // ✅ uses authToken internally
-      await loadUserHistory();
+      showToast("🗑️ History item deleted!");
+      // Removed loadUserHistory() to prevent lag
     } catch (err) {
       console.error("Failed to delete history item:", err);
+      await loadUserHistory(); // recover if failed
     }
   };
 
   const handleHistoryClear = async () => {
     try {
+      // OPTIMISTIC UI: Clear list instantly
+      setHistory([]);
+
       await clearHistory(); // ✅ uses authToken internally
-      await loadUserHistory();
+      showToast("🧹 All history cleared!");
+      // Removed loadUserHistory() to prevent lag
     } catch (err) {
       console.error("Failed to clear history:", err);
+      await loadUserHistory(); // recover if failed
     }
   };
 
@@ -452,82 +466,8 @@ export default function PostmanClone() {
   // -------------------------------------------
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(typeof text === "string" ? text : JSON.stringify(text, null, 2));
-    const toast = document.createElement("div");
-    toast.textContent = "Copied to clipboard!";
-    toast.className = "toast";
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 1200);
+    showToast("✅ Copied to clipboard!");
   };
-  const getSmartHelpMessage = (status = null, responseBody) => {
-    if (!status) return { diagnosis: "ℹ️ No request sent yet", fix: "Send an API request and I’ll explain errors.", tests: [] };
-
-    if (status === 400) return {
-      diagnosis: "⚠️ 400 Bad Request: Request syntax invalid or missing fields",
-      fix: "Validate JSON format, check required parameters, match API schema exactly",
-      tests: ["Validate JSON schema", "Check required fields"]
-    };
-
-    if (status === 401) return {
-      diagnosis: "🚫 401 Unauthorized: Missing or invalid token",
-      fix: "Add Authorization header, refresh or regenerate token",
-      tests: ["Check token validity", "Ensure Bearer format"]
-    };
-
-    if (status === 403) return {
-      diagnosis: "⛔ 403 Forbidden: Access denied",
-      fix: "Check user roles/permissions, correct API key, backend access rules",
-      tests: ["Verify user permissions", "Check API key"]
-    };
-
-    if (status === 404) return {
-      diagnosis: "❓ 404 Not Found: Endpoint does not exist or typo in URL",
-      fix: "Verify endpoint URL and API version, confirm backend route",
-      tests: ["Check route exists", "Validate URL"]
-    };
-
-    if (status === 405) return {
-      diagnosis: "🚫 405 Method Not Allowed",
-      fix: "Use correct HTTP method (GET/POST/PUT/DELETE)",
-      tests: ["Check allowed methods in backend"]
-    };
-
-    if (status === 409) return {
-      diagnosis: "🔁 409 Conflict: Resource already exists or duplicate submission",
-      fix: "Use PUT to update existing resource instead of POST",
-      tests: ["Check if resource exists before creating"]
-    };
-
-    if (status === 422) return {
-      diagnosis: "📛 422 Unprocessable Entity: Validation failed",
-      fix: "Match backend validation rules, check payload types",
-      tests: ["Validate field types", "Check required fields"]
-    };
-
-    if (status === 429) return {
-      diagnosis: "⏳ 429 Too Many Requests: Rate limit exceeded",
-      fix: "Slow down requests, implement retry with delay",
-      tests: ["Throttle requests", "Upgrade API plan if needed"]
-    };
-
-    if (status >= 500 && status < 600) return {
-      diagnosis: `🔥 ${status} Server Error`,
-      fix: "Check backend logs, retry after some time, contact backend team",
-      tests: ["Check server logs", "Retry request"]
-    };
-
-    if (status === "NETWORK_ERROR" || status === "ERR") return {
-      diagnosis: "🌐 Network / Client Error",
-      fix: "Check backend running, DevTools → Network tab, CORS issues",
-      tests: ["Verify server is running", "Check browser console for CORS"]
-    };
-
-    return {
-      diagnosis: `✅ Request Successful (${status})`,
-      fix: "Response received successfully",
-      tests: []
-    };
-  };
-
 
 
   // -------------------------------------------
@@ -675,6 +615,7 @@ export default function PostmanClone() {
                     link.href = url;
                     link.download = "response.json";
                     link.click();
+                    showToast("💾 Response saved successfully!");
                   }}
                 >
                   Save
@@ -753,9 +694,6 @@ export default function PostmanClone() {
 
         />
       )}
-
-
-
     </div>
   );
 }

@@ -263,8 +263,10 @@
   font-size: 14.5px;
   margin-top: 10px;
   margin-bottom: 4px;
-  padding: 4px 6px;          /* reduced padding */
-  border-left: 2px solid transparent; /* fixed */
+  padding: 4px 6px;
+  /* reduced padding */
+  border-left: 2px solid transparent;
+  /* fixed */
   border-radius: 4px;
   cursor: default;
   transition:
@@ -289,7 +291,8 @@
 .bot-text-line {
   font-size: 13.5px;
   line-height: 1.5;
-  padding-left: 6px; /* reduced from 11px */
+  padding-left: 6px;
+  /* reduced from 11px */
 }
 
 .bot-overlay {

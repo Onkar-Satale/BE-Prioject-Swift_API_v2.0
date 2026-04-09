@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect,useContext } from "react";
+import { useState, useRef, useEffect, useContext } from "react";
 import "./BotSidebar.css";
 import { PostmanContext } from "../context/PostmanContext";
+import { showToast } from "../utils/toast";
 
 
 export default function BotSidebar({
@@ -22,10 +23,14 @@ export default function BotSidebar({
   const botBodyRef = useRef(null);
   const [copiedIndex, setCopiedIndex] = useState(null);
   const [featureLoading, setFeatureLoading] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const { messages, setMessages } = useContext(PostmanContext);
 
-
-
+  const handleClearBot = () => {
+    setMessages([]);
+    setShowClearConfirm(false);
+    showToast("🤖 Chat bot cleared!");
+  };
 
   useEffect(() => {
     if (botBodyRef.current) {
@@ -35,14 +40,6 @@ export default function BotSidebar({
       });
     }
   }, [messages]);
-
-
-
-
-
-
-
-
 
 
   /* ===============================
@@ -156,14 +153,14 @@ export default function BotSidebar({
     setInput("");
 
     try {
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
+      const backendUrl = process.env.REACT_APP_BACKEND_URL;
       const token = localStorage.getItem("authToken");
 
       const response = await fetch(`${backendUrl}/api/ai/bot`, {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          "Authorization": token ? `Bearer ${token}` : "" 
+          "Authorization": token ? `Bearer ${token}` : ""
         },
         body: JSON.stringify({
           userId: "user123", // the backend will overwrite this securely based on the token
@@ -325,14 +322,14 @@ export default function BotSidebar({
     };
 
     try {
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
+      const backendUrl = process.env.REACT_APP_BACKEND_URL;
       const token = localStorage.getItem("authToken");
 
       const res = await fetch(`${backendUrl}/api/ai/analyze`, {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          "Authorization": token ? `Bearer ${token}` : "" 
+          "Authorization": token ? `Bearer ${token}` : ""
         },
         body: JSON.stringify(payload)
       });
@@ -384,8 +381,24 @@ export default function BotSidebar({
           </div>
           <h3 style={{ color: "#ff8810", fontWeight: "bold" }}>JARVIS is here to HELP !</h3>
         </div>
-        <button className="close-btn" onClick={onClose}>✖</button>
+        <div>
+          <button onClick={() => setShowClearConfirm(true)} style={{ background: "none", border: "none", color: "#fff", cursor: "pointer", fontSize: "16px", marginRight: "10px" }} title="Refresh/Clear Chat">🔄</button>
+          <button className="close-btn" onClick={onClose}>✖</button>
+        </div>
       </div>
+
+      {showClearConfirm && (
+        <div className="modal-overlay">
+          <div className="confirm-modal">
+            <h3>⚠️ Refresh Bot</h3>
+            <p>Are you sure to refresh the bot?</p>
+            <div className="modal-actions">
+              <button className="btn-no" onClick={() => setShowClearConfirm(false)}>No, Cancel</button>
+              <button className="btn-yes" onClick={handleClearBot}>Yes, Clear</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* PANEL */}
       <div ref={panelRef} className={`bot-panel ${showPanel ? "open" : ""}`}>

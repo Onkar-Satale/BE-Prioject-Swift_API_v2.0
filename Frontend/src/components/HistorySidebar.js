@@ -35,6 +35,9 @@ function groupByDate(items) {
 
 export default function HistorySidebar({ items = [], onSelect, onDelete, onClear, onCountChange }) {
   const [collapsed, setCollapsed] = useState({});
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
+
   useEffect(() => {
     if (onCountChange) {
       onCountChange(items.length);
@@ -44,9 +47,43 @@ export default function HistorySidebar({ items = [], onSelect, onDelete, onClear
 
   return (
     <aside className="history">
+      {/* Single Item Delete Modal */}
+      {itemToDelete && (
+        <div className="modal-overlay">
+          <div className="confirm-modal">
+            <h3>⚠️ Delete Request</h3>
+            <p>Do you want to delete this request from history?</p>
+            <div className="modal-actions">
+              <button className="btn-no" onClick={() => setItemToDelete(null)}>No, Cancel</button>
+              <button className="btn-yes" onClick={() => {
+                onDelete(itemToDelete);
+                setItemToDelete(null);
+              }}>Yes, Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Clear Confirmation Modal */}
+      {showClearConfirm && (
+        <div className="modal-overlay">
+          <div className="confirm-modal">
+            <h3>⚠️ Clear History</h3>
+            <p>Do you really want to delete all requests in history?</p>
+            <div className="modal-actions">
+              <button className="btn-no" onClick={() => setShowClearConfirm(false)}>No, Cancel</button>
+              <button className="btn-yes" onClick={() => {
+                setShowClearConfirm(false);
+                onClear();
+              }}>Yes, Delete All</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="history-header">
         <h3>History</h3>
-        <button className="clear-btn" onClick={onClear}>Clear</button>
+        <button className="clear-btn" onClick={() => setShowClearConfirm(true)}>Clear</button>
       </div>
 
       <div className="history-list">
@@ -87,7 +124,7 @@ export default function HistorySidebar({ items = [], onSelect, onDelete, onClear
                       <span className="time">
                         {new Date(h.time).toLocaleTimeString()}
                       </span>
-                      <button className="del" onClick={() => onDelete(h._id)}>
+                      <button className="del" onClick={() => setItemToDelete(h._id)}>
                         ✕
                       </button>
                     </div>

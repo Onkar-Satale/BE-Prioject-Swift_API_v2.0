@@ -1,15 +1,15 @@
-const HISTORY_API = `${process.env.REACT_APP_BACKEND_URL || "http://localhost:5000"}/api/history`;
+const HISTORY_API = `${process.env.REACT_APP_BACKEND_URL}/api/history`;
 
-// GET all history
 export const getHistory = async () => {
   try {
     const token = localStorage.getItem("authToken"); // ✅ corrected
     if (!token) return [];
 
-    const res = await fetch(HISTORY_API, {
+    const res = await fetch(`${HISTORY_API}?t=${Date.now()}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
+      cache: "no-store",
     });
 
     if (!res.ok) throw new Error(`Failed to fetch history: ${res.status}`);

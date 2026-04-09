@@ -1,77 +1,7 @@
-// import React, { useState } from "react";
-// import "./ContactSupport.css";
-
-// const ContactSupport = () => {
-//     const [form, setForm] = useState({
-//         subject: "",
-//         message: "",
-//     });
-//     const [showToast, setShowToast] = useState(false);
-
-//     const handleChange = (e) => {
-//         setForm({ ...form, [e.target.name]: e.target.value });
-//     };
-
-//     const handleSubmit = (e) => {
-//         e.preventDefault();
-
-//         console.log("Support Ticket:", form);
-
-//         // Show toast notification
-//         setShowToast(true);
-//         setTimeout(() => setShowToast(false), 2000);
-
-//         // Reset form
-//         setForm({ subject: "", message: "" });
-//     };
-
-//     return (
-//         <div className="support-page">
-//             <h1>Contact Support</h1>
-
-//             <div className="support-card">
-//                 <form onSubmit={handleSubmit} className="support-form">
-//                     <div className="form-group">
-//                         <input
-//                             type="text"
-//                             name="subject"
-//                             value={form.subject}
-//                             onChange={handleChange}
-//                             required
-//                             placeholder=" "
-//                             autoComplete="off"        // disables browser autocomplete
-//                             spellCheck="false"
-//                         />
-//                         <label>Subject</label>
-//                     </div>
-
-//                     <div className="form-group">
-//                         <textarea
-//                             name="message"
-//                             rows="6"
-//                             value={form.message}
-//                             onChange={handleChange}
-//                             required
-//                             placeholder=" "
-//                         />
-//                         <label>Message</label>
-//                     </div>
-
-//                     <button type="submit" className="submit-btn">Submit</button>
-//                 </form>
-//             </div>
-
-//             {showToast && <div className="toast">Support request submitted!</div>}
-//         </div>
-//     );
-// };
-// export default ContactSupport;
-
-
-
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import emailjs from "@emailjs/browser";
+import { getToken } from "../services/authService";
+import { showToast } from "../utils/toast";
 import "./ContactSupport.css";
 
 const ContactSupport = () => {
@@ -82,8 +12,40 @@ const ContactSupport = () => {
         subject: "",
         message: "",
     });
-    const [showToast, setShowToast] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [userData, setUserData] = useState(null);
+
+    useEffect(() => {
+        const loadUser = async () => {
+            const token = getToken();
+            if (!token) return;
+            try {
+                const backendUrl = process.env.REACT_APP_BACKEND_URL;
+                const res = await fetch(`${backendUrl}/api/auth/me`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                const data = await res.json();
+                if (res.ok && data.user) {
+                    setUserData(data.user);
+                }
+            } catch (error) {
+                console.error("Failed to load user for contact support:", error);
+            }
+        };
+        loadUser();
+    }, []);
+
+    const handleFocusName = () => {
+        if (!form.name && userData?.username) {
+            setForm(prev => ({ ...prev, name: userData.username }));
+        }
+    };
+
+    const handleFocusEmail = () => {
+        if (!form.email && userData?.email) {
+            setForm(prev => ({ ...prev, email: userData.email }));
+        }
+    };
 
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
@@ -112,8 +74,7 @@ const ContactSupport = () => {
                 "SKmEoaGBdBM-RTXNA"     // Public key
             );
 
-            setShowToast(true);
-            setTimeout(() => setShowToast(false), 2000);
+            showToast("☑️ Message sent successfully!");
             setForm({ name: "", email: "", phone: "", subject: "", message: "" });
 
         } catch (error) {
@@ -136,6 +97,7 @@ const ContactSupport = () => {
                             name="name"
                             value={form.name}
                             onChange={handleChange}
+                            onFocus={handleFocusName}
                             required
                             placeholder=" "
                             autoComplete="off"
@@ -150,6 +112,7 @@ const ContactSupport = () => {
                             name="email"
                             value={form.email}
                             onChange={handleChange}
+                            onFocus={handleFocusEmail}
                             required
                             placeholder=" "
                             autoComplete="off"
@@ -208,7 +171,6 @@ const ContactSupport = () => {
                 </form>
             </div>
 
-            {showToast && <div className="toast">Support request submitted!</div>}
         </div>
     );
 };

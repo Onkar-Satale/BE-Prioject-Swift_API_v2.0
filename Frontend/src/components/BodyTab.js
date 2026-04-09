@@ -16,7 +16,7 @@ export default function BodyTab({
 
   const handleSelectChange = (e) => {
     const value = e.target.value;
-setBodyType(value);
+    setBodyType(value);
 
     if (value === "none") {
       onBodyChange(null);
@@ -29,7 +29,7 @@ setBodyType(value);
 
   const handleChange = (newValue) => {
     setBody(newValue);
-    if (bodyType  === "raw") {
+    if (bodyType === "raw") {
       onBodyChange(newValue);
     }
   };
