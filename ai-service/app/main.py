@@ -1,5 +1,6 @@
 import logging
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -28,6 +29,20 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def verify_service_token(request: Request, call_next):
+    # Exclude root from token check for deployment health checks
+    if request.url.path == "/":
+        return await call_next(request)
+
+    token = request.headers.get("x-ai-service-token")
+    if token != settings.AI_SERVICE_SECRET:
+        return JSONResponse(
+            status_code=401,
+            content={"detail": "Unauthorized. Invalid or missing AI Service Token."}
+        )
+    return await call_next(request)
 
 # Expose generic root check
 @app.get("/")

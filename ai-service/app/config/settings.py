@@ -9,6 +9,7 @@ if env_path:
 class Settings:
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY")
     FRONTEND_URLS: str = os.getenv("FRONTEND_URLS")
+    AI_SERVICE_SECRET: str = os.getenv("AI_SERVICE_SECRET", "my_super_secret_ai_token_123")
     
     @property
     def cors_origins(self) -> list[str]:

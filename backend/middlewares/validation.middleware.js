@@ -7,10 +7,25 @@ export const validate = (schema) => (req, res, next) => {
       query: req.query,
       params: req.params,
     });
-    // Replace req properties with validated ones (which trims / converts types sometimes)
-    req.body = parsed.body;
-    req.query = parsed.query;
-    req.params = parsed.params;
+    if (parsed.body !== undefined) {
+      req.body = parsed.body;
+    }
+    if (parsed.query !== undefined) {
+      Object.defineProperty(req, 'query', {
+        value: parsed.query,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
+    }
+    if (parsed.params !== undefined) {
+      Object.defineProperty(req, 'params', {
+        value: parsed.params,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
+    }
     next();
   } catch (error) {
     if (error.name === 'ZodError') {

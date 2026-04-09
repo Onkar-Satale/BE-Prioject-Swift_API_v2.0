@@ -177,7 +177,6 @@ export default function PostmanClone() {
   const loadUserHistory = async () => {
     try {
       const h = await getHistory(); // ✅ uses authToken internally
-      console.log("Fetched history:", h); // <-- Add this
       setHistory(Array.isArray(h) ? [...h].reverse() : []);
     } catch (err) {
       console.error("Failed to load history:", err);
@@ -280,8 +279,6 @@ export default function PostmanClone() {
     }
 
     // Add auth token
-
-    console.log("Sending headers:", headers); // <-- check in console if headers are correct
 
 
     setLoading(true);
@@ -419,7 +416,6 @@ export default function PostmanClone() {
     } finally {
       setLoading(false);
       // responseRef.current?.scrollIntoView({ behavior: "smooth" });
-      console.log("Request duration:", Math.round(performance.now() - start), "ms");
     }
   };
 
@@ -430,7 +426,7 @@ export default function PostmanClone() {
     try {
       // OPTIMISTIC UI: Remove from list instantly
       setHistory(prev => prev.filter(item => item._id !== historyId));
-      
+
       await deleteHistoryItem(historyId); // ✅ uses authToken internally
       showToast("🗑️ History item deleted!");
       // Removed loadUserHistory() to prevent lag
@@ -628,8 +624,17 @@ export default function PostmanClone() {
               <button className="copy-btn" onClick={() => response && copyToClipboard(response)}>Copy</button>
               <button
                 type="button"
-                onClick={() => {
-                  if (!url) return;
+                onClick={(e) => {
+                  e.stopPropagation(); // prevent outer click listener bugs
+                  const token = localStorage.getItem("authToken");
+                  if (!token) {
+                    showToast("⚠️ Please log in to use the AI Assistant.");
+                    return;
+                  }
+                  if (!response) {
+                    showToast("⚠️ Please send a request first to get help!");
+                    return;
+                  }
                   setShowBot(true);
                 }}
               >

@@ -294,13 +294,7 @@ export default function BotSidebar({
 
   // 🔹 NEW: Call GenAI /analyze endpoint for a specific feature
   const handleAnalyzeFeature = async (feature) => {
-    if (!currentApiContext) {
-      setMessages(prev => [
-        ...prev,
-        { from: "bot", text: "⚠️ No API context available for analysis." }
-      ]);
-      return;
-    }
+    // Validation handled by the parent component Help button
 
     if (featureLoading) return; // prevent spam clicks
     setShowPanel(false);
