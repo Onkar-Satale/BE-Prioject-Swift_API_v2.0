@@ -64,7 +64,13 @@ export default function PostmanClone() {
   // const [paramsObj, setParamsObj] = useState([
   //   { key: "", value: "", description: "" }
   // ]);
-  const [showBot, setShowBot] = useState(false);
+  const [showBot, setShowBot] = useState(
+    sessionStorage.getItem("showBot") === "true"
+  );
+  
+  useEffect(() => {
+    sessionStorage.setItem("showBot", showBot);
+  }, [showBot]);
   // const [messages, setMessages] = useState([
   //   {
   //     from: "bot",

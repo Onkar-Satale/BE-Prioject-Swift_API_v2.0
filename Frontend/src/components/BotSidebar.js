@@ -27,7 +27,9 @@ export default function BotSidebar({
   const { messages, setMessages } = useContext(PostmanContext);
 
   const handleClearBot = () => {
-    setMessages([]);
+    setMessages([
+      { from: "bot", text: "Hi 👋 I’m your API assistant. Send a request and I’ll explain errors." }
+    ]);
     setShowClearConfirm(false);
     showToast("🤖 Chat bot cleared!");
   };
@@ -329,7 +331,13 @@ export default function BotSidebar({
       });
 
       const data = await res.json();
-      const textToDisplay = data.text || "⚠️ Explanation unavailable.";
+      
+      let textToDisplay = data.text;
+      if (!res.ok) {
+        textToDisplay = `⚠️ Error ${res.status}: ${data.error || data.message || data.detail || JSON.stringify(data)}`;
+      } else if (!textToDisplay) {
+        textToDisplay = "⚠️ Explanation unavailable.";
+      }
 
       setMessages(prev => [
         ...prev.filter(msg => !msg.isTemp),
