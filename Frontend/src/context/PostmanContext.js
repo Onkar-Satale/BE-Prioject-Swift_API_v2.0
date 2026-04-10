@@ -18,7 +18,7 @@ export const PostmanProvider = ({ children }) => {
   const [url, setUrl] = useState(saved.url || "");
   const [headersObj, setHeadersObj] = useState(saved.headersObj || [{ key: "", value: "" }]);
   const [paramsObj, setParamsObj] = useState(saved.paramsObj || [{ key: "", value: "", description: "" }]);
-  const [rawBody, setRawBody] = useState(saved.rawBody || '{\n  "example": "value"\n}');
+  const [rawBody, setRawBody] = useState(saved.rawBody || "");
   const [activeTab, setActiveTab] = useState(saved.activeTab || "Params");
 
   // Authorization state

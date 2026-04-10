@@ -10,12 +10,12 @@ export const callBot = async (userId, message, currentApiContext, requestHistory
   }, {
     headers: { 'x-ai-service-token': config.aiServiceSecret }
   });
-  return aiRes.data;
+  return aiRes;
 };
 
 export const callAnalyze = async (analyzeData) => {
   const aiRes = await apiClient.post(`${config.aiServiceUrl}/analyze`, analyzeData, {
     headers: { 'x-ai-service-token': config.aiServiceSecret }
   });
-  return aiRes.data;
+  return aiRes;
 };
