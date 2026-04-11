@@ -46,6 +46,27 @@ export const PostmanProvider = ({ children }) => {
     sessionStorage.setItem("postmanCloneState", JSON.stringify(stateToSave));
   }, [method, url, headersObj, paramsObj, rawBody, activeTab, auth, response, status, messages]);
 
+  // Reset Context for logout or new login
+  const resetContext = () => {
+    setMethod("GET");
+    setUrl("");
+    setHeadersObj([{ key: "", value: "" }]);
+    setParamsObj([{ key: "", value: "", description: "" }]);
+    setRawBody("");
+    setActiveTab("Params");
+    setAuth({
+      type: "none",
+      token: "",
+      username: "",
+      password: "",
+    });
+    setResponse("");
+    setStatus(null);
+    setMessages([
+      { from: "bot", text: "Hi 👋 I’m your API assistant. Send a request and I’ll explain errors." }
+    ]);
+  };
+
   return (
     <PostmanContext.Provider
       value={{
@@ -58,7 +79,8 @@ export const PostmanProvider = ({ children }) => {
         auth, setAuth,       // ✅ add auth here
         response, setResponse,
         status, setStatus,
-        messages, setMessages
+        messages, setMessages,
+        resetContext         // 🔹 new reset function
       }}
     >
       {children}

@@ -1,9 +1,11 @@
 // frontend/src/pages/AccountPage.jsx
 import "./accountPage.css";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import { getToken, logout } from "../services/authService";
 import { showToast } from "../utils/toast";
+import { PostmanContext } from "../context/PostmanContext";
+
 
 
 export default function AccountPage() {
@@ -96,9 +98,12 @@ export default function AccountPage() {
   };
 
 
+  const { resetContext } = useContext(PostmanContext);
+
   const handleLogout = () => {
     setShowLogoutConfirm(false);
     showToast("🚪 Successfully logged out.");
+    resetContext();
     logout();
     navigate("/login");
   };

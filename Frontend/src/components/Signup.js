@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
+import { PostmanContext } from "../context/PostmanContext";
 import { signup, saveAuthData } from "../services/authService";
 import { showToast } from "../utils/toast";
 import "./Signup.css";
@@ -10,6 +11,12 @@ export default function SignupPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const { resetContext } = useContext(PostmanContext);
+
+  useEffect(() => {
+    // Clear context on signup page mount
+    resetContext();
+  }, []);
 
   const isPasswordStrong = (pass) => {
     return pass.length >= 8 && /[A-Z]/.test(pass) && /[a-z]/.test(pass) && /[0-9]/.test(pass);

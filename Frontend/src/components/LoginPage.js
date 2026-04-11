@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
+import { PostmanContext } from "../context/PostmanContext";
 import { login, saveAuthData } from "../services/authService";
 import { showToast } from "../utils/toast";
 import "./Login.css";
@@ -10,8 +11,11 @@ export default function LoginPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const { resetContext } = useContext(PostmanContext);
 
   useEffect(() => {
+    // Clear context immediately when they navigate to login
+    resetContext();
     const token = localStorage.getItem("authToken");
     if (token) navigate("/");
   }, [navigate]);
