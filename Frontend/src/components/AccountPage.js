@@ -47,7 +47,7 @@ export default function AccountPage() {
       }
     } catch (err) {
       logout();
-      navigate("/login");
+      navigate("/");
     } finally {
       setLoading(false);
     }
@@ -94,7 +94,6 @@ export default function AccountPage() {
       console.error(err);
     }
   };
-
 
   const { resetContext } = useContext(PostmanContext);
 
