@@ -50,7 +50,13 @@ export default function PostmanClone() {
       sessionStorage.removeItem("activePanel");
     }
   }, [activePanel]);
-  const [viewMode, setViewMode] = useState("pretty");
+  const [viewMode, setViewMode] = useState(
+    sessionStorage.getItem("viewMode") || "pretty"
+  );
+
+  useEffect(() => {
+    sessionStorage.setItem("viewMode", viewMode);
+  }, [viewMode]);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [bodyContent, setBodyContent] = useState("");
@@ -60,7 +66,13 @@ export default function PostmanClone() {
 
   const navigate = useNavigate();
   const responseRef = useRef(null);
-  const [responseHeight, setResponseHeight] = useState(300); // default height 300px
+  const [responseHeight, setResponseHeight] = useState(() => {
+    return parseInt(sessionStorage.getItem("responseHeight")) || 300;
+  });
+
+  useEffect(() => {
+    sessionStorage.setItem("responseHeight", responseHeight);
+  }, [responseHeight]);
   // const [paramsObj, setParamsObj] = useState([
   //   { key: "", value: "", description: "" }
   // ]);
@@ -483,7 +495,14 @@ export default function PostmanClone() {
 
         <button
           className={`sidebar-btn ${activePanel === "history" ? "active" : ""}`}
-          onClick={() => setActivePanel(activePanel === "history" ? null : "history")}
+          onClick={() => {
+            const token = localStorage.getItem("authToken");
+            if (!token) {
+              showToast("⚠️ You need to log in to see your history.");
+              return;
+            }
+            setActivePanel(activePanel === "history" ? null : "history");
+          }}
         >
           🕒<span className="tooltip">History</span>
         </button>
@@ -509,7 +528,7 @@ export default function PostmanClone() {
 
       {activePanel === "account" && (
         <div className="sidebar-large">
-          <AccountPage />
+          <AccountPage onClose={() => setActivePanel(null)} />
         </div>
       )}
 
@@ -608,6 +627,10 @@ export default function PostmanClone() {
                 <button
                   className="save-btn"
                   onClick={() => {
+                    if (!response) {
+                      showToast("⚠️ First send a request and then you can save it.");
+                      return;
+                    }
                     const blob = new Blob(
                       [typeof response === "string" ? response : JSON.stringify(response, null, 2)],
                       { type: "application/json" }
@@ -635,6 +658,7 @@ export default function PostmanClone() {
                   const token = localStorage.getItem("authToken");
                   if (!token) {
                     showToast("⚠️ Please log in to use the AI Assistant.");
+                    navigate("/login");
                     return;
                   }
                   if (!response) {
@@ -658,38 +682,52 @@ export default function PostmanClone() {
               </div>
             ) : !response ? (
               <p>No response yet</p>
-            )
-              : viewMode === "raw" ? (
-                <pre style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-                  {typeof response === "string" ? response : JSON.stringify(response)}
-                </pre>
-              ) : viewMode === "pretty" ? (
-                <ReactJson
-                  src={typeof response === "string" ? { raw: response } : response}
-                  name={null}
-                  collapsed={1}
-                  enableClipboard={true}
-                  displayDataTypes={false}
-                  displayObjectSize={true}
-                  theme="google"
-                />
-              ) : viewMode === "preview" ? (
-                <div
-                  style={{
-                    background: "#1e1e1e",
-                    color: "#fff",
-                    fontFamily: "monospace",
-                    whiteSpace: "pre-wrap",
-                    padding: "10px",
-                  }}
-                >
-                  <pre style={{ margin: 0, color: "#fff" }}>
-                    {typeof response === "string"
-                      ? response.replace(/\\n/g, "\n")
-                      : JSON.stringify(response, null, 2)}
+            ) : (
+              <>
+                <div style={{ display: viewMode === "raw" ? "block" : "none" }}>
+                  <pre style={{ whiteSpace: "pre-wrap", wordBreak: "break-word", margin: 0, padding: "10px" }}>
+                    {(() => {
+                      const str = typeof response === "string" ? response : JSON.stringify(response);
+                      return str.length > 250000 ? str.slice(0, 250000) + "\n\n... [Truncated for performance]" : str;
+                    })()}
                   </pre>
                 </div>
-              ) : null}
+
+                <div style={{ display: viewMode === "pretty" ? "block" : "none", maxWidth: "100%", overflowX: "auto" }}>
+                  {(() => {
+                    try {
+                      const isTooLarge = typeof response !== "string" && JSON.stringify(response).length > 250000;
+                      if (isTooLarge) {
+                        return (
+                          <div style={{ padding: "20px", color: "#ff9900" }}>
+                            ⚠️ This response is too large to safely render in 'Pretty' mode. Please use 'Raw' or 'Preview'.
+                          </div>
+                        );
+                      }
+                      return (
+                        <ReactJson
+                          src={typeof response === "string" ? { raw: response } : response}
+                          name={null}
+                          collapsed={50}
+                          enableClipboard={true}
+                          displayDataTypes={false}
+                          displayObjectSize={true}
+                          theme="google"
+                        />
+                      );
+                    } catch (err) {
+                      return <div style={{ color: "red", padding: "10px" }}>Error rendering pretty view. Try 'Raw'.</div>;
+                    }
+                  })()}
+                </div>
+
+                <div style={{ display: viewMode === "preview" ? "block" : "none", background: "#1e1e1e", color: "#fff", fontFamily: "monospace", overflowX: "auto", padding: "10px" }}>
+                  <pre style={{ margin: 0, color: "#fff", whiteSpace: "pre" }}>
+                    {typeof response === "string" ? response.replace(/\\n/g, "\n") : JSON.stringify(response, null, 2)}
+                  </pre>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

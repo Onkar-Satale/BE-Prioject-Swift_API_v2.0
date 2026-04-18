@@ -40,4 +40,5 @@ export const logout = () => {
   sessionStorage.removeItem("lastRequest");
   sessionStorage.removeItem("lastResponse");
   sessionStorage.removeItem("activePanel");
+  sessionStorage.removeItem("showBot");
 };

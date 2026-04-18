@@ -79,61 +79,137 @@ Response Body: {error_content}
 """
 
     if req.feature == "smart_error_translator":
-        return f"{ERROR_TRANSLATOR_PROMPT}\n\nAPI Response:\n{error_content}"
+        return f"""STRUCTURE YOUR RESPONSE EXACTLY LIKE THIS:
+### 🕵️ What Happened
+(explain what happened in simple English for a junior developer)
+
+[EMPTY LINE]
+
+### 🤔 Why It Happened
+(explain why it likely happened)
+
+[EMPTY LINE]
+
+### 🛠️ Practical Fixes
+• step 1
+• step 2
+
+Now explain this error based on these details:
+{base_request_info}"""
 
     elif req.feature == "header_silly_mistakes":
-        return f"""You are an API Header Inspector.
-Rules:
-- If headers are empty, clearly say: "No headers were provided."
-- If headers are present and no issues are found, say: "No header issues detected."
-- If issues exist, list them clearly using bullet points.
-Only detect spelling mistakes, wrong capitalization, duplicates, or format issues in headers. Do NOT analyze response.
+        return f"""STRUCTURE YOUR RESPONSE EXACTLY LIKE THIS:
+### 🔍 Header Inspection
+(detect missing or empty headers)
+
+[EMPTY LINE]
+
+### 📌 Summary
+(no header issues or overview of duplicate/format metadata)
+
+[EMPTY LINE]
+
+### 📝 Corrections
+• step 1 (if issues exist)
+• step 2
+
+Analyze only for spelling mistakes, wrong capitalization, duplicates, or format issues.
 Headers:
 {req.headers}"""
 
     elif req.feature == "retry_recommendation":
-        return f"""You are a retry strategy expert.
-Based only on status code and response, decide whether this request should be retried.
-Return:
-• Retry or Not
-• Reason
-• Suggested retry method (if needed)
+        return f"""STRUCTURE YOUR RESPONSE EXACTLY LIKE THIS:
+### 🔄 Retry Decision
+(Retry or Not and short explanation)
 
+[EMPTY LINE]
+
+### 📌 Reason
+(clear explanation of why based on status code and response)
+
+[EMPTY LINE]
+
+### 🚀 Suggestions
+• suggested retry method step 1
+• step 2
+
+Decide whether this request should be retried based on:
 Status Code: {req.status}
 Response:
 {error_content}"""
 
     elif req.feature == "api_usage_tips":
-        return f"""You are an API usage optimizer.
-Give only improvement tips. Focus on Pagination, Filtering, Payload optimization, and Best practices.
+        return f"""STRUCTURE YOUR RESPONSE EXACTLY LIKE THIS:
+### 💡 Overview
+(overall api usage)
+
+[EMPTY LINE]
+
+### 📌 Summary
+(summary of what can be optimized)
+
+[EMPTY LINE]
+
+### 🚀 Tips & Best Practices
+• Pagination
+• Filtering
+• Payload optimization
+
+Analyze this API call and recommend best practices:
 {base_request_info}"""
 
     elif req.feature == "security_judge":
-        return f"""You are a strict API security auditor.
-Check for missing authentication, exposed keys, HTTP usage, sensitive data leaks, or insecure headers.
-Return only security findings.
+        return f"""STRUCTURE YOUR RESPONSE EXACTLY LIKE THIS:
+### 🛡️ Security Audit
+(check for missing authentication, exposed keys, HTTP usage, sensitive data leaks, etc)
+
+[EMPTY LINE]
+
+### 📌 Findings
+(key security notes)
+
+[EMPTY LINE]
+
+### 🛠️ Recommendations
+• fix step 1
+• fix step 2
+
+Analyze this API call strictly for security issues:
 {base_request_info}"""
 
     elif req.feature == "advanced_response_time":
-        return f"""You are an API performance analyst.
-Analyze performance intuitively based on this status snippet (note: true latency isn't provided, use heuristics).
-Return Performance evaluation, Bottlenecks, Backend vs Network guess, and Optimization suggestions.
+        return f"""STRUCTURE YOUR RESPONSE EXACTLY LIKE THIS:
+### ⚡ Performance Eval
+(analyze performance intuitively based on this status snippet)
+
+[EMPTY LINE]
+
+### 🐢 Bottlenecks
+(backend vs network guess)
+
+[EMPTY LINE]
+
+### 🚀 Optimization Suggestions
+• step 1
+• step 2
+
+Analyze for performance:
 Status Code: {req.status}"""
 
     else:
         # Default payload (Root Cause Analysis, missing specific instruction logic, falls back to JARVIS logic)
         return f"""STRUCTURE YOUR RESPONSE EXACTLY LIKE THIS:
-🧠 Diagnosis
+### 🧠 Diagnosis
 (explain what happened in 2-3 friendly lines)
 
 [EMPTY LINE]
 
-📌 Summary
+### 📌 Summary
 (short, clear conclusion)
 
 [EMPTY LINE]
 
-🚀 Suggestions
+### 🚀 Suggestions
 • bullet point
 • bullet point
 

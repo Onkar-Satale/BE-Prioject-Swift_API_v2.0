@@ -17,16 +17,14 @@ export const proxyRequestHandler = async (req, res, next) => {
       responseBody: proxyResult.body,
     };
 
-    // If userId exists (thanks to authOptional middleware that decodes token if present)
-    if (req.userId) {
-      const savedEntry = await pushHistoryItem(req.userId, historyEntry);
-      historyId = savedEntry._id;
-    }
+    // req.userId exists since authMiddleware strictly checks for it
+    const savedEntry = await pushHistoryItem(req.userId, historyEntry);
+    historyId = savedEntry._id;
 
     res.json({
       success: true,
       ...proxyResult,
-      historyId, // May be null if guest
+      historyId,
     });
   } catch (error) {
     next(error);

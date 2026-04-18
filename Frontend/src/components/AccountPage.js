@@ -6,8 +6,6 @@ import { getToken, logout } from "../services/authService";
 import { showToast } from "../utils/toast";
 import { PostmanContext } from "../context/PostmanContext";
 
-
-
 export default function AccountPage() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -29,8 +27,8 @@ export default function AccountPage() {
   const fetchUser = async () => {
     const token = getToken();
     if (!token) {
-      setIsGuest(true);
       setLoading(false);
+      navigate("/login");
       return;
     }
 
@@ -44,12 +42,12 @@ export default function AccountPage() {
       if (res.ok && data.user) {
         setUser(data.user);
       } else {
-        setIsGuest(true);
         logout();
+        navigate("/login");
       }
     } catch (err) {
-      setIsGuest(true);
       logout();
+      navigate("/login");
     } finally {
       setLoading(false);
     }
@@ -138,9 +136,6 @@ export default function AccountPage() {
   const workspacesCount = user?.workspaces?.length || 0;
 
   // Remove useContext entirely
-
-
-
   return (
     <div className="account-page">
 
@@ -294,6 +289,7 @@ export default function AccountPage() {
     </div>
   );
 }
+
 
 
 

@@ -2,7 +2,7 @@ import express from 'express';
 import { z } from 'zod';
 import { validate } from '../middlewares/validation.middleware.js';
 import { proxyRequestHandler } from '../controllers/request.controller.js';
-import { authOptional } from '../middlewares/auth.middleware.js';
+import { authMiddleware } from '../middlewares/auth.middleware.js';
 import { apiRateLimiter } from '../middlewares/rateLimit.middleware.js';
 
 const router = express.Router();
@@ -17,6 +17,6 @@ const requestProxySchema = z.object({
   })
 });
 
-router.post('/', apiRateLimiter, authOptional, validate(requestProxySchema), proxyRequestHandler);
+router.post('/', apiRateLimiter, authMiddleware, validate(requestProxySchema), proxyRequestHandler);
 
 export default router;

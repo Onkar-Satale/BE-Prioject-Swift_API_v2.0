@@ -486,14 +486,14 @@ export default function BotSidebar({
                       <div
                         key={idx}
                         className={
-                          line.startsWith("🧠 Diagnosis") ||
-                            line.startsWith("📌 Summary") ||
-                            line.startsWith("🚀 Suggestions")
-                            ? "bot-section-title"
-                            : "bot-text-line"
+                          (() => {
+                            const cleanLine = line.replace(/\*\*/g, "").trim();
+                            const isTitle = cleanLine.startsWith("###");
+                            return isTitle ? "bot-section-title" : "bot-text-line";
+                          })()
                         }
                       >
-                        {line.replace("[TITLE]", "").replace("[/TITLE]", "")}
+                        {line.replace(/\[TITLE\]/g, "").replace(/\[\/TITLE\]/g, "").replace(/\*\*/g, "").replace(/^###\s*/, "")}
                       </div>
                     )
                   )
