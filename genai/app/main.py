@@ -36,11 +36,12 @@ async def verify_service_token(request: Request, call_next):
     if request.url.path == "/":
         return await call_next(request)
 
-    token = request.headers.get("x-ai-service-token")
-    if token != settings.AI_SERVICE_SECRET:
+    # Use x-api-key and settings.GENAI_API_SECRET matching PackMate
+    token = request.headers.get("x-api-key")
+    if token != settings.GENAI_API_SECRET:
         return JSONResponse(
             status_code=401,
-            content={"detail": "Unauthorized. Invalid or missing AI Service Token."}
+            content={"detail": "Unauthorized. Invalid or missing API Key."}
         )
     return await call_next(request)
 

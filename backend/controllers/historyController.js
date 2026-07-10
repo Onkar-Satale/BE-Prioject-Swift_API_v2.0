@@ -1,8 +1,8 @@
-import { getHistory, deleteHistoryItem, clearHistory } from '../services/history.service.js';
+const historyService = require('../services/historyService');
 
-export const fetchHistoryHandler = async (req, res, next) => {
+exports.fetchHistoryHandler = async (req, res, next) => {
   try {
-    const history = await getHistory(req.userId);
+    const history = await historyService.getHistory(req.userId);
     if (!history) {
       return res.status(404).json({ success: false, error: 'User not found' });
     }
@@ -12,10 +12,10 @@ export const fetchHistoryHandler = async (req, res, next) => {
   }
 };
 
-export const deleteHistoryHandler = async (req, res, next) => {
+exports.deleteHistoryHandler = async (req, res, next) => {
   try {
     const { historyId } = req.params;
-    const result = await deleteHistoryItem(req.userId, historyId);
+    const result = await historyService.deleteHistoryItem(req.userId, historyId);
     if (!result) {
       return res.status(404).json({ success: false, error: 'User not found' });
     }
@@ -25,9 +25,9 @@ export const deleteHistoryHandler = async (req, res, next) => {
   }
 };
 
-export const clearHistoryHandler = async (req, res, next) => {
+exports.clearHistoryHandler = async (req, res, next) => {
   try {
-    const result = await clearHistory(req.userId);
+    const result = await historyService.clearHistory(req.userId);
     if (!result) {
       return res.status(404).json({ success: false, error: 'User not found' });
     }
