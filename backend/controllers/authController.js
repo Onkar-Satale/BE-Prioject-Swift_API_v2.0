@@ -2,6 +2,8 @@ import authService from '../services/authService.js';
 import { ApiError } from '../utils/ApiError.js';
 
 const setRefreshCookie = (res, token) => {
+  // Use SameSite=Lax for dev (supports localhost:3000 to localhost:5000)
+  // Use SameSite=None for cross-origin setups or production (requires secure HTTPS)
   const isProd = process.env.NODE_ENV === "production";
   res.cookie("refreshToken", token, {
     httpOnly: true,
@@ -13,23 +15,29 @@ const setRefreshCookie = (res, token) => {
 
 export const register = async (req, res, next) => {
   try {
-    const { username, email, password } = req.body;
+    const { email, password, firstName, lastName } = req.body;
+    
+    const existingUser = await authService.findUserByEmail(email);
+    if (existingUser) return next(new ApiError(400, "A user with this email already exists"));
 
-    const emailExists = await authService.findUserByEmail(email);
-    if (emailExists) {
-      return next(new ApiError(400, 'Email already exists'));
-    }
-
-    const user = await authService.registerUser({ username, email, password });
+    const user = await authService.registerUser({ firstName, lastName, email, password });
     
     const token = authService.generateAuthToken(user._id);
     const refreshToken = authService.generateRefreshToken(user._id);
     await authService.storeRefreshToken(user._id, refreshToken);
-
+    
     setRefreshCookie(res, refreshToken);
-    res.json({ success: true, message: 'Account created', token, userId: user._id });
-  } catch (error) {
-    next(error);
+    res.status(201).json({
+      success: true,
+      data: {
+        token,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName
+      }
+    });
+  } catch (err) {
+    next(err);
   }
 };
 
@@ -38,41 +46,48 @@ export const login = async (req, res, next) => {
     const { email, password } = req.body;
 
     const user = await authService.findUserByEmail(email);
-    if (!user) {
-      return next(new ApiError(404, 'User not found'));
-    }
+    if (!user) return next(new ApiError(401, "Invalid credentials"));
 
     const isMatch = await authService.verifyPassword(password, user);
-    if (!isMatch) {
-      return next(new ApiError(401, 'Invalid password'));
-    }
+    if (!isMatch) return next(new ApiError(401, "Invalid credentials"));
 
     const token = authService.generateAuthToken(user._id);
     const refreshToken = authService.generateRefreshToken(user._id);
     await authService.storeRefreshToken(user._id, refreshToken);
-
+    
     setRefreshCookie(res, refreshToken);
-    res.json({ success: true, message: 'Login successful', token, userId: user._id });
-  } catch (error) {
-    next(error);
+
+    res.json({
+      success: true,
+      data: {
+        token,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName
+      }
+    });
+  } catch (err) {
+    next(err);
   }
 };
 
 export const refreshToken = async (req, res, next) => {
   try {
     const { refreshToken } = req.cookies;
-    if (!refreshToken) return res.status(401).json({ success: false, error: "No refresh token available" });
+    if (!refreshToken) {
+      return next(new ApiError(401, "No refresh token available"));
+    }
     
     const decoded = authService.verifyRefreshToken(refreshToken);
     const user = await authService.findUserWithRefreshToken(decoded.userId);
     if (!user || user.refreshToken !== refreshToken) {
-      return res.status(401).json({ success: false, error: "Invalid refresh token" });
+      return next(new ApiError(401, "Invalid refresh token"));
     }
     
     const token = authService.generateAuthToken(user._id);
     res.json({ success: true, token, userId: user._id });
   } catch(err) {
-    return res.status(401).json({ success: false, error: "Refresh token expired or invalid" });
+    return next(new ApiError(401, "Refresh token expired or invalid", true, err.stack));
   }
 };
 
@@ -84,7 +99,7 @@ export const logout = async (req, res, next) => {
         const decoded = authService.verifyRefreshToken(refreshToken);
         await authService.clearRefreshToken(decoded.userId);
       } catch (e) {
-        // Ignore token issues on logout
+        // Ignore token expiration issues during logout
       }
     }
     res.clearCookie("refreshToken");
@@ -94,27 +109,13 @@ export const logout = async (req, res, next) => {
   }
 };
 
-export const me = async (req, res, next) => {
-  try {
-    const user = await authService.findUserById(req.userId);
-    if (!user) {
-      return res.status(404).json({ success: false, error: 'User not found' });
-    }
-    res.json({ success: true, user });
-  } catch (error) {
-    next(error);
-  }
-};
-
 export const deleteAccount = async (req, res, next) => {
   try {
-    const deletedUser = await authService.deleteUser(req.userId);
-    if (!deletedUser) {
-      return res.status(404).json({ success: false, error: 'User not found' });
-    }
+    const userId = req.userId; // auth middleware sets req.userId
+    await authService.deleteUser(userId);
     res.clearCookie("refreshToken");
-    res.json({ success: true, message: 'Account and related history deleted successfully' });
-  } catch (error) {
-    next(error);
+    res.json({ success: true, message: "Account deleted successfully" });
+  } catch(err) {
+    next(err);
   }
 };

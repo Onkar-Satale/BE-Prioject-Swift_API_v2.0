@@ -1,0 +1,237 @@
+openapi: 3.0.0
+info:
+  title: Swift API
+  version: 1.0.0
+  description: API Documentation for Swift API Backend Services
+servers:
+  - url: http://localhost:5000/api
+paths:
+  /register:
+    post:
+      summary: User Registration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - firstName
+                - email
+                - password
+              properties:
+                firstName:
+                  type: string
+                  maxLength: 50
+                lastName:
+                  type: string
+                  maxLength: 50
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                  description: Must contain at least one uppercase letter, one lowercase letter, and one number.
+      responses:
+        '201':
+          description: User successfully registered
+        '400':
+          description: Validation error or account already exists
+
+  /login:
+    post:
+      summary: User Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Successfully logged in, issues token and refresh cookie
+        '400':
+          description: Validation error or invalid credentials
+
+  /refresh-token:
+    post:
+      summary: Refresh Access Token
+      description: Issues a new short-lived access token using the HTTP-only refresh cookie.
+      responses:
+        '200':
+          description: Standard New Token Response
+        '401':
+          description: Unauthorized / Refresh token expired or missing
+
+  /logout:
+    post:
+      summary: Secure Logout
+      description: Clears the HTTP-only refresh token cookie.
+      responses:
+        '200':
+          description: Successfully logged out
+
+  /delete-account:
+    delete:
+      summary: Delete User Account
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Account deleted successfully
+        '401':
+          description: Unauthorized
+
+  /history:
+    get:
+      summary: Get User Activity/Conversation History
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Successfully retrieved history list
+        '401':
+          description: Unauthorized
+
+  /history/clear:
+    put:
+      summary: Clear User History
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: History cleared successfully
+        '401':
+          description: Unauthorized
+
+  /history/{historyId}:
+    delete:
+      summary: Delete Specific History Item
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: historyId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: History item deleted successfully
+        '401':
+          description: Unauthorized
+        '404':
+          description: History item not found
+
+  /ai/bot:
+    post:
+      summary: AI Assistant Bot Chat
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - message
+              properties:
+                message:
+                  type: string
+                currentApiContext:
+                  type: object
+                requestHistory:
+                  type: array
+                  items:
+                    type: object
+                userId:
+                  type: string
+      responses:
+        '200':
+          description: Chatbot response returned successfully
+        '401':
+          description: Unauthorized
+
+  /ai/analyze:
+    post:
+      summary: AI Request/Response Analysis
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - feature
+              properties:
+                url:
+                  type: string
+                method:
+                  type: string
+                headers:
+                  type: object
+                body:
+                  type: object
+                status:
+                  type: integer
+                response:
+                  type: object
+                feature:
+                  type: string
+      responses:
+        '200':
+          description: Analysis returned successfully
+        '401':
+          description: Unauthorized
+
+  /request:
+    post:
+      summary: Proxy API Request
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - url
+                - method
+              properties:
+                url:
+                  type: string
+                  format: uri
+                method:
+                  type: string
+                headers:
+                  type: object
+                params:
+                  type: object
+                body:
+                  type: object
+      responses:
+        '200':
+          description: Proxy request completed and response returned
+        '401':
+          description: Unauthorized
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

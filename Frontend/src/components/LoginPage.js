@@ -31,8 +31,8 @@ export default function LoginPage() {
 
     const res = await login(formData);
 
-    if (res.success && res.token && res.userId) {
-      saveAuthData({ token: res.token, userId: res.userId });
+    if (res.success && res.data && res.data.token) {
+      saveAuthData(res.data);
       showToast("🔓 Logged in successfully!");
       navigate("/");
     } else {

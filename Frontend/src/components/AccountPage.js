@@ -23,8 +23,8 @@ export default function AccountPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  // Fetch logged-in user info
-  const fetchUser = async () => {
+  // Load user info from local storage (aligned with PackMate style)
+  const fetchUser = () => {
     const token = getToken();
     if (!token) {
       setLoading(false);
@@ -32,25 +32,16 @@ export default function AccountPage() {
       return;
     }
 
-    try {
-      const backendUrl = process.env.REACT_APP_BACKEND_URL;
-      const res = await fetch(`${backendUrl}/api/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
+    const username = localStorage.getItem("username");
+    const email = localStorage.getItem("email");
+    const createdAt = localStorage.getItem("createdAt");
 
-      if (res.ok && data.user) {
-        setUser(data.user);
-      } else {
-        logout();
-        navigate("/login");
-      }
-    } catch (err) {
-      logout();
-      navigate("/");
-    } finally {
-      setLoading(false);
+    if (username && email) {
+      setUser({ username, email, createdAt });
+    } else {
+      setUser({ username: "User", email: "N/A", createdAt: new Date() });
     }
+    setLoading(false);
   };
 
   // Fetch user history for stats
@@ -75,7 +66,7 @@ export default function AccountPage() {
   const handleDeleteAccount = async () => {
     try {
       const backendUrl = process.env.REACT_APP_BACKEND_URL;
-      const res = await fetch(`${backendUrl}/api/auth/me`, {
+      const res = await fetch(`${backendUrl}/api/delete-account`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${getToken()}` },
       });

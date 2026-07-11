@@ -1,47 +1,64 @@
 import express from 'express';
+import rateLimit from 'express-rate-limit';
 import cors from 'cors';
+import morgan from 'morgan';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
-import morgan from 'morgan';
-import rateLimit from 'express-rate-limit';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import swaggerUi from 'swagger-ui-express';
+import YAML from 'yamljs';
+import logger from './utils/logger.js';
 import errorHandler from './middlewares/errorHandler.js';
-
 import authRoutes from './routes/auth.js';
 import historyRoutes from './routes/history.js';
 import aiRoutes from './routes/ai.js';
-
-// Import request controller/validator/auth directly matching PackMate's Gateway design
 import { proxyRequestHandler } from './controllers/requestController.js';
 import { requestProxyValidator } from './validators/requestValidator.js';
 import auth from './middlewares/auth.js';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
+app.set("trust proxy", 1);
 
-// Global Middlewares
+// 1. Security Middlewares
 app.use(helmet());
-
 const allowedOrigins = process.env.ALLOWED_ORIGINS 
   ? process.env.ALLOWED_ORIGINS.split(',').map(url => url.trim())
   : [];
 
-// CORS configuration matching PackMate exactly
 app.use(cors({
   origin: function (origin, callback) {
+    // Dynamically allow origins hitting the local proxy from dev servers
     if (!origin || allowedOrigins.includes(origin) || origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
       callback(null, true);
     } else {
-      console.warn('CORS blocked this Origin:', origin);
+      logger.warn(`CORS blocked this Origin: ${origin}`);
       callback(new Error('CORS blocked origin'), false);
     }
   },
   credentials: true
 }));
 
-app.use(express.json({ limit: '5mb' }));
-app.use(cookieParser()); // Enable HTTP-only cookie parsing matching PackMate
-app.use(morgan('dev'));
+// 2. Parsers
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
+app.use(cookieParser()); // Enable HTTP-only cookie parsing
 
-// Rate Limiting defined directly in app.js matching PackMate Gateway style
+// OpenAPI / Swagger Documentation
+try {
+  const swaggerDocument = YAML.load(path.join(__dirname, "docs/swagger.yaml"));
+  app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+} catch (e) {
+  logger.error("Failed to load swagger.yaml", e);
+}
+
+// 3. Activity Logging
+app.use(morgan("dev"));
+
+// 4. Rate Limiting
 const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
   max: 30, 
@@ -64,22 +81,24 @@ const apiRateLimiter = rateLimit({
   },
 });
 
-// Apply rate limiting raw mapping like PackMate
-app.use('/api/auth/signup', authRateLimiter);
-app.use('/api/auth/login', authRateLimiter);
+// Apply rate limiters
+app.use("/api/login", authRateLimiter);
+app.use("/api/register", authRateLimiter);
 
-// Base route for health checks
-app.get('/', (req, res) => res.send('Backend is running...'));
-
+// 5. Mount API Routes
 // Direct mount for Gateway API Proxy matching PackMate travel-chat direct declaration
 app.post('/api/request', apiRateLimiter, auth, requestProxyValidator, proxyRequestHandler);
 
-// API Routes (mounted individually like PackMate)
-app.use('/api/auth', authRoutes);
+app.use('/api', authRoutes);
 app.use('/api/history', historyRoutes);
 app.use('/api/ai', aiRoutes);
 
-// Global Error Handler
+// Health check
+app.get('/', (req, res) => {
+  res.json({ success: true, message: 'Backend is running securely' });
+});
+
+// 6. Centralized Error Pipeline
 app.use(errorHandler);
 
 export default app;

@@ -7,7 +7,7 @@ import "./Signup.css";
 
 export default function SignupPage() {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({ username: "", email: "", password: "" });
+  const [formData, setFormData] = useState({ firstName: "", lastName: "", email: "", password: "" });
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -39,8 +39,8 @@ export default function SignupPage() {
     try {
       const res = await signup(formData);
 
-      if (res.success && res.token && res.userId) {
-        saveAuthData({ token: res.token, userId: res.userId });
+      if (res.success && res.data && res.data.token) {
+        saveAuthData(res.data);
         showToast("🎉 Signed up successfully!");
         navigate("/");
       } else {
@@ -57,8 +57,10 @@ export default function SignupPage() {
     <div className="signup-page">
       <h2>Create Account</h2>
       <form onSubmit={handleSubmit}>
-        <label>Username</label>
-        <input name="username" value={formData.username} onChange={handleChange} required />
+        <label>First Name</label>
+        <input name="firstName" value={formData.firstName} onChange={handleChange} required />
+        <label>Last Name</label>
+        <input name="lastName" value={formData.lastName} onChange={handleChange} required />
         <label>Email</label>
         <input type="email" name="email" value={formData.email} onChange={handleChange} required />
         <label>Password</label>

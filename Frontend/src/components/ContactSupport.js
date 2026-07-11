@@ -16,20 +16,13 @@ const ContactSupport = () => {
     const [userData, setUserData] = useState(null);
 
     useEffect(() => {
-        const loadUser = async () => {
+        const loadUser = () => {
             const token = getToken();
             if (!token) return;
-            try {
-                const backendUrl = process.env.REACT_APP_BACKEND_URL;
-                const res = await fetch(`${backendUrl}/api/auth/me`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                const data = await res.json();
-                if (res.ok && data.user) {
-                    setUserData(data.user);
-                }
-            } catch (error) {
-                console.error("Failed to load user for contact support:", error);
+            const username = localStorage.getItem("username");
+            const email = localStorage.getItem("email");
+            if (username && email) {
+                setUserData({ username, email });
             }
         };
         loadUser();

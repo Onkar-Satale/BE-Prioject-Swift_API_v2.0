@@ -1,10 +1,11 @@
 import historyService from '../services/historyService.js';
+import { ApiError } from '../utils/ApiError.js';
 
 export const fetchHistoryHandler = async (req, res, next) => {
   try {
     const history = await historyService.getHistory(req.userId);
     if (!history) {
-      return res.status(404).json({ success: false, error: 'User not found' });
+      return next(new ApiError(404, 'User not found'));
     }
     res.json(history);
   } catch (error) {
@@ -17,7 +18,7 @@ export const deleteHistoryHandler = async (req, res, next) => {
     const { historyId } = req.params;
     const result = await historyService.deleteHistoryItem(req.userId, historyId);
     if (!result) {
-      return res.status(404).json({ success: false, error: 'User not found' });
+      return next(new ApiError(404, 'User not found'));
     }
     res.json({ success: true, message: 'History item deleted successfully' });
   } catch (error) {
@@ -29,7 +30,7 @@ export const clearHistoryHandler = async (req, res, next) => {
   try {
     const result = await historyService.clearHistory(req.userId);
     if (!result) {
-      return res.status(404).json({ success: false, error: 'User not found' });
+      return next(new ApiError(404, 'User not found'));
     }
     res.json({ success: true, message: 'History cleared successfully' });
   } catch (error) {

@@ -2,7 +2,7 @@ import express from 'express';
 import rateLimit from 'express-rate-limit';
 import { botValidator, analyzeValidator } from '../validators/aiValidator.js';
 import { botHandler, analyzeHandler } from '../controllers/aiController.js';
-import auth from '../middlewares/auth.js';
+import authMiddleware from '../middlewares/auth.js';
 
 const router = express.Router();
 
@@ -13,10 +13,19 @@ const aiLimiter = rateLimit({
   message: { success: false, message: "Too many AI requests, please try again later." },
 });
 
-router.use(auth);
+router.use(authMiddleware);
 
-router.post('/bot', aiLimiter, botValidator, botHandler);
-router.post('/analyze', aiLimiter, analyzeValidator, analyzeHandler);
+router.post(
+  '/bot', 
+  aiLimiter, 
+  botValidator, 
+  botHandler);
+  
+router.post(
+  '/analyze', 
+  aiLimiter, 
+  analyzeValidator, 
+  analyzeHandler);
 
 export default router;
 
