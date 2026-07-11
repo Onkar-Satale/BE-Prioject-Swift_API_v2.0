@@ -93,7 +93,7 @@ export default function AccountPage() {
     showToast("🚪 Successfully logged out.");
     resetContext();
     logout();
-    navigate("/login");
+    navigate("/");
   };
 
   const openDocumentation = () => {

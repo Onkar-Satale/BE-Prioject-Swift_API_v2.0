@@ -491,7 +491,19 @@ export default function PostmanClone() {
     <div className="layout">
       {/* Sidebar */}
       <div className="sidebar-small">
-        <button className="sidebar-btn" onClick={() => navigate("/account")}>👤<span className="tooltip">Account</span></button>
+        <button 
+          className="sidebar-btn" 
+          onClick={() => {
+            const token = localStorage.getItem("authToken");
+            if (!token) {
+              navigate("/login");
+            } else {
+              navigate("/account");
+            }
+          }}
+        >
+          👤<span className="tooltip">Account</span>
+        </button>
 
         <button
           className={`sidebar-btn ${activePanel === "history" ? "active" : ""}`}
@@ -567,7 +579,12 @@ export default function PostmanClone() {
               className={`tab ${activeTab === tab ? "active" : ""}`}
               onClick={() => {
                 if (tab === "Settings") {
-                  navigate("/account"); // ✅ redirect to account page
+                  const token = localStorage.getItem("authToken");
+                  if (!token) {
+                    navigate("/login");
+                  } else {
+                    navigate("/account");
+                  }
                 } else {
                   setActiveTab(tab);
                 }
