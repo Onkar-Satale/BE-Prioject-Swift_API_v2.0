@@ -1,5 +1,5 @@
-const { param, validationResult } = require("express-validator");
-const { ApiError } = require("../utils/ApiError");
+import { param, validationResult } from 'express-validator';
+import { ApiError } from '../utils/ApiError.js';
 
 const validateRequest = (req, res, next) => {
   const errors = validationResult(req);
@@ -15,6 +15,6 @@ const deleteHistoryValidator = [
   validateRequest
 ];
 
-module.exports = {
+export {
   deleteHistoryValidator
 };

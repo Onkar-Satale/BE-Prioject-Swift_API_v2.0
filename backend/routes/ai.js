@@ -1,8 +1,8 @@
-const express = require('express');
-const rateLimit = require('express-rate-limit');
-const { botValidator, analyzeValidator } = require('../validators/aiValidator');
-const { botHandler, analyzeHandler } = require('../controllers/aiController');
-const auth = require('../middlewares/auth');
+import express from 'express';
+import rateLimit from 'express-rate-limit';
+import { botValidator, analyzeValidator } from '../validators/aiValidator.js';
+import { botHandler, analyzeHandler } from '../controllers/aiController.js';
+import auth from '../middlewares/auth.js';
 
 const router = express.Router();
 
@@ -18,5 +18,5 @@ router.use(auth);
 router.post('/bot', aiLimiter, botValidator, botHandler);
 router.post('/analyze', aiLimiter, analyzeValidator, analyzeHandler);
 
-module.exports = router;
+export default router;
 

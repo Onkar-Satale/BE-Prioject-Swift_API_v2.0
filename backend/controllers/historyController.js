@@ -1,6 +1,6 @@
-const historyService = require('../services/historyService');
+import historyService from '../services/historyService.js';
 
-exports.fetchHistoryHandler = async (req, res, next) => {
+export const fetchHistoryHandler = async (req, res, next) => {
   try {
     const history = await historyService.getHistory(req.userId);
     if (!history) {
@@ -12,7 +12,7 @@ exports.fetchHistoryHandler = async (req, res, next) => {
   }
 };
 
-exports.deleteHistoryHandler = async (req, res, next) => {
+export const deleteHistoryHandler = async (req, res, next) => {
   try {
     const { historyId } = req.params;
     const result = await historyService.deleteHistoryItem(req.userId, historyId);
@@ -25,7 +25,7 @@ exports.deleteHistoryHandler = async (req, res, next) => {
   }
 };
 
-exports.clearHistoryHandler = async (req, res, next) => {
+export const clearHistoryHandler = async (req, res, next) => {
   try {
     const result = await historyService.clearHistory(req.userId);
     if (!result) {

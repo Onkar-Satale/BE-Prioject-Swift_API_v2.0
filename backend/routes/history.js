@@ -1,7 +1,7 @@
-const express = require('express');
-const { deleteHistoryValidator } = require('../validators/historyValidator');
-const { fetchHistoryHandler, deleteHistoryHandler, clearHistoryHandler } = require('../controllers/historyController');
-const auth = require('../middlewares/auth');
+import express from 'express';
+import { deleteHistoryValidator } from '../validators/historyValidator.js';
+import { fetchHistoryHandler, deleteHistoryHandler, clearHistoryHandler } from '../controllers/historyController.js';
+import auth from '../middlewares/auth.js';
 
 const router = express.Router();
 
@@ -11,4 +11,4 @@ router.get('/', fetchHistoryHandler);
 router.put('/clear', clearHistoryHandler);
 router.delete('/:historyId', deleteHistoryValidator, deleteHistoryHandler);
 
-module.exports = router;
+export default router;

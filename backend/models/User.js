@@ -1,6 +1,6 @@
-const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
-const historySchema = require("./History");
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
+import historySchema from './History.js';
 
 // ---------------------------
 // User Schema
@@ -36,4 +36,4 @@ userSchema.methods.toJSON = function() {
   return obj;
 };
 
-module.exports = mongoose.model("User", userSchema);
+export default mongoose.model("User", userSchema);

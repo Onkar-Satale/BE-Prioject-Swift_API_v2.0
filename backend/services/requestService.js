@@ -1,6 +1,6 @@
-const axios = require('axios');
-const { ApiError } = require("../utils/ApiError");
-const historyService = require("./historyService");
+import axios from 'axios';
+import { ApiError } from '../utils/ApiError.js';
+import historyService from './historyService.js';
 
 class RequestService {
   async executeProxyRequest({ url, method, headers, params, body }) {
@@ -63,4 +63,4 @@ class RequestService {
   }
 }
 
-module.exports = new RequestService();
+export default new RequestService();

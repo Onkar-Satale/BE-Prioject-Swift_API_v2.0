@@ -1,5 +1,5 @@
-const mongoose = require("mongoose");
-const User = require("../models/User");
+import mongoose from 'mongoose';
+import User from '../models/User.js';
 
 class HistoryService {
   async getHistory(userId) {
@@ -37,4 +37,4 @@ class HistoryService {
   }
 }
 
-module.exports = new HistoryService();
+export default new HistoryService();

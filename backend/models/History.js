@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from 'mongoose';
 
 const historySchema = new mongoose.Schema(
   {
@@ -13,4 +13,4 @@ const historySchema = new mongoose.Schema(
   { _id: true }
 );
 
-module.exports = historySchema;
+export default historySchema;

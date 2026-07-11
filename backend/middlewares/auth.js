@@ -1,8 +1,8 @@
-const jwt = require('jsonwebtoken');
-const { ApiError } = require('../utils/ApiError');
-const User = require('../models/User');
+import jwt from 'jsonwebtoken';
+import { ApiError } from '../utils/ApiError.js';
+import User from '../models/User.js';
 
-module.exports = async (req, res, next) => {
+export default async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization || req.headers['x-backend-token'];
     if (!authHeader) {

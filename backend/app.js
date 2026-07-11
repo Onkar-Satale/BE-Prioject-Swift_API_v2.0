@@ -1,19 +1,19 @@
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const cookieParser = require('cookie-parser');
-const morgan = require('morgan');
-const rateLimit = require('express-rate-limit');
-const errorHandler = require('./middlewares/errorHandler');
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
+import morgan from 'morgan';
+import rateLimit from 'express-rate-limit';
+import errorHandler from './middlewares/errorHandler.js';
 
-const authRoutes = require('./routes/auth');
-const historyRoutes = require('./routes/history');
-const aiRoutes = require('./routes/ai');
+import authRoutes from './routes/auth.js';
+import historyRoutes from './routes/history.js';
+import aiRoutes from './routes/ai.js';
 
 // Import request controller/validator/auth directly matching PackMate's Gateway design
-const { proxyRequestHandler } = require('./controllers/requestController');
-const { requestProxyValidator } = require('./validators/requestValidator');
-const auth = require('./middlewares/auth');
+import { proxyRequestHandler } from './controllers/requestController.js';
+import { requestProxyValidator } from './validators/requestValidator.js';
+import auth from './middlewares/auth.js';
 
 const app = express();
 
@@ -82,4 +82,4 @@ app.use('/api/ai', aiRoutes);
 // Global Error Handler
 app.use(errorHandler);
 
-module.exports = app;
+export default app;

@@ -1,6 +1,6 @@
-const requestService = require('../services/requestService');
+import requestService from '../services/requestService.js';
 
-exports.proxyRequestHandler = async (req, res, next) => {
+export const proxyRequestHandler = async (req, res, next) => {
   try {
     const { url, method, headers, params, body } = req.body;
     

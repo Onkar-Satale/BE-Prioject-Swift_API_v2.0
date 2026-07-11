@@ -1,5 +1,5 @@
-const { body, validationResult } = require("express-validator");
-const { ApiError } = require("../utils/ApiError");
+import { body, validationResult } from 'express-validator';
+import { ApiError } from '../utils/ApiError.js';
 
 const validateRequest = (req, res, next) => {
   const errors = validationResult(req);
@@ -29,7 +29,7 @@ const analyzeValidator = [
   validateRequest
 ];
 
-module.exports = {
+export {
   botValidator,
   analyzeValidator
 };

@@ -1,10 +1,10 @@
-const axios = require('axios');
-const { ApiError } = require('../utils/ApiError');
+import axios from 'axios';
+import { ApiError } from '../utils/ApiError.js';
 
 const genaiUrl = process.env.GENAI_SERVICE_URL;
 const genaiApiSecret = process.env.GENAI_API_SECRET;
 
-exports.botHandler = async (req, res, next) => {
+export const botHandler = async (req, res, next) => {
   try {
     const response = await axios.post(`${genaiUrl}/bot`, {
       userId: req.userId || req.body.userId || 'guest',
@@ -25,7 +25,7 @@ exports.botHandler = async (req, res, next) => {
   }
 };
 
-exports.analyzeHandler = async (req, res, next) => {
+export const analyzeHandler = async (req, res, next) => {
   try {
     const response = await axios.post(`${genaiUrl}/analyze`, req.body, {
       headers: { 'x-api-key': genaiApiSecret }
