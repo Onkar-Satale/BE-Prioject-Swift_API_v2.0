@@ -30,9 +30,11 @@ const userSchema = new mongoose.Schema({
     minlength: [6, "Password must be at least 6 characters long"],
     select: false // Prevent password from being queried by default
   },
-  reqCount: { type: Number, default: 0 
+  reqCount: {
+    type: Number, default: 0
   },
-  history: { type: [historySchema], default: []
+  history: {
+    type: [historySchema], default: []
   },
   refreshToken: {
     type: String,
@@ -41,22 +43,22 @@ const userSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Hash password before saving
-userSchema.pre("save", async function() {
+userSchema.pre("save", async function () {
   if (!this.isModified("password")) return;
   this.password = await bcrypt.hash(this.password, 12); // Enforce 12 salt rounds per spec
 });
 
 // Compare password securely
-userSchema.methods.comparePassword = async function(candidatePassword) {
+userSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
 // Remove password completely when returning JSON payload
-userSchema.methods.toJSON = function() {
+userSchema.methods.toJSON = function () {
   const obj = this.toObject();
   delete obj.password;
   delete obj.refreshToken;
   return obj;
 };
 
-export default mongoose.model("User", userSchema);
+export default mongoose.model("User_SwiftAPI", userSchema);
