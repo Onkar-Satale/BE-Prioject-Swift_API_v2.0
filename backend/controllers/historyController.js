@@ -18,7 +18,7 @@ export const deleteHistoryHandler = async (req, res, next) => {
     const { historyId } = req.params;
     const result = await historyService.deleteHistoryItem(req.userId, historyId);
     if (!result) {
-      return next(new ApiError(404, 'User not found'));
+      return next(new ApiError(404, 'History item not found'));
     }
     res.json({ success: true, message: 'History item deleted successfully' });
   } catch (error) {
