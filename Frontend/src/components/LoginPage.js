@@ -29,17 +29,21 @@ export default function LoginPage() {
     setErrorMsg("");
     setLoading(true);
 
-    const res = await login(formData);
+    try {
+      const res = await login(formData);
 
-    if (res.success && res.data && res.data.token) {
-      saveAuthData(res.data);
-      showToast("🔓 Logged in successfully!");
-      navigate("/");
-    } else {
-      setErrorMsg(res.error || res.message || "Login failed");
+      if (res.success && res.data && res.data.token) {
+        saveAuthData(res.data);
+        showToast("🔓 Logged in successfully!");
+        navigate("/");
+      } else {
+        setErrorMsg("Invalid credentials");
+      }
+    } catch (err) {
+      setErrorMsg("Invalid credentials");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (

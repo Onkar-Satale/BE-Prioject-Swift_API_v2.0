@@ -18,7 +18,7 @@ export const register = async (req, res, next) => {
     const { email, password, firstName, lastName } = req.body;
     
     const existingUser = await authService.findUserByEmail(email);
-    if (existingUser) return next(new ApiError(400, "A user with this email already exists"));
+    if (existingUser) return next(new ApiError(401, "Invalid credentials"));
 
     const user = await authService.registerUser({ firstName, lastName, email, password });
     

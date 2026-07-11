@@ -30,7 +30,7 @@ export default function SignupPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isPasswordStrong(formData.password)) {
-      setErrorMsg("Password must be at least 8 characters long, contain an uppercase letter, a lowercase letter, and a number.");
+      setErrorMsg("Invalid credentials");
       return;
     }
     setErrorMsg("");
@@ -44,10 +44,10 @@ export default function SignupPage() {
         showToast("🎉 Signed up successfully!");
         navigate("/");
       } else {
-        setErrorMsg(res.error || res.message || "Signup failed");
+        setErrorMsg("Invalid credentials");
       }
     } catch (err) {
-      setErrorMsg(err.message || "Something went wrong");
+      setErrorMsg("Invalid credentials");
     } finally {
       setLoading(false);
     }
