@@ -1,11 +1,9 @@
 import logging
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-
 from app.config.settings import settings
 from app.routes.analyze import router as analyze_router
 
@@ -18,17 +16,9 @@ logging.basicConfig(
 # Initialize Rate Limiter
 limiter = Limiter(key_func=get_remote_address, default_limits=["20/minute"])
 
-app = FastAPI(title="Postman Clone GenAI Service with Groq")
+app = FastAPI(title="SwiftAPI GenAI Service with Groq")
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.cors_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 @app.middleware("http")
 async def verify_service_token(request: Request, call_next):
@@ -41,7 +31,7 @@ async def verify_service_token(request: Request, call_next):
     if token != settings.GENAI_API_SECRET:
         return JSONResponse(
             status_code=401,
-            content={"detail": "Unauthorized. Invalid or missing API Key."}
+            content={"detail": "Unauthorized. Invalid or missing x-api-key."}
         )
     return await call_next(request)
 

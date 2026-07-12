@@ -28,7 +28,7 @@ export default function BotSidebar({
 
   const handleClearBot = () => {
     setMessages([
-      { from: "bot", text: "Hi 👋 I’m your API assistant. Send a request and I’ll explain errors." }
+      { from: "bot", text: "Hi 👋 I’m your J.A.R.V.I.S. API assistant! You can ask me questions about API testing, HTTP protocols, headers, status codes, or request structures. ⚠️ Please note that I only answer questions related to API testing and development." }
     ]);
     setShowClearConfirm(false);
     showToast("🤖 Chat bot cleared!");
@@ -148,10 +148,15 @@ export default function BotSidebar({
      =============================== */
 
   const handleSend = async () => {
-    if (!input.trim()) return;
+    const userQuery = input.trim();
+    if (!userQuery) return;
 
-    const userMessage = { from: "user", text: input };
-    setMessages((prev) => [...prev, userMessage]);
+    const userMessage = { from: "user", text: userQuery };
+    setMessages((prev) => [
+      ...prev,
+      userMessage,
+      { from: "bot", text: "Thinking...", isTemp: true }
+    ]);
     setInput("");
 
     try {
@@ -166,13 +171,13 @@ export default function BotSidebar({
         },
         body: JSON.stringify({
           userId: "user123", // the backend will overwrite this securely based on the token
-          message: input,
+          message: userQuery,
 
           // 🔹 ADDED: recent API context for smarter answers
           currentApiContext: currentApiContext,
 
-          // existing placeholder
-          requestHistory: []
+          // Map actual message history so the model knows the conversation context
+          requestHistory: messages
         })
       });
 
@@ -180,7 +185,9 @@ export default function BotSidebar({
 
       let botMessage = "";
 
-      if (data.type === "root_cause") {
+      if (!response.ok) {
+        botMessage = `⚠️ Error ${response.status}: ${data.error || data.message || data.detail || JSON.stringify(data)}`;
+      } else if (data.type === "root_cause") {
         botMessage = `Root Cause:\n${data.rootCause}\n\nFix Steps:\n- ${data.fixSteps.join("\n- ")}`;
       } else if (data.type === "workflow") {
         botMessage = `Workflow Steps:\n- ${data.steps.join("\n- ")}`;
@@ -190,10 +197,13 @@ export default function BotSidebar({
         botMessage = data.text || "Got it!";
       }
 
-      setMessages((prev) => [...prev, { from: "bot", text: botMessage }]);
+      setMessages((prev) => [
+        ...prev.filter(msg => !msg.isTemp),
+        { from: "bot", text: botMessage }
+      ]);
     } catch (err) {
       setMessages((prev) => [
-        ...prev,
+        ...prev.filter(msg => !msg.isTemp),
         { from: "bot", text: "❌ Failed to reach AI bot. Try again." }
       ]);
     }
@@ -331,7 +341,7 @@ export default function BotSidebar({
       });
 
       const data = await res.json();
-      
+
       let textToDisplay = data.text;
       if (!res.ok) {
         textToDisplay = `⚠️ Error ${res.status}: ${data.error || data.message || data.detail || JSON.stringify(data)}`;
@@ -370,6 +380,56 @@ export default function BotSidebar({
 
 
 
+
+  const token = localStorage.getItem("authToken");
+
+  if (!token) {
+    return (
+      <div className="bot-sidebar">
+        {/* HEADER */}
+        <div className="bot-header">
+          <div className="bot-header-left">
+            <h3 style={{ color: "#ff8810", fontWeight: "bold" }}>JARVIS is here to HELP !</h3>
+          </div>
+          <button className="close-btn" onClick={onClose}>✖</button>
+        </div>
+        <div className="bot-auth-prompt" style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "calc(100% - 60px)",
+          padding: "20px",
+          textAlign: "center",
+          color: "#aaa"
+        }}>
+          <div style={{ fontSize: "40px", marginBottom: "15px" }}>🔒</div>
+          <h4 style={{ color: "#fff", marginBottom: "10px", fontSize: "18px" }}>Authentication Required</h4>
+          <p style={{ fontSize: "14px", marginBottom: "20px", lineHeight: "1.5" }}>
+            Please log in to chat with J.A.R.V.I.S. and use the AI analysis features.
+          </p>
+          <a
+            href="/login"
+            className="login-prompt-btn"
+            onClick={() => setShowBot(false)}
+            style={{
+              display: "inline-block",
+              background: "#ff7f00",
+              color: "#fff",
+              padding: "10px 20px",
+              borderRadius: "6px",
+              textDecoration: "none",
+              fontWeight: "bold",
+              fontSize: "14px",
+              transition: "background 0.2s"
+            }}
+          >
+            Go to Login
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bot-sidebar">

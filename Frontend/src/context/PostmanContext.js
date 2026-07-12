@@ -33,7 +33,7 @@ export const PostmanProvider = ({ children }) => {
   const [response, setResponse] = useState(saved.response || "");
   const [status, setStatus] = useState(saved.status || null);
   const [messages, setMessages] = useState(saved.messages || [
-    { from: "bot", text: "Hi 👋 I’m your API assistant. Send a request and I’ll explain errors." }
+    { from: "bot", text: "Hi 👋 I’m your J.A.R.V.I.S. API assistant! You can ask me questions about API testing, HTTP protocols, headers, status codes, or request structures. ⚠️ Please note that I only answer questions related to API testing and development." }
   ]);
 
   // Persist to sessionStorage whenever state changes
@@ -63,7 +63,7 @@ export const PostmanProvider = ({ children }) => {
     setResponse("");
     setStatus(null);
     setMessages([
-      { from: "bot", text: "Hi 👋 I’m your API assistant. Send a request and I’ll explain errors." }
+      { from: "bot", text: "Hi 👋 I’m your J.A.R.V.I.S. API assistant! You can ask me questions about API testing, HTTP protocols, headers, status codes, or request structures. ⚠️ Please note that I only answer questions related to API testing and development." }
     ]);
   };
 
