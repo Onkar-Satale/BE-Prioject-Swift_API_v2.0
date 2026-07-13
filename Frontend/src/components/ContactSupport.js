@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import emailjs from "@emailjs/browser";
 import { getToken } from "../services/authService";
 import { showToast } from "../utils/toast";
 import "./ContactSupport.css";
@@ -51,27 +50,34 @@ const ContactSupport = () => {
         setIsSubmitting(true);
 
         try {
-            // Replace newlines in message with <br> for HTML formatting
-            const formattedMessage = form.message.replace(/\n/g, "<br>");
-
-            await emailjs.send(
-                "service_rc05p5v",     // Gmail service
-                "template_nh3migb",    // Email template
-                {
+            const response = await fetch("https://api.web3forms.com/submit", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Accept: "application/json"
+                },
+                body: JSON.stringify({
+                    access_key: process.env.REACT_APP_WEB3FORMS_KEY,
                     name: form.name,
                     email: form.email,
                     phone: form.phone,
                     subject: form.subject,
-                    message: form.message.replace(/\n/g, "<br>"), // preserve line breaks
-                },
-                "SKmEoaGBdBM-RTXNA"     // Public key
-            );
+                    message: form.message,
+                })
+            });
 
-            showToast("☑️ Message sent successfully!");
-            setForm({ name: "", email: "", phone: "", subject: "", message: "" });
+            const data = await response.json();
+
+            if (data.success) {
+                showToast("☑️ Message sent successfully!");
+                setForm({ name: "", email: "", phone: "", subject: "", message: "" });
+            } else {
+                throw new Error(data.message || "Failed to submit form");
+            }
 
         } catch (error) {
-            console.error("Email send failed:", error);
+            console.error("Support submission failed:", error);
+            showToast("❌ Message submission failed.");
         } finally {
             setIsSubmitting(false);
         }
