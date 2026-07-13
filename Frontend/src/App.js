@@ -6,8 +6,6 @@ import Signup from "./components/Signup";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Documentation from "./components/Documentation";
 import ContactSupport from "./components/ContactSupport";
-import { useState, useEffect } from "react";
-import { getToken } from "./services/authService";
 import { PostmanProvider } from "./context/PostmanContext"; // 🔹 add this
 
 

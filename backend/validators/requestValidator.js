@@ -1,14 +1,5 @@
-import { body, validationResult } from 'express-validator';
-import { ApiError } from '../utils/ApiError.js';
-
-const validateRequest = (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    const errorMsg = errors.array().map((err) => err.msg).join(", ");
-    return next(new ApiError(400, `Validation Error: ${errorMsg}`));
-  }
-  next();
-};
+import { body } from 'express-validator';
+import { validateRequest } from '../middlewares/validate.js';
 
 const requestProxyValidator = [
   body("url").trim().notEmpty().withMessage("URL is required").isURL().withMessage("Must be a valid URL"),
