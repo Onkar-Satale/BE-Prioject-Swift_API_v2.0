@@ -647,27 +647,41 @@ body {
 
   /* Top Bar (Method dropdown, URL, Send button) wrapping */
   .top-bar {
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 8px;
+    display: grid !important;
+    grid-template-columns: 1fr 100px !important;
+    gap: 8px !important;
+    padding: 8px !important;
   }
 
-  .method-select {
-    width: 90px !important;
+  .method-dropdown {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    width: 100% !important;
   }
 
-  .url-input {
-    flex: 1;
-    min-width: 180px;
-    height: 32px;
-    font-size: 13px;
+  .method-display {
+    width: auto !important;
+    box-sizing: border-box !important;
   }
 
   .send-btn {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
     width: 100% !important;
-    min-height: 40px !important;
-    font-size: 15px;
-    margin-top: 4px;
+    min-height: 38px !important;
+    height: 38px !important;
+    font-size: 14px !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .url-input {
+    grid-column: 1 / span 2 !important;
+    grid-row: 2 !important;
+    width: 100% !important;
+    height: 38px !important;
+    font-size: 13px !important;
+    box-sizing: border-box !important;
   }
 
   /* Main Tabs scrollable horizontally */
@@ -723,10 +737,13 @@ body {
   }
 
   .response-right {
-    justify-content: space-between;
-    width: 100%;
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    width: 100% !important;
     margin-top: 4px;
-    gap: 6px;
+    gap: 8px !important;
   }
 
   .response-right button {
