@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import AceEditor from "react-ace";
 
 import "ace-builds/src-noconflict/mode-json";
@@ -13,6 +13,7 @@ export default function BodyTab({
   setBody,
   onBodyChange
 }) {
+  const [showRawOptions, setShowRawOptions] = useState(false);
 
   const handleSelectChange = (e) => {
     const value = e.target.value;
@@ -24,6 +25,7 @@ export default function BodyTab({
 
     if (value === "raw") {
       onBodyChange(body);
+      setShowRawOptions(false);
     }
   };
 
@@ -36,27 +38,40 @@ export default function BodyTab({
 
   return (
     <div className="body-tab">
-      <div className="body-options">
-        {[
-          "none",
-          "form-data",
-          "x-www-form-urlencoded",
-          "raw",
-          "binary",
-          "GraphQL",
-        ].map((option) => (
-          <label key={option} className="body-option">
-            <input
-              type="radio"
-              name="body-option"
-              value={option}
-              checked={bodyType === option}
-              onChange={handleSelectChange}
-            />
-            <span>{option}</span>
-          </label>
-        ))}
-      </div>
+      {bodyType === "raw" && !showRawOptions ? (
+        <div className="raw-header-minimal">
+          <span className="raw-badge">Raw Mode Active</span>
+          <button
+            type="button"
+            className="change-type-btn"
+            onClick={() => setShowRawOptions(true)}
+          >
+            ⚙️ Change Type / Options
+          </button>
+        </div>
+      ) : (
+        <div className="body-options">
+          {[
+            "none",
+            "form-data",
+            "x-www-form-urlencoded",
+            "raw",
+            "binary",
+            "GraphQL",
+          ].map((option) => (
+            <label key={option} className="body-option">
+              <input
+                type="radio"
+                name="body-option"
+                value={option}
+                checked={bodyType === option}
+                onChange={handleSelectChange}
+              />
+              <span>{option}</span>
+            </label>
+          ))}
+        </div>
+      )}
 
       {bodyType === "none" && (
         <div className="no-body-hint">
@@ -81,10 +96,12 @@ export default function BodyTab({
 
       {bodyType === "raw" && (
         <div className="json-editor">
-          <div className="body-hint">
-            Use raw mode to send JSON, XML, HTML, or plain text.
-            For structured API data, choose JSON and edit the content below.
-          </div>
+          {showRawOptions && (
+            <div className="body-hint">
+              Use raw mode to send JSON, XML, HTML, or plain text.
+              For structured API data, choose JSON and edit the content below.
+            </div>
+          )}
           <AceEditor
             mode="json"
             theme="twilight"
@@ -102,7 +119,6 @@ export default function BodyTab({
               tabSize: 2,
             }}
           />
-
         </div>
       )}
 
@@ -119,7 +135,6 @@ export default function BodyTab({
           {"{ query, variables }"} format. Use this for GraphQL API calls.
         </div>
       )}
-
     </div>
   );
 }

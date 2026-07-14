@@ -18,8 +18,8 @@
   background: #2a2a2a;
   cursor: pointer;
   font-weight: 600;
-  height: 24px;
-  width: 30px;
+  height: 38px;
+  box-sizing: border-box;
 }
 
 .method-display .arrow {

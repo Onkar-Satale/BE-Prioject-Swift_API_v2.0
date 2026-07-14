@@ -133,21 +133,33 @@ export default function PostmanClone() {
 
   const startResizing = (e) => {
     e.preventDefault();
-    const startY = e.clientY;
+    const isTouch = e.type === 'touchstart';
+    const startY = isTouch ? e.touches[0].clientY : e.clientY;
     const startHeight = responseRef.current.offsetHeight;
 
     const doDrag = (event) => {
-      const newHeight = startHeight + (event.clientY - startY);
+      const currentY = event.type === 'touchmove' ? event.touches[0].clientY : event.clientY;
+      const newHeight = startHeight + (currentY - startY);
       setResponseHeight(newHeight > 100 ? newHeight : 100); // minimum 100px
     };
 
     const stopDrag = () => {
-      document.removeEventListener("mousemove", doDrag);
-      document.removeEventListener("mouseup", stopDrag);
+      if (isTouch) {
+        document.removeEventListener("touchmove", doDrag);
+        document.removeEventListener("touchend", stopDrag);
+      } else {
+        document.removeEventListener("mousemove", doDrag);
+        document.removeEventListener("mouseup", stopDrag);
+      }
     };
 
-    document.addEventListener("mousemove", doDrag);
-    document.addEventListener("mouseup", stopDrag);
+    if (isTouch) {
+      document.addEventListener("touchmove", doDrag, { passive: false });
+      document.addEventListener("touchend", stopDrag);
+    } else {
+      document.addEventListener("mousemove", doDrag);
+      document.addEventListener("mouseup", stopDrag);
+    }
   };
 
   // Ensure Postman-like param rows: always keep 1 empty row
@@ -157,6 +169,17 @@ export default function PostmanClone() {
         p.key.trim() !== "" ||
         p.value.trim() !== "" ||
         p.description.trim() !== ""
+    );
+
+    return [...filled, { key: "", value: "", description: "" }];
+  };
+
+  const cleanHeaders = (arr) => {
+    const filled = arr.filter(
+      (h) =>
+        h.key.trim() !== "" ||
+        h.value.trim() !== "" ||
+        (h.description && h.description.trim() !== "")
     );
 
     return [...filled, { key: "", value: "", description: "" }];
@@ -607,7 +630,12 @@ export default function PostmanClone() {
             )}
 
 
-            {activeTab === "Headers" && <HeadersTab headers={headersObj} setHeaders={setHeadersObj} />}
+            {activeTab === "Headers" && (
+              <HeadersTab 
+                headers={headersObj} 
+                setHeaders={(updated) => setHeadersObj(cleanHeaders(updated))} 
+              />
+            )}
             {activeTab === "Body" && (
               <BodyTab
                 bodyType={bodyType}
@@ -628,7 +656,12 @@ export default function PostmanClone() {
 
         {/* Response Section */}
         <div className="response" ref={responseRef} style={{ height: responseHeight }}>
-          <div className="response-resize-handle" onMouseDown={startResizing}></div>          <div className="response-header">
+          <div 
+            className="response-resize-handle" 
+            onMouseDown={startResizing}
+            onTouchStart={startResizing}
+          ></div>
+          <div className="response-header">
             <div className="response-left">
               <h4>Response</h4>
               <div className="view-buttons">

@@ -7,6 +7,12 @@
   color: #fff;
   font-family: Arial, sans-serif;
   border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  box-sizing: border-box;
 }
 
 /* Table */
@@ -115,6 +121,9 @@
     display: none !important;
   }
   .params-table tbody tr {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr 40px !important;
+    gap: 6px !important;
     margin-bottom: 12px;
     border: 1px solid #333;
     border-radius: 8px;
@@ -123,14 +132,25 @@
   }
   .params-table td {
     border: none !important;
-    padding: 4px 0 !important;
-  }
-  .params-table td:last-child {
-    text-align: right !important;
+    padding: 0 !important;
     width: 100% !important;
-    padding-top: 6px !important;
+  }
+  .params-table td:nth-child(3) { /* Description */
+    grid-column: 1 / span 2 !important;
+  }
+  .params-table td:last-child { /* Remove button */
+    grid-column: 3 !important;
+    grid-row: 1 / span 2 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding-top: 0 !important;
+  }
+  .params-table .remove-btn {
+    width: 100% !important;
+    height: 32px !important;
   }
   .params-table input[type="text"] {
-    height: 36px !important;
+    height: 32px !important;
   }
 }
