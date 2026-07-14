@@ -648,7 +648,7 @@ body {
   /* Top Bar (Method dropdown, URL, Send button) wrapping */
   .top-bar {
     display: grid !important;
-    grid-template-columns: 1fr 100px !important;
+    grid-template-columns: 110px 1fr 90px !important;
     gap: 8px !important;
     padding: 8px !important;
   }
@@ -665,7 +665,7 @@ body {
   }
 
   .send-btn {
-    grid-column: 2 !important;
+    grid-column: 3 !important;
     grid-row: 1 !important;
     width: 100% !important;
     min-height: 38px !important;
@@ -676,7 +676,7 @@ body {
   }
 
   .url-input {
-    grid-column: 1 / span 2 !important;
+    grid-column: 1 / span 3 !important;
     grid-row: 2 !important;
     width: 100% !important;
     height: 38px !important;
