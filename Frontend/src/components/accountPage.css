@@ -826,8 +826,17 @@ body {
     align-items: flex-start !important;
   }
   .account-page {
-    max-height: none !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
     overflow-y: auto !important;
     padding-bottom: 80px !important;
   }
+}
+
+/* Global override to ensure account page scrolls properly when HTML/body is overflow: hidden */
+.account-page {
+  height: 100vh !important;
+  max-height: 100vh !important;
+  box-sizing: border-box !important;
+  overflow-y: auto !important;
 }
