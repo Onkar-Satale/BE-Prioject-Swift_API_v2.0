@@ -1,5 +1,6 @@
 # Dependencies
 node_modules/
+**/node_modules/
 
 # Environment variables
 .env
@@ -7,18 +8,39 @@ node_modules/
 .env.development.local
 .env.test.local
 .env.production.local
+**/.env
+**/.env.*
 
 # Logs
 logs/
+**/logs/
 *.log
 npm-debug.log*
 
 # Production builds
-frontend/build/
-frontend/dist/
+build/
+dist/
+**/build/
+**/dist/
+[fF]rontend/build/
+[fF]rontend/dist/
+
+# Python
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+ENV/
+**/venv/
+**/.venv/
+**/.pytest_cache/
 
 # IDE / System files
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
+
