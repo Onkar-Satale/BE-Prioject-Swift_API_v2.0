@@ -697,7 +697,7 @@ export default function PostmanClone() {
                 </button>
               </div>
             </div>
-            <div className="response-right" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div className="response-right" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
               {status !== null && <span className={`status-badge status-${status}`}>{status}</span>}
 
               <button className="copy-btn" onClick={() => response && copyToClipboard(response)}>Copy</button>

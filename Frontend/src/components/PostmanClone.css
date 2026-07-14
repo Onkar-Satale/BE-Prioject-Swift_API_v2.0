@@ -349,7 +349,6 @@ body {
   border: none;
   padding: 4px 12px;
   /* smaller top/bottom padding reduces height */
-  margin-right: 8px;
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
@@ -442,7 +441,7 @@ body {
 /* Right side */
 .response-right {
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
 
 /* --- ERROR BOX --- */
@@ -684,20 +683,20 @@ body {
     box-sizing: border-box !important;
   }
 
-  /* Main Tabs scrollable horizontally */
+  /* Main Tabs wrap to fit screen on mobile */
   .tab-list {
-    overflow-x: auto;
-    white-space: nowrap;
-    display: flex;
-    flex-wrap: nowrap;
-    -webkit-overflow-scrolling: touch;
+    flex-wrap: wrap !important;
+    overflow-x: hidden !important;
+    white-space: normal !important;
+    display: flex !important;
   }
 
-  /* Prevent tabs from shrinking */
+  /* Allow tabs to wrap and fit nicely */
   .tab {
-    flex: 0 0 auto;
-    padding: 8px 12px;
-    font-size: 13px;
+    flex: 1 1 auto !important;
+    padding: 8px 10px !important;
+    font-size: 12px !important;
+    text-align: center !important;
   }
 
   /* Response Panel styling on mobile */
@@ -743,7 +742,7 @@ body {
     align-items: center !important;
     width: 100% !important;
     margin-top: 4px;
-    gap: 8px !important;
+    gap: 6px !important;
   }
 
   .response-right button {

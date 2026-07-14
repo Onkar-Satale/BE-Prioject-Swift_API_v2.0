@@ -825,4 +825,9 @@ body {
     flex-direction: column !important;
     align-items: flex-start !important;
   }
+  .account-page {
+    max-height: none !important;
+    overflow-y: auto !important;
+    padding-bottom: 80px !important;
+  }
 }
