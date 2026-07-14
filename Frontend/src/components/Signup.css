@@ -143,3 +143,12 @@
   /* text color */
   transition: background-color 5000s ease-in-out 0s;
 }
+
+@media (max-width: 480px) {
+  .signup-page {
+    height: auto !important;
+    min-height: 100vh;
+    overflow-y: auto !important;
+    padding: 20px 0;
+  }
+}

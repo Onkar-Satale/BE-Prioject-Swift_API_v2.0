@@ -582,3 +582,155 @@ body {
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* --- RESPONSIVE OVERRIDES (MOBILE & TABLET) --- */
+@media (max-width: 768px) {
+  /* Layout restructuring */
+  .layout {
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* Small Sidebar -> Bottom navigation bar */
+  .sidebar-small {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 55px;
+    width: 100%;
+    flex-direction: row !important;
+    justify-content: space-around;
+    align-items: center;
+    border-top: 1px solid #23262a;
+    border-right: none;
+    background: #111;
+    padding: 0;
+    z-index: 1000;
+  }
+
+  .sidebar-btn {
+    padding: 8px;
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 22px;
+  }
+
+  /* Hide desktop tooltips on mobile */
+  .tooltip {
+    display: none !important;
+  }
+
+  /* Large Sidebar -> Cover Drawer Overlay */
+  .sidebar-large {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: calc(100vh - 55px);
+    z-index: 999;
+    background: #000;
+    border-right: none;
+    border-bottom: 1px solid #23262a;
+    box-sizing: border-box;
+  }
+
+  /* Main Workspace App container */
+  .app {
+    height: calc(100vh - 55px) !important;
+    margin-bottom: 55px;
+    overflow-y: auto;
+  }
+
+  /* Top Bar (Method dropdown, URL, Send button) wrapping */
+  .top-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .method-select {
+    width: 90px !important;
+  }
+
+  .url-input {
+    flex: 1;
+    min-width: 180px;
+    height: 32px;
+    font-size: 13px;
+  }
+
+  .send-btn {
+    width: 100% !important;
+    min-height: 40px !important;
+    font-size: 15px;
+    margin-top: 4px;
+  }
+
+  /* Main Tabs scrollable horizontally */
+  .tab-list {
+    overflow-x: auto;
+    white-space: nowrap;
+    display: flex;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Prevent tabs from shrinking */
+  .tab {
+    flex: 0 0 auto;
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  /* Response Panel styling on mobile */
+  .response {
+    max-height: 60vh !important;
+    min-height: 180px;
+  }
+
+  /* Response Header wrapping */
+  .response-header {
+    flex-direction: column;
+    align-items: stretch;
+    height: auto !important;
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .response-left {
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .response-left h4 {
+    font-size: 13px;
+  }
+
+  .view-buttons {
+    display: flex;
+    gap: 4px;
+  }
+
+  .view-btn, .save-btn {
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+
+  .response-right {
+    justify-content: space-between;
+    width: 100%;
+    margin-top: 4px;
+    gap: 6px;
+  }
+
+  .response-right button {
+    padding: 4px 12px;
+    font-size: 12px;
+  }
+}

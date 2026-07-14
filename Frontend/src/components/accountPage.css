@@ -793,3 +793,36 @@ body {
   background: #e72514 !important;
   color: rgb(226, 226, 226) !important;
 }
+
+@media (max-width: 768px) {
+  .account-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+  .header-actions {
+    width: 100% !important;
+    justify-content: flex-start !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+  .header-actions button {
+    margin-left: 0 !important;
+    margin-right: 8px !important;
+  }
+  .account-content {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    flex-wrap: wrap !important;
+  }
+  .info-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+  }
+  .profile-card {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+}

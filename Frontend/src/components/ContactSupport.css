@@ -130,3 +130,12 @@ textarea:-webkit-autofill {
   transition: background-color 5000s ease-in-out 0s;
   /* Chrome/Edge hack */
 }
+
+@media (max-width: 768px) {
+  .support-page {
+    padding: 16px !important;
+  }
+  .submit-btn {
+    width: 100% !important;
+  }
+}

@@ -161,3 +161,20 @@ body {
 .doc-page pre::-webkit-scrollbar-track {
   background-color: #1e1e1e;
 }
+
+@media (max-width: 768px) {
+  .doc-page {
+    padding: 16px !important;
+  }
+  .doc-page h1 {
+    font-size: 1.8rem !important;
+    margin-bottom: 20px !important;
+  }
+  .doc-page h2 {
+    font-size: 1.3rem !important;
+  }
+  .doc-page section {
+    padding: 16px 14px !important;
+    margin-bottom: 16px !important;
+  }
+}
