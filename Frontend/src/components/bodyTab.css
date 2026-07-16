@@ -138,10 +138,10 @@
 /* ==== No Body Hint ==== */
 .no-body-hint {
   padding: 10px;
-  background-color: #2a2a2a;
+  background-color: #000000;
   color: #bbb;
   font-size: 13px;
-  border: 1px dashed #555;
+  border: 1px dashed var(--terminal-border);
   border-radius: 6px;
   margin-top: 10px;
   font-family: monospace;
@@ -156,10 +156,10 @@
 /* ==== Shared Hint Box Style ==== */
 .body-hint {
   padding: 10px;
-  background-color: #2a2a2a;
+  background-color: #000000;
   color: #c0c0c0;
   font-size: 14px;
-  border: 1px dashed #555;
+  border: 1px dashed var(--terminal-border);
   border-radius: 6px;
   margin-top: 10px;
   font-family: monospace;
@@ -169,10 +169,10 @@
 /* ==== No Body Hint (kept separate if you want different look) ==== */
 .no-body-hint {
   padding: 10px;
-  background-color: #2a2a2a;
+  background-color: #000000;
   color: #d1d1d1;
   font-size: 14px;
-  border: 1px dashed #555;
+  border: 1px dashed var(--terminal-border);
   border-radius: 6px;
   margin-top: 10px;
   font-family: monospace;
@@ -240,8 +240,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 6px 12px;
-  background-color: #2b2b2b;
-  border: 1px solid #444;
+  background-color: #000000;
+  border: 1px solid var(--terminal-border);
   border-radius: 6px;
   margin-top: 7px;
   margin-bottom: 8px;
@@ -250,25 +250,26 @@
 .raw-badge {
   font-size: 12px;
   font-weight: 600;
-  color: #007BFF;
-  background: rgba(0, 123, 255, 0.15);
+  color: var(--terminal-purple);
+  background: rgba(168, 85, 247, 0.15);
   padding: 3px 8px;
   border-radius: 4px;
 }
 
 .change-type-btn {
   background: transparent;
-  border: 1px solid #555;
-  color: #ccc;
+  border: 1px solid var(--terminal-border);
+  color: var(--terminal-text-dim);
   padding: 4px 10px;
   font-size: 12px;
-  border-radius: 4px;
+  font-radius: 4px;
   cursor: pointer;
+  font-family: var(--terminal-font);
   transition: all 0.2s ease;
 }
 
 .change-type-btn:hover {
-  background: #3a3a3a;
-  color: #fff;
-  border-color: #777;
+  background: rgba(168, 85, 247, 0.1);
+  color: var(--terminal-white);
+  border-color: var(--terminal-purple);
 }

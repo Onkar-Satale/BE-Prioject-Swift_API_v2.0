@@ -21,7 +21,7 @@ export const login = async ({ email, password }) => {
 };
 
 // Save auth token and userId along with profile details
-export const saveAuthData = ({ token, email, firstName, lastName }) => {
+export const saveAuthData = ({ token, email, firstName, lastName, createdAt }) => {
   localStorage.setItem("authToken", token);
   try {
     const payload = JSON.parse(atob(token.split(".")[1]));
@@ -32,8 +32,12 @@ export const saveAuthData = ({ token, email, firstName, lastName }) => {
   } catch (e) {
     // Ignore decoding issues
   }
-  localStorage.setItem("username", firstName || "");
+  const fullName = lastName ? `${firstName} ${lastName}`.trim() : (firstName || "");
+  localStorage.setItem("username", fullName);
   localStorage.setItem("email", email || "");
+  if (createdAt) {
+    localStorage.setItem("createdAt", createdAt);
+  }
 };
 
 // Get token

@@ -1,18 +1,96 @@
 // frontend/src/pages/AccountPage.jsx
 import "./accountPage.css";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState, useContext } from "react";
+import { useEffect, useState, useContext, useRef } from "react";
 import { getToken, logout } from "../services/authService";
 import { showToast } from "../utils/toast";
 import { PostmanContext } from "../context/PostmanContext";
+
+// GRID CONFIGURATION
+const GRID_ROWS = 22;
+const GRID_COLS = 10;
+const ROW_START_COLS = [
+  2, 1, 3, 2, 4, 1, 3, 2, 1, 4,
+  2, 1, 3, 2, 4, 1, 3, 2, 1, 4,
+  2, 1
+];
+
+function GridBlock() {
+  const [isActive, setIsActive] = useState(false);
+  const [pixels, setPixels] = useState([]);
+  const timerRef = useRef(null);
+
+  const handleMouseEnter = () => {
+    setIsActive(true);
+    // Generate a random 4x4 grid of pixel colors
+    const newPixels = Array.from({ length: 16 }, () => {
+      const rand = Math.random();
+      if (rand < 0.5) return "purple";
+      if (rand < 0.65) return "white";
+      if (rand < 0.8) return "pink";
+      if (rand < 0.9) return "green";
+      return "empty";
+    });
+    setPixels(newPixels);
+
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+    // Stay active for 1.2s then fade back to empty
+    timerRef.current = setTimeout(() => {
+      setIsActive(false);
+    }, 1200);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, []);
+
+  return (
+    <div
+      className={`grid-block ${isActive ? "active" : ""}`}
+      onMouseEnter={handleMouseEnter}
+    >
+      <div className="pixel-container">
+        {pixels.map((color, idx) => (
+          <div key={idx} className={`pixel ${color}`} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function RenderGrid() {
+  const blocks = [];
+  for (let r = 0; r < GRID_ROWS; r++) {
+    for (let c = 0; c < GRID_COLS; c++) {
+      const isVisible = c >= ROW_START_COLS[r];
+      blocks.push(
+        <div key={`${r}-${c}`} className={`grid-cell-wrapper ${isVisible ? "visible-cell" : "empty-cell"}`}>
+          {isVisible ? <GridBlock /> : <div className="grid-cell-empty" />}
+        </div>
+      );
+    }
+  }
+
+  return (
+    <div className="render-grid-container">
+      {blocks}
+    </div>
+  );
+}
 
 export default function AccountPage() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [errorMsg, setErrorMsg] = useState("");
-  const [isGuest, setIsGuest] = useState(false);
+  const [errorMsg] = useState("");
+  const [isGuest] = useState(false);
   const [requestsCount, setRequestsCount] = useState(0); // local state for per-user count
 
   const capitalizeFirstChar = (str) => {
@@ -106,6 +184,7 @@ export default function AccountPage() {
 
   useEffect(() => {
     fetchUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Removed redundant fetchRequestCount
@@ -118,26 +197,51 @@ export default function AccountPage() {
     }
   }, [user, history.length]);
 
-  if (loading) return <p>Loading user data...</p>;
-  if (errorMsg) return <p style={{ color: "red" }}>{errorMsg}</p>;
+  const [logs, setLogs] = useState([]);
+
+  useEffect(() => {
+    if (!user) return;
+    const lines = [
+      `[${new Date().toLocaleTimeString()}] INCOMING REQUEST: GET /api/user/profile ...`,
+      `[${new Date().toLocaleTimeString()}] RESOLVING SESSION TOKEN ... SUCCESS`,
+      `[${new Date().toLocaleTimeString()}] INJECTING ACCOUNT VARIABLES ...`,
+      `[${new Date().toLocaleTimeString()}] DATABASE CONNECTION ... ACTIVE`,
+      `[${new Date().toLocaleTimeString()}] PROFILE RETRIEVED FOR USER "${user.username.toUpperCase()}"`,
+      `[${new Date().toLocaleTimeString()}] SYSTEM STATUS ... SECURE & STABLE`
+    ];
+    setLogs([]);
+    let current = 0;
+    const timer = setInterval(() => {
+      if (current < lines.length) {
+        setLogs(prev => [...prev, lines[current]]);
+        current++;
+      } else {
+        clearInterval(timer);
+      }
+    }, 250);
+    return () => clearInterval(timer);
+  }, [user]);
+
+  if (loading) return <div className="terminal-loading">Loading user data from terminal...</div>;
+  if (errorMsg) return <div className="terminal-error">ERROR: {errorMsg}</div>;
 
   // Stats: dynamic if user logged in, else 0
   const collectionsCount = user?.collections?.length || 0;
   const workspacesCount = user?.workspaces?.length || 0;
 
-  // Remove useContext entirely
   return (
     <div className="account-page">
-
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="modal-overlay">
-          <div className="confirm-modal">
-            <h3>⚠️ Delete Account</h3>
-            <p>Do you really want to delete this account? This will permanently erase your profile and all related history data.</p>
+          <div className="confirm-modal terminal-modal">
+            <div className="modal-title">⚠️ WARNING: ACCOUNT DELETION</div>
+            <div className="modal-body-text">
+              Do you really want to delete this account? This will permanently erase your profile and all related history data.
+            </div>
             <div className="modal-actions">
-              <button className="btn-no" onClick={() => setShowDeleteConfirm(false)}>No, Cancel</button>
-              <button className="btn-yes" onClick={handleDeleteAccount}>Yes, Delete</button>
+              <button className="btn-no" onClick={() => setShowDeleteConfirm(false)}>[ NO, CANCEL ]</button>
+              <button className="btn-yes" onClick={handleDeleteAccount}>[ YES, DELETE ]</button>
             </div>
           </div>
         </div>
@@ -146,136 +250,196 @@ export default function AccountPage() {
       {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
         <div className="modal-overlay">
-          <div className="confirm-modal">
-            <h3>⚠️ Logout</h3>
-            <p>Do you really want to logout?</p>
+          <div className="confirm-modal terminal-modal">
+            <div className="modal-title">⚠️ ALERT: SECURE LOGOUT</div>
+            <div className="modal-body-text">
+              Do you really want to logout from this terminal?
+            </div>
             <div className="modal-actions">
-              <button className="btn-no" onClick={() => setShowLogoutConfirm(false)}>No, Cancel</button>
-              <button className="btn-yes" onClick={handleLogout}>Yes, Logout</button>
+              <button className="btn-no" onClick={() => setShowLogoutConfirm(false)}>[ NO, CANCEL ]</button>
+              <button className="btn-yes" onClick={handleLogout}>[ YES, LOGOUT ]</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Header */}
-      <header className="account-header">
-        <h2>⚙️ My Account</h2>
-        <div className="header-actions">
-          <button onClick={() => navigate("/")} className="back-btn">
-            ← Back
-          </button>
-          {!isGuest && (
-            <>
-              <button onClick={() => setShowDeleteConfirm(true)} className="delete-account-btn" style={{ padding: '6px 12px', border: '1px solid #ff4d4f', cursor: 'pointer', background: 'rgba(255, 77, 79, 0.1)', color: '#ff4d4f', borderRadius: '6px', fontWeight: '600' }}>
-                Delete Account
+      {/* Main split-screen container */}
+      <div className="terminal-grid-layout">
+        
+        {/* Left Side: Terminal Console */}
+        <div className="terminal-console-section">
+          {/* Header */}
+          <header className="terminal-header">
+            <div className="terminal-logo">
+              <span className="logo-symbol">❤</span> SWIFT API
+            </div>
+            <div className="header-actions">
+              <button onClick={() => navigate("/")} className="back-btn">
+                [ BACK TO APP ]
               </button>
-              <button onClick={() => setShowLogoutConfirm(true)} className="logout-btn">
-                ⎋ Logout
-              </button>
-            </>
-          )}
-        </div>
-      </header>
+              {!isGuest && (
+                <>
+                  <button onClick={() => setShowDeleteConfirm(true)} className="delete-account-btn">
+                    [ DELETE ACCOUNT ]
+                  </button>
+                  <button onClick={() => setShowLogoutConfirm(true)} className="logout-btn">
+                    [ LOGOUT ]
+                  </button>
+                </>
+              )}
+            </div>
+          </header>
 
-      {/* Welcome Banner */}
-      <div style={{ padding: "10px 0 20px 0", textAlign: "center" }}>
-        <h1 style={{ fontSize: "48px", color: "#ffffff", margin: 0, fontWeight: "bold" }}>
-          Welcome, <span style={{ color: "#ffffffff" }}>{user?.username ? capitalizeFirstChar(user.username) : "Guest"}</span> !
-        </h1>
-      </div>
+          <div className="terminal-body">
+            {/* Logs Area */}
+            <div className="terminal-logs-window">
+              {logs.map((log, idx) => (
+                <div key={idx} className="log-line">{log}</div>
+              ))}
+              {logs.length === 6 && (
+                <>
+                  <div className="log-line welcome-ascii">
+{`┌───────────────────────────────────────────────┐
+│          SWIFT API // USER ACCOUNT            │
+└───────────────────────────────────────────────┘`}
+                  </div>
+                  <div className="log-line welcome-msg" style={{ color: "var(--terminal-white)", fontWeight: "bold", marginTop: 8 }}>
+                    WELCOME, {user?.username?.toUpperCase()}!
+                  </div>
+                </>
+              )}
+            </div>
 
-      {/* Content */}
-      <div className="account-content">
-        {/* Profile Card */}
-        <div className="info-card profile-card">
-          <div className="avatar">{user?.username ? user.username.charAt(0).toUpperCase() : "G"}</div>
-          <div>
-            <h3>{user?.username ? capitalizeFirstChar(user.username) : "Guest User"}</h3>
-            <p>Email: {user?.email || "N/A"}</p>
-            <p>
-              Member since:{" "}
-              {user
-                ? new Date(user.createdAt).toLocaleDateString()
-                : "N/A"}
-            </p>
+            {/* User details formatted as terminal stats/info blocks */}
+            {logs.length === 6 && (
+              <div className="terminal-account-info">
+                
+                {/* Profile Information */}
+                <div className="terminal-section-block">
+                  <div className="section-title">{"// USER PROFILE DATA"}</div>
+                  <div className="info-row">
+                    <span className="info-key">USERNAME:</span>
+                    <span className="info-value">{user?.username ? capitalizeFirstChar(user.username) : "Guest"}</span>
+                  </div>
+                  <div className="info-row">
+                    <span className="info-key">EMAIL_ADDR:</span>
+                    <span className="info-value">{user?.email || "N/A"}</span>
+                  </div>
+                  <div className="info-row">
+                    <span className="info-key">MEMBER_SINCE:</span>
+                    <span className="info-value">
+                      {(() => {
+                        if (!user || !user.createdAt || user.createdAt === "null" || user.createdAt === "undefined") return "N/A";
+                        const date = new Date(user.createdAt);
+                        return isNaN(date.getTime()) ? "N/A" : date.toLocaleDateString();
+                      })()}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Preferences */}
+                <div className="terminal-section-block">
+                  <div className="section-title">{"// PREFERENCES"}</div>
+                  <div className="info-row">
+                    <span className="info-key">THEME_MODE:</span>
+                    <span className="info-value">DARK_CONSOLE</span>
+                  </div>
+                  <div className="info-row">
+                    <span className="info-key">LANGUAGE:</span>
+                    <span className="info-value">ENGLISH_US</span>
+                  </div>
+                  <div className="action-row">
+                    <button
+                      className="terminal-action-btn edit-btn"
+                      disabled={isGuest}
+                      onClick={() => !isGuest && showToast("✏️ Preferences editing is currently read-only.")}
+                      title={isGuest ? "Login to edit preferences" : ""}
+                    >
+                      [ EDIT PREFERENCES ]
+                    </button>
+                  </div>
+                </div>
+
+                {/* Usage Statistics */}
+                <div className="terminal-section-block">
+                  <div className="section-title">{"// USAGE STATISTICS"}</div>
+                  <div className="info-row">
+                    <span className="info-key">REQUESTS_SENT:</span>
+                    <span className="info-value highlight-num">{requestsCount}</span>
+                  </div>
+                  <div className="info-row">
+                    <span className="info-key">COLLECTIONS:</span>
+                    <span className="info-value highlight-num">{collectionsCount}</span>
+                  </div>
+                  <div className="info-row">
+                    <span className="info-key">WORKSPACES:</span>
+                    <span className="info-value highlight-num">{workspacesCount}</span>
+                  </div>
+                </div>
+
+                {/* Workspaces */}
+                <div className="terminal-section-block">
+                  <div className="section-title">{"// ACTIVE WORKSPACES"}</div>
+                  <ul className="workspace-list">
+                    {user?.workspaces?.map((ws, idx) => (
+                      <li key={idx}>* {ws}</li>
+                    )) || <li>* Personal Workspace</li>}
+                  </ul>
+                  <div className="action-row">
+                    <button
+                      className="terminal-action-btn create-btn"
+                      disabled={isGuest}
+                      onClick={() => !isGuest && showToast("➕ Workspaces management is available in the main app.")}
+                      title={isGuest ? "Login to create workspace" : ""}
+                    >
+                      [ CREATE NEW WORKSPACE ]
+                    </button>
+                  </div>
+                </div>
+
+                {/* Help and Support */}
+                <div className="terminal-section-block">
+                  <div className="section-title">{"// SYSTEM RESOURCES & HELP"}</div>
+                  <div className="info-row">
+                    <span className="info-key">DOCUMENTATION:</span>
+                    <span className="info-value">
+                      <button className="terminal-link-btn" onClick={openDocumentation}>
+                        [ VIEW DOCS ]
+                      </button>
+                    </span>
+                  </div>
+                  <div className="info-row">
+                    <span className="info-key">CONTACT_SUPPORT:</span>
+                    <span className="info-value">
+                      <button className="terminal-link-btn" onClick={contactSupport}>
+                        [ GET SUPPORT ]
+                      </button>
+                    </span>
+                  </div>
+                </div>
+
+              </div>
+            )}
+          </div>
+
+          <div className="terminal-footer">
+            <span
+              className="terminal-purple-link"
+              onClick={() => navigate("/")}
+              style={{ cursor: "pointer" }}
+            >
+              START TESTING ON SWIFT API TODAY →
+            </span>
+            <span className="terminal-status-light">APPLICATION RUNNING</span>
           </div>
         </div>
 
-        {/* Preferences */}
-        <div className="info-card">
-          <h3>Preferences</h3>
-          <p>Theme: Dark</p>
-          <p>Language: English</p>
-          <button
-            className="edit-btn"
-            disabled={isGuest}
-            title={isGuest ? "Login to edit preferences" : ""}
-          >
-            ✏️ Edit Preferences
-          </button>
+        {/* Right Side: Render-style blocks animation */}
+        <div className="grid-animation-section">
+          <RenderGrid />
         </div>
 
-        {/* Usage Stats */}
-        <div className="info-card">
-          <h3>Usage Stats</h3>
-          <p>
-            Requests Sent: <strong>{requestsCount}</strong>
-          </p>
-          <p>
-            Collections Created: <strong>{collectionsCount}</strong>
-          </p>
-          <p>
-            Workspaces: <strong>{workspacesCount}</strong>
-          </p>
-        </div>
-
-        {/* Workspaces */}
-        <div className="info-card">
-          <h3>Workspaces</h3>
-          <ul>
-            {user?.workspaces?.map((ws, idx) => (
-              <li key={idx}>{ws}</li>
-            )) || <li>Personal Workspace</li>}
-          </ul>
-          <button
-            className="create-btn"
-            disabled={isGuest}
-            title={isGuest ? "Login to create workspace" : ""}
-          >
-            ➕ Create Workspace
-          </button>
-        </div>
-
-        {/* Support */}
-        <div className="info-card">
-          <h3>Support & Help</h3>
-          <p>
-            📖{" "}
-            <button className="link-btn" onClick={openDocumentation}>
-              Documentation
-            </button>
-          </p>
-          <p>
-            📩{" "}
-            <button className="link-btn" onClick={contactSupport}>
-              Contact Support
-            </button>
-          </p>
-        </div>
       </div>
-
-      {/* Footer */}
-      <footer className="account-footer">
-        <p>© 2025 YourApp. All rights reserved.</p>
-        <div className="footer-links">
-          <button className="link-btn" onClick={openDocumentation}>
-            Documentation
-          </button>
-          <button className="link-btn" onClick={contactSupport}>
-            Support
-          </button>
-        </div>
-      </footer>
     </div>
   );
 }

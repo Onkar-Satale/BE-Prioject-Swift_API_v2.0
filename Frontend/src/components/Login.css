@@ -1,22 +1,25 @@
-/* --- Login Page Container --- */
+/* frontend/src/components/Login.css */
+
 .login-page {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: #1e1e1e;
-  font-family: Arial, sans-serif;
-  color: #fff;
+  background-color: var(--terminal-bg);
+  font-family: var(--terminal-font);
+  color: var(--terminal-text-bright);
   overflow: hidden;
+  padding: 16px;
+  box-sizing: border-box;
 }
 
-/* --- Form Card --- */
 .login-page form {
-  background-color: #111;
+  background-color: #000000;
   padding: 30px 25px;
-  border-radius: 10px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  border-radius: 6px;
+  border: 1px solid var(--terminal-border);
+  box-shadow: 0 10px 30px var(--terminal-purple-glow);
   width: 100%;
   max-width: 400px;
   display: flex;
@@ -24,115 +27,88 @@
   box-sizing: border-box;
 }
 
-/* --- Heading --- */
 .login-page h2 {
   text-align: center;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: bold;
   margin-bottom: 20px;
+  color: var(--terminal-white);
+  text-shadow: 0 0 6px var(--terminal-purple-glow);
 }
 
-/* --- Labels --- */
 .login-page label {
   margin: 10px 0 5px;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 13px;
+  color: var(--terminal-text-dim);
 }
 
-/* --- Input Fields --- */
 .login-page input {
   padding: 10px;
   margin-bottom: 10px;
-  background-color: #1f1f1f;
-  border: 1px solid #333;
-  border-radius: 6px;
-  color: #fff;
+  background-color: var(--terminal-bg);
+  border: 1px solid var(--terminal-border);
+  border-radius: 4px;
+  color: var(--terminal-white);
   font-size: 14px;
+  outline: none;
+  transition: all 0.15s ease;
 }
 
 .login-page input:focus {
-  outline: none;
-  border: 1px solid #004cff;
-  box-shadow: 0 0 4px #004cff;
+  border-color: var(--terminal-purple);
+  box-shadow: 0 0 6px var(--terminal-purple-glow);
 }
 
-/* --- Buttons --- */
 .login-page button {
   padding: 10px;
   margin-top: 10px;
-  background-color: #004cff;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  font-size: 16px;
+  background-color: transparent;
+  color: var(--terminal-purple);
+  border: 1px solid var(--terminal-purple);
+  border-radius: 4px;
+  font-size: 14px;
   font-weight: bold;
   cursor: pointer;
-  transition: 0.2s;
+  transition: all 0.15s ease;
 }
 
 .login-page button:hover {
-  background-color: #005fcc;
+  background-color: var(--terminal-purple-dim);
+  color: var(--terminal-white);
+  box-shadow: 0 0 8px var(--terminal-purple-glow);
 }
 
 .login-page button:disabled {
-  background-color: #333;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
-/* --- Error Message --- */
 .login-error {
-  background-color: #3b0a0a;
-  color: #ffb3b3;
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #fca5a5;
   padding: 8px 12px;
   margin-bottom: 12px;
-  border-radius: 6px;
-  border: 1px solid #ff4d4d;
-  font-size: 14px;
+  border-radius: 4px;
+  border: 1px solid #ef4444;
+  font-size: 13px;
   text-align: center;
 }
 
-/* --- Signup Link --- */
 .login-page p {
   text-align: center;
-  font-size: 14px;
+  font-size: 13px;
   margin-top: 15px;
+  color: var(--terminal-text-dim);
 }
 
 .login-page p span {
-  color: #004cff;
+  color: var(--terminal-purple);
   cursor: pointer;
   text-decoration: underline;
+  margin-left: 4px;
 }
 
 .login-page p span:hover {
-  color: #66a3ff;
-}
-
-/* --- Responsive --- */
-@media (max-width: 450px) {
-  .login-page form {
-    width: 90%;
-    padding: 20px;
-  }
-}
-
-/* Fix Chrome autofill background for dark theme on Login Page */
-.login-page input:-webkit-autofill,
-.login-page input:-webkit-autofill:hover,
-.login-page input:-webkit-autofill:focus,
-.login-page input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0px 1000px #1f1f1f inset;
-  /* match input background */
-  -webkit-text-fill-color: #fff;
-  /* text color */
-  transition: background-color 5000s ease-in-out 0s;
-}
-
-@media (max-width: 480px) {
-  .login-page {
-    height: auto !important;
-    min-height: 100vh;
-    overflow-y: auto !important;
-    padding: 20px 0;
-  }
+  color: var(--terminal-white);
+  text-shadow: 0 0 6px var(--terminal-purple-glow);
 }

@@ -1,27 +1,126 @@
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background-color: #1e1e1e;
-  color: white;
+/* frontend/src/index.css */
+
+:root {
+  --terminal-bg: #09090b;
+  --terminal-border: #1f1f23;
+  --terminal-green: #22c55e;
+  --terminal-blue: #3b82f6;
+  --terminal-purple: #a855f7;
+  --terminal-purple-dim: #7c3aed;
+  --terminal-purple-glow: rgba(168, 85, 247, 0.4);
+  --terminal-pink: #ec4899;
+  --terminal-orange: #f97316;
+  --terminal-orange-dim: rgba(249, 115, 22, 0.1);
+  --terminal-white: #ffffff;
+  --terminal-text-dim: #a1a1aa;
+  --terminal-text-bright: #f4f4f5;
+  --terminal-font: "Courier New", Courier, Monaco, "Fira Code", monospace;
 }
 
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--terminal-bg);
+  color: var(--terminal-text-bright);
+  font-family: var(--terminal-font) !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Force uniform text size across the entire application for console consistency */
+html,
+body,
+p,
+span,
+div,
+li,
+label,
+pre,
+td,
+th,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+input,
+textarea,
+select,
+button {
+  font-size: 12px !important;
+}
+
+/* Global scrollbars styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--terminal-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--terminal-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--terminal-purple-dim);
+}
+
+/* Global inputs default formatting */
+input,
+textarea,
+select,
+button {
+  font-family: var(--terminal-font) !important;
+}
+
+/* Chrome, Safari, Edge autofill style override to maintain dark theme */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+textarea:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px var(--terminal-bg) inset !important;
+  -webkit-text-fill-color: var(--terminal-white) !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Toast notifications styled as terminal messages */
 .toast {
   position: fixed !important;
   bottom: 20px !important;
   right: 20px !important;
-  background-color: #212121 !important;
-  border: 1px solid #484848 !important;
-  color: #ffffff !important;
-  padding: 12px 20px !important;
-  border-radius: 8px !important;
+  width: fit-content !important;
+  max-width: 260px !important;
+  background-color: var(--terminal-bg) !important;
+  border: 1px solid var(--terminal-purple) !important;
+  color: var(--terminal-white) !important;
+  padding: 10px 16px !important;
+  border-radius: 4px !important;
   z-index: 9999 !important;
-  font-weight: 500 !important;
-  font-size: 14px !important;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5) !important;
-  animation: slideIn 0.3s ease-out !important;
+  font-size: 11px !important;
+  box-shadow: 0 4px 20px var(--terminal-purple-glow) !important;
+  animation: slideIn 0.25s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+  white-space: normal !important;
+  word-break: break-word !important;
 }
 
 @keyframes slideIn {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+  from {
+    transform: translateX(120%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }

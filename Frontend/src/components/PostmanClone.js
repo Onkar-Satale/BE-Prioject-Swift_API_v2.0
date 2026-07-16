@@ -59,6 +59,12 @@ export default function PostmanClone() {
   }, [viewMode]);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+
+  // Clear error message immediately when URL changes
+  useEffect(() => {
+    setErrorMsg("");
+  }, [url]);
+
   const [bodyContent, setBodyContent] = useState("");
   // const [headersObj, setHeadersObj] = useState([
   //   { key: "", value: "" }
@@ -596,7 +602,7 @@ export default function PostmanClone() {
 
         {/* Tabs */}
         <div className="tab-list">
-          {["Params", "Headers", "Body", "Authorization", "Scripts", "Settings"].map((tab) => (
+          {["Params", "Headers", "Body", "Authorization", "Settings"].map((tab) => (
             <button
               key={tab}
               className={`tab ${activeTab === tab ? "active" : ""}`}
@@ -613,10 +619,14 @@ export default function PostmanClone() {
                 }
               }}
             >
-              {tab}
+              {tab === "Authorization" ? (
+                <>
+                  <span className="tab-label-desktop">Authorization</span>
+                  <span className="tab-label-mobile">Auth</span>
+                </>
+              ) : tab}
             </button>
           ))}
-
         </div>
 
         {/* Tab Content */}
@@ -649,7 +659,6 @@ export default function PostmanClone() {
             {activeTab === "Authorization" && (
               <AuthorizationTab auth={auth} setAuth={setAuth} />
             )}
-            {activeTab === "Scripts" && <div>Scripts placeholder</div>}
             {activeTab === "Settings" && <div>Settings options</div>}
           </div>
         </div>
@@ -743,7 +752,7 @@ export default function PostmanClone() {
                   </pre>
                 </div>
 
-                <div style={{ display: viewMode === "pretty" ? "block" : "none", maxWidth: "100%", overflowX: "auto" }}>
+                <div className="pretty-json-container" style={{ display: viewMode === "pretty" ? "block" : "none", maxWidth: "100%", overflowX: "auto" }}>
                   {(() => {
                     try {
                       const isTooLarge = typeof response !== "string" && JSON.stringify(response).length > 250000;
@@ -763,6 +772,7 @@ export default function PostmanClone() {
                           displayDataTypes={false}
                           displayObjectSize={true}
                           theme="google"
+                          style={{ fontSize: "12px", background: "transparent" }}
                         />
                       );
                     } catch (err) {
@@ -771,8 +781,8 @@ export default function PostmanClone() {
                   })()}
                 </div>
 
-                <div style={{ display: viewMode === "preview" ? "block" : "none", background: "#1e1e1e", color: "#fff", fontFamily: "monospace", overflowX: "auto", padding: "10px" }}>
-                  <pre style={{ margin: 0, color: "#fff", whiteSpace: "pre" }}>
+                <div style={{ display: viewMode === "preview" ? "block" : "none", background: "transparent", color: "var(--terminal-white)", overflowX: "auto", padding: "10px" }}>
+                  <pre style={{ margin: 0, color: "var(--terminal-white)", whiteSpace: "pre" }}>
                     {typeof response === "string" ? response.replace(/\\n/g, "\n") : JSON.stringify(response, null, 2)}
                   </pre>
                 </div>

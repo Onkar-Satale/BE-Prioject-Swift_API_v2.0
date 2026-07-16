@@ -59,7 +59,12 @@ export default function BotSidebar({
 
     const methodAndUrl = lines[0]
       .replace("curl -X ", "")
-      .replace(/"/g, "");
+      .replace(/"/g, "")
+      .trim();
+
+    const parts = methodAndUrl.split(" ");
+    const methodText = parts[0] || "GET";
+    const urlText = parts.slice(1).join(" ") || "";
 
     const headers = lines
       .slice(1)
@@ -70,19 +75,35 @@ export default function BotSidebar({
           .trim()
       );
 
-    return `${methodAndUrl}\n\n${headers.join("\n")}`;
+    const getMethodColor = (m) => {
+      const upper = m.toUpperCase();
+      if (upper === "GET") return "#22c55e";    // green
+      if (upper === "POST") return "#3b82f6";   // blue
+      if (upper === "PUT") return "#eab308";    // yellow
+      if (upper === "DELETE") return "#ef4444"; // red
+      return "var(--terminal-purple)";          // fallback
+    };
+
+    return (
+      <>
+        <span className="curl-method" style={{ color: getMethodColor(methodText), fontWeight: "bold" }}>{methodText}</span>{" "}
+        <span className="curl-url" style={{ color: "var(--terminal-orange)" }}>{urlText}</span>
+        {"\n\n"}
+        <span className="curl-headers" style={{ color: "var(--terminal-text-dim)" }}>{headers.join("\n")}</span>
+      </>
+    );
   };
 
 
 
-  const autoFillHeaders = () => {
-    return [
-      "Authorization: Bearer <token>",
-      "Content-Type: application/json",
-      "Accept: application/json",
-      "User-Agent: Postman-Clone"
-    ].join("\n");
-  };
+  // const autoFillHeaders = () => {
+  //   return [
+  //     "Authorization: Bearer <token>",
+  //     "Content-Type: application/json",
+  //     "Accept: application/json",
+  //     "User-Agent: Postman-Clone"
+  //   ].join("\n");
+  // };
 
   const severityBadge = (status = 500) => {
     if (status >= 200 && status < 300) {
@@ -431,6 +452,75 @@ export default function BotSidebar({
     );
   }
 
+  const parseBotMessage = (text) => {
+    if (typeof text !== "string") return null;
+
+    // Split text into parts using '###' as delimiter, preserving the delimiter
+    const parts = text.split(/(?=###)/g);
+    
+    return parts.map((part, index) => {
+      const trimmed = part.trim();
+      if (!trimmed) return null;
+      
+      if (trimmed.startsWith("###")) {
+        const lines = trimmed.split("\n");
+        const heading = lines[0].replace(/###/g, "").trim();
+        const body = lines.slice(1).join("\n").trim();
+        
+        const lowerHeading = heading.toLowerCase();
+        const isSpecialHeading = 
+          lowerHeading.includes("diagnosis") || 
+          lowerHeading.includes("summary") || 
+          lowerHeading.includes("suggestion") || 
+          lowerHeading.includes("fix") ||
+          heading.includes("🧠") ||
+          heading.includes("📌") ||
+          heading.includes("🚀") ||
+          heading.includes("💡");
+        
+        if (isSpecialHeading) {
+          return (
+            <div key={index} className="bot-special-section" style={{ marginTop: 10 }}>
+              <div className="bot-heading-box">
+                {heading}
+              </div>
+              <div className="bot-text-line" style={{ marginTop: 6 }}>
+                {body.split("\n").map((line, idx) => (
+                  <div key={idx} style={{ marginTop: idx > 0 ? 4 : 0 }}>
+                    {line.replace(/\*\*/g, "")}
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        }
+        
+        return (
+          <div key={index} className="bot-general-section" style={{ marginTop: 10 }}>
+            <div className="bot-section-title">{heading}</div>
+            <div className="bot-text-line" style={{ marginTop: 4 }}>
+              {body.split("\n").map((line, idx) => (
+                <div key={idx} style={{ marginTop: idx > 0 ? 4 : 0 }}>
+                  {line.replace(/\*\*/g, "")}
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      } else {
+        return (
+          <div key={index} className="bot-text-plain">
+            {trimmed.split("\n").map((line, idx) => (
+              <div key={idx} className="bot-text-line" style={{ marginTop: idx > 0 ? 4 : 0 }}>
+                {line.replace(/\*\*/g, "")}
+              </div>
+            ))}
+          </div>
+        );
+      }
+    });
+  };
+
   return (
     <div className="bot-sidebar">
       {/* HEADER */}
@@ -441,22 +531,32 @@ export default function BotSidebar({
             <span></span>
             <span></span>
           </div>
-          <h3 style={{ color: "#ff8810", fontWeight: "bold" }}>JARVIS is here to HELP !</h3>
+          <h3 style={{ color: "#ff8810", fontWeight: "bold", fontSize: "14px", margin: 0, whiteSpace: "nowrap" }}>
+            JARVIS is here to HELP !
+          </h3>
         </div>
-        <div>
-          <button onClick={() => setShowClearConfirm(true)} style={{ background: "none", border: "none", color: "#fff", cursor: "pointer", fontSize: "16px", marginRight: "10px" }} title="Refresh/Clear Chat">🔄</button>
-          <button className="close-btn" onClick={onClose}>✖</button>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <button 
+            onClick={() => setShowClearConfirm(true)} 
+            style={{ background: "none", border: "none", color: "#fff", cursor: "pointer", fontSize: "14px", padding: 0, display: "flex", alignItems: "center" }} 
+            title="Refresh/Clear Chat"
+          >
+            🔄
+          </button>
+          <button className="close-btn" onClick={onClose} style={{ padding: 0, display: "flex", alignItems: "center", fontSize: "16px" }}>✖</button>
         </div>
       </div>
 
       {showClearConfirm && (
         <div className="modal-overlay">
-          <div className="confirm-modal">
-            <h3>⚠️ Refresh Bot</h3>
-            <p>Are you sure to refresh the bot?</p>
+          <div className="confirm-modal terminal-modal">
+            <div className="modal-title">⚠️ ALERT: REFRESH ASSISTANT</div>
+            <div className="modal-body-text">
+              Are you sure you want to refresh the assistant? This will clear all current session messages.
+            </div>
             <div className="modal-actions">
-              <button className="btn-no" onClick={() => setShowClearConfirm(false)}>No, Cancel</button>
-              <button className="btn-yes" onClick={handleClearBot}>Yes, Clear</button>
+              <button className="btn-no" onClick={() => setShowClearConfirm(false)}>[ NO, CANCEL ]</button>
+              <button className="btn-yes" onClick={handleClearBot}>[ YES, CLEAR ]</button>
             </div>
           </div>
         </div>
@@ -526,46 +626,16 @@ export default function BotSidebar({
             {/* 🔹 BOT MESSAGE (OBJECT or STRING SAFE) */}
             {msg.from === "bot" && msg.type !== "curl" && (
               typeof msg.text === "string" ? (
-                msg.text
-                  .split("\n")
-                  .filter(line => !/^(Fix:|Suggested Tests:)\s*$/.test(line.trim()))
-                  .reduce((acc, line) => {
-                    if (line.trim() === "") {
-                      // prevent multiple empty spacers
-                      if (acc.length === 0 || acc[acc.length - 1] === "__EMPTY__") {
-                        return acc;
-                      }
-                      return [...acc, "__EMPTY__"];
-                    }
-                    return [...acc, line];
-                  }, [])
-                  .map((line, idx) =>
-                    line === "__EMPTY__" ? (
-                      <div key={idx} style={{ height: 10 }} />
-                    ) : (
-                      <div
-                        key={idx}
-                        className={
-                          (() => {
-                            const cleanLine = line.replace(/\*\*/g, "").trim();
-                            const isTitle = cleanLine.startsWith("###");
-                            return isTitle ? "bot-section-title" : "bot-text-line";
-                          })()
-                        }
-                      >
-                        {line.replace(/\[TITLE\]/g, "").replace(/\[\/TITLE\]/g, "").replace(/\*\*/g, "").replace(/^###\s*/, "")}
-                      </div>
-                    )
-                  )
+                parseBotMessage(msg.text)
 
 
               ) : (
                 <>
                   {msg.text?.diagnosis && (
-                    <>
-                      <div>🧠 Diagnosis</div>
-                      <div style={{ marginBottom: 12 }}>{msg.text.diagnosis}</div>
-                    </>
+                    <div className="bot-diagnosis-box">
+                      <div className="bot-diagnosis-title">🧠 Diagnosis</div>
+                      <div className="bot-diagnosis-text">{msg.text.diagnosis}</div>
+                    </div>
                   )}
                 </>
               )

@@ -3,9 +3,8 @@
 /* Wrapper */
 .params-tab {
   padding: 10px;
-  background-color: #1e1e1e;
+  background-color: transparent;
   color: #fff;
-  font-family: Arial, sans-serif;
   border-radius: 6px;
   display: flex;
   flex-direction: column;
@@ -30,20 +29,20 @@
 .params-table th,
 .params-table td {
   padding: 6px 8px;
-  border: 1px solid #333;
+  border: 1px solid var(--terminal-border);
   text-align: left;
   vertical-align: middle;
   /* ✅ ADDED */
 }
 
 .params-table th {
-  background-color: #2b2b2b;
+  background-color: var(--terminal-bg);
   font-weight: bold;
 }
 
 /* Row background (Postman-like separation) */
 .params-table tbody tr {
-  background-color: #1b1b1b;
+  background-color: transparent;
   /* ✅ ADDED */
 }
 
@@ -54,9 +53,9 @@
   /* ✅ ADDED */
   padding: 6px 8px;
   /* ✅ CHANGED */
-  border: 1px solid #555;
+  border: 1px solid var(--terminal-border);
   border-radius: 4px;
-  background-color: #2b2b2b;
+  background-color: var(--terminal-bg);
   color: #fff;
   box-sizing: border-box;
   /* ✅ ADDED */

@@ -1,16 +1,16 @@
-/* --- HISTORY SIDEBAR --- */
+/* frontend/src/components/HistorySidebar.css */
+
 .history {
-  background: #111;
-  border-right: 1px solid #23262a;
+  background: var(--terminal-bg);
+  border-right: 1px solid var(--terminal-border);
   height: 100%;
-  width: 235px;
-  /* reduce to 200px or less if you want smaller sidebar */
+  width: 100%;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
   padding: 0;
   overflow: hidden;
-  /* hide horizontal overflow */
+  font-family: var(--terminal-font);
 }
 
 /* Header */
@@ -19,46 +19,42 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 10px;
-  border-bottom: 1px solid #23262a;
+  border-bottom: 1px solid var(--terminal-border);
   width: 100%;
   box-sizing: border-box;
-  overflow-x: hidden;
 }
 
 .history-header h3 {
   margin: 0;
-  font-size: 14px;
-  color: #e8eaed;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 13px;
+  color: var(--terminal-white);
+  font-weight: bold;
 }
 
 /* Clear button */
 .clear-btn {
   background: transparent;
-  border: 1px solid #2b2f34;
-  color: #9aa0a6;
-  font-size: 12px;
+  border: 1px solid var(--terminal-border);
+  color: var(--terminal-text-dim);
+  font-family: var(--terminal-font);
+  font-size: 11px;
   padding: 4px 8px;
-  border-radius: 6px;
+  border-radius: 4px;
   cursor: pointer;
-  flex-shrink: 0;
-  white-space: nowrap;
+  transition: all 0.15s ease;
 }
 
 .clear-btn:hover {
-  border-color: #3a3f45;
-  color: #e8eaed;
+  border-color: var(--terminal-purple);
+  color: var(--terminal-white);
+  background: rgba(168, 85, 247, 0.1);
 }
 
 /* Empty state */
 .history-empty {
-  color: #9aa0a6;
-  font-size: 13px;
+  color: var(--terminal-text-dim);
+  font-size: 12px;
   padding: 12px;
-  overflow-x: hidden;
 }
 
 /* Scrollable list */
@@ -69,45 +65,19 @@
   flex: 1;
   overflow-y: auto !important;
   overflow-x: hidden;
-  /* prevent horizontal scroll */
   width: 100%;
   box-sizing: border-box;
-
-  /* Firefox thin scrollbar */
-  scrollbar-width: thin;
-  scrollbar-color: #555 transparent;
-}
-
-/* Chrome, Edge, Safari thin scrollbar */
-.history-list::-webkit-scrollbar {
-  width: 1px !important;
-  /* very thin */
-}
-
-
-.history-list::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.history-list::-webkit-scrollbar-thumb {
-  background-color: #555;
-  border-radius: 2px;
-}
-
-.history-list::-webkit-scrollbar-thumb:hover {
-  background-color: #888;
 }
 
 /* Individual items */
 .history-item {
-  background: #15181c;
-  border: 1px solid #23262a;
-  border-radius: 10px;
-  padding: 6px 4px;
-  margin: 4px 0;
+  background: #000000;
+  border: 1px solid var(--terminal-border);
+  border-radius: 4px;
+  padding: 6px 12px 6px 6px;
+  margin: 6px 0;
   width: 100%;
   box-sizing: border-box;
-  overflow-x: hidden;
 }
 
 .history-main {
@@ -118,49 +88,49 @@
   background: transparent;
   border: 0;
   cursor: pointer;
-  overflow-x: hidden;
+  padding: 0;
 }
 
 /* Pills */
 .pill {
-  padding: 2px 4px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  color: white;
+  padding: 2px 6px;
+  border-radius: 2px;
+  font-size: 10px;
+  font-weight: bold;
+  color: #fff;
+  text-transform: uppercase;
 }
 
 .method-get {
-  background: #0b8043;
+  background: var(--terminal-green);
 }
 
 .method-post {
-  background: #1a73e8;
+  background: var(--terminal-blue);
 }
 
 .method-put {
-  background: #e37400;
+  background: #d97706;
 }
 
 .method-delete {
-  background: #d93025;
+  background: #dc2626;
 }
 
 .method-patch {
-  background: #8847ff;
+  background: var(--terminal-pink);
 }
 
 /* URL text */
 .url {
-  color: #e8eaed;
-  font-size: 13px;
+  color: var(--terminal-text-bright);
+  font-size: 12px;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
   flex: 1;
+  text-align: left;
   min-width: 0;
-  /* fix flex overflow */
 }
 
 /* Meta info */
@@ -168,36 +138,36 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-top: 4px;
-  color: #9aa0a6;
-  font-size: 12px;
-  overflow-x: hidden;
+  margin-top: 6px;
+  color: var(--terminal-text-dim);
+  font-size: 11px;
 }
 
 .history-meta .status {
-  color: #8ab4f8;
+  color: var(--terminal-green);
 }
 
 .history-meta .status.err {
-  color: #f28b82;
+  color: #f87171;
 }
 
 .history-meta .dot {
-  opacity: 0.5;
+  opacity: 0.4;
 }
 
 .history-meta .del {
   margin-left: auto;
   background: transparent;
   border: 0;
-  color: #9aa0a6;
+  color: var(--terminal-text-dim);
   cursor: pointer;
-  font-size: 12px;
-  flex-shrink: 0;
+  font-size: 13px;
+  font-family: var(--terminal-font);
+  padding-left: 6px;
 }
 
 .history-meta .del:hover {
-  color: #e8eaed;
+  color: #ef4444;
 }
 
 /* Groups */
@@ -208,34 +178,40 @@
 .group-header {
   width: 100%;
   text-align: left;
-  background: #111315;
-  border: none;
+  background: #000000;
+  border: 1px solid var(--terminal-border);
   padding: 6px 12px;
-  color: #9aa0a6;
-  font-size: 12px;
-  font-weight: 600;
+  color: var(--terminal-text-dim);
+  font-family: var(--terminal-font);
+  font-size: 11px;
+  font-weight: bold;
   cursor: pointer;
   display: flex;
   justify-content: space-between;
   align-items: center;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
   box-sizing: border-box;
-  overflow-x: hidden;
+  margin-bottom: 4px;
 }
 
 .group-header:hover {
-  color: #e8eaed;
-  background: #1a1d21;
-  border-radius: 6px;
+  color: var(--terminal-white);
+  border-color: var(--terminal-purple);
+  background: rgba(168, 85, 247, 0.05);
 }
 
 .chevron {
-  font-size: 11px;
+  font-size: 10px;
   opacity: 0.6;
   transition: transform 0.2s ease;
 }
 
 .group-header.open .chevron {
   transform: rotate(90deg);
+}
+
+@media (max-width: 768px) {
+  .history {
+    width: 100% !important;
+  }
 }

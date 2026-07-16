@@ -33,7 +33,8 @@ export const register = async (req, res, next) => {
         token,
         email: user.email,
         firstName: user.firstName,
-        lastName: user.lastName
+        lastName: user.lastName,
+        createdAt: user.createdAt
       }
     });
   } catch (err) {
@@ -63,7 +64,8 @@ export const login = async (req, res, next) => {
         token,
         email: user.email,
         firstName: user.firstName,
-        lastName: user.lastName
+        lastName: user.lastName,
+        createdAt: user.createdAt
       }
     });
   } catch (err) {

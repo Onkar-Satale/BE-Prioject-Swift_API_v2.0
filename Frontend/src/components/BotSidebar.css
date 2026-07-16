@@ -1,18 +1,20 @@
+/* frontend/src/components/BotSidebar.css */
+
 .bot-sidebar {
   position: fixed;
   top: 0;
   right: 0;
   width: 360px;
   height: 100vh;
-  background: #1f1f1f;
-  box-shadow: -4px 0 12px rgba(0, 0, 0, 0.4);
-  border-left: 1px solid #333;
+  background: var(--terminal-bg);
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.6);
+  border-left: 1px solid var(--terminal-border);
   display: flex;
   flex-direction: column;
-  font-family: "Segoe UI", sans-serif;
-  color: #eee;
+  font-family: var(--terminal-font);
+  color: var(--terminal-text-bright);
   z-index: 999;
-  border-radius: 8px 0 0 8px;
+  border-radius: 0;
   overflow: hidden;
   transition: all 0.3s ease;
 }
@@ -22,11 +24,11 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #2a2a2a;
+  background: #000000;
   padding: 12px 16px;
-  font-weight: 600;
-  font-size: 16px;
-  border-bottom: 1px solid #333;
+  font-weight: bold;
+  font-size: 15px;
+  border-bottom: 1px solid var(--terminal-border);
   position: relative;
 }
 
@@ -36,7 +38,6 @@
   gap: 10px;
 }
 
-/* Hamburger lines */
 .panel-toggle {
   width: 22px;
   display: flex;
@@ -50,7 +51,7 @@
   display: block;
   height: 2px;
   width: 100%;
-  background-color: #ccc;
+  background-color: var(--terminal-text-dim);
   border-radius: 1px;
   transition: all 0.2s ease;
 }
@@ -58,27 +59,25 @@
 .close-btn {
   background: transparent;
   border: none;
-  color: #ccc;
+  color: var(--terminal-text-dim);
   font-size: 18px;
   cursor: pointer;
-  transition: color 0.2s ease;
+  transition: color 0.15s ease;
 }
 
 .close-btn:hover {
-  color: #ff0000;
-  /* orange hover */
+  color: #ef4444;
 }
 
 /* SLIDING PANEL */
 .bot-panel {
   position: absolute;
   left: -260px;
-  /* fully hidden offscreen */
   top: 0;
   width: 240px;
   height: 100%;
-  background: #252526;
-  border-right: 1px solid #444;
+  background: #000000;
+  border-right: 1px solid var(--terminal-border);
   display: flex;
   flex-direction: column;
   padding: 16px;
@@ -97,23 +96,27 @@
 
 .bot-panel h4 {
   margin: 0 0 10px 0;
-  color: #fff;
+  color: var(--terminal-white);
+  font-size: 14px;
 }
 
 .bot-panel button {
-  background: #e07408;
-  /* orange theme */
-  border: none;
-  color: white;
+  background: transparent;
+  border: 1px solid var(--terminal-border);
+  color: var(--terminal-text-dim);
   padding: 8px;
-  border-radius: 6px;
+  border-radius: 4px;
   cursor: pointer;
   text-align: left;
-  transition: background 0.2s ease;
+  font-family: var(--terminal-font);
+  font-size: 13px;
+  transition: all 0.15s ease;
 }
 
 .bot-panel button:hover {
-  background: #b35600;
+  border-color: var(--terminal-purple);
+  color: var(--terminal-white);
+  background: rgba(168, 85, 247, 0.1);
 }
 
 /* BODY */
@@ -123,31 +126,33 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  background: linear-gradient(to bottom, #1f1f1f 0%, #181818 100%);
+  gap: 12px;
+  background: var(--terminal-bg);
 }
 
 /* MESSAGE BUBBLES */
 .bot-message {
-  padding: 8px 12px;
-  border-radius: 16px;
+  padding: 10px 14px;
+  border-radius: 4px;
   max-width: 85%;
   word-wrap: break-word;
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.4;
 }
 
 .bot-message.bot {
-  background: #2a2a2a;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--terminal-border);
   align-self: flex-start;
-  color: #d0d0d0;
+  color: var(--terminal-text-bright);
 }
 
 .bot-message.user {
-  background: #ff7f00;
-  /* orange user messages */
-  color: white;
+  background: rgba(168, 85, 247, 0.1);
+  border: 1px solid var(--terminal-purple);
+  color: var(--terminal-white);
   align-self: flex-end;
+  box-shadow: 0 0 6px var(--terminal-purple-glow);
 }
 
 /* FOOTER */
@@ -155,165 +160,115 @@
   display: flex;
   gap: 8px;
   padding: 10px 12px;
-  border-top: 1px solid #333;
-  background: #2a2a2a;
+  border-top: 1px solid var(--terminal-border);
+  background: #000000;
 }
 
 .bot-footer input {
   flex: 1;
-  padding: 10px 12px;
-  border-radius: 20px;
-  border: 1px solid #444;
-  background: #121212;
-  color: #fff;
-  font-size: 14px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid var(--terminal-border);
+  background: var(--terminal-bg);
+  color: var(--terminal-white);
+  font-family: var(--terminal-font);
+  font-size: 13px;
   outline: none;
+  transition: all 0.15s ease;
 }
 
 .bot-footer input:focus {
-  border: 1px solid #ff7f00;
-  /* orange focus */
-  box-shadow: 0 0 6px #ff7f0044;
+  border: 1px solid var(--terminal-purple);
+  box-shadow: 0 0 6px var(--terminal-purple-glow);
 }
 
 .bot-footer button {
-  padding: 10px 16px;
-  border-radius: 20px;
-  border: none;
-  background: #ff7f00;
-  /* orange button */
-  color: #fff;
-  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: 1px solid var(--terminal-purple);
+  background: transparent;
+  color: var(--terminal-purple);
+  font-family: var(--terminal-font);
+  font-weight: bold;
+  font-size: 13px;
   cursor: pointer;
+  transition: all 0.15s ease;
 }
 
 .bot-footer button:hover {
-  background: #e66e00;
+  background: var(--terminal-purple-dim);
+  color: var(--terminal-white);
+  box-shadow: 0 0 8px var(--terminal-purple-glow);
 }
 
-/* ANIMATIONS */
-@keyframes slideIn {
-  from {
-    transform: translateX(100%);
-  }
-
-  to {
-    transform: translateX(0);
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
+/* CURL CONTAINER */
 .curl-box {
-  background: #161617;
-  border-radius: 8px;
+  background: #000000;
+  border: 1px solid var(--terminal-border);
+  border-radius: 4px;
   padding: 12px;
-  margin-top: 6px;
+  margin-top: 8px;
+  margin-bottom: 8px;
   position: relative;
-  font-family: monospace;
-  color: #e5e7eb;
+  font-family: var(--terminal-font);
+  color: var(--terminal-text-bright);
 }
 
 .curl-box pre {
   margin: 0;
   white-space: pre-wrap;
   word-break: break-word;
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .copy-btn2 {
   position: absolute;
   top: 8px;
   right: 8px;
-  background: #00aa03;
-  border: none;
-  color: #ffffff;
-  padding: 2px 5px;
-  border-radius: 6px;
+  background: transparent;
+  border: 1px solid var(--terminal-purple);
+  color: var(--terminal-purple);
+  padding: 3px 8px;
+  border-radius: 4px;
   cursor: pointer;
-  font-size: 12px;
+  font-family: var(--terminal-font);
+  font-size: 11px;
+  transition: all 0.15s ease;
 }
 
 .copy-btn2:hover {
-  opacity: 0.9;
-  background: #008802;
-
+  background: rgba(168, 85, 247, 0.1);
+  color: var(--terminal-white);
+  border-color: var(--terminal-purple);
 }
 
-
-
-
-
-
-
-
-
-
-.bot-section-title {
-  font-weight: 700;
-  font-size: 14.5px;
-  margin-top: 10px;
-  margin-bottom: 4px;
-  padding: 4px 6px;
-  /* reduced padding */
-  border-left: 2px solid transparent;
-  /* fixed */
+/* Bot Special Heading Box */
+.bot-heading-box {
+  display: block; /* Spans full width of the message bubble */
+  background: rgba(249, 115, 22, 0.06); /* very faint orange background */
+  border: none !important; /* NO BORDER AT ALL */
   border-radius: 4px;
+  padding: 6px 12px;
+  margin-top: 10px;
+  margin-bottom: 8px;
+  color: var(--terminal-orange);
+  font-weight: bold;
+  font-size: 13px;
   cursor: default;
-  transition:
-    background-color 0.2s ease,
-    border-color 0.2s ease,
-    transform 0.15s ease;
-
-  color: #e27910;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
 }
 
-
-/* Hover effect */
-.bot-section-title:hover {
-  background-color: rgba(255, 127, 0, 0.05);
-  border-left-color: #ff7f00;
-  transform: translateX(1px);
-}
-
-
-
-/* Normal text */
-.bot-text-line {
-  font-size: 13.5px;
-  line-height: 1.5;
-  padding-left: 6px;
-  /* reduced from 11px */
-}
-
-.bot-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.3);
-  z-index: 999;
-}
-
-.bot-sidebar {
-  position: absolute;
-  right: 0;
-  top: 0;
-  height: 100%;
-  width: 380px;
-  background: #1e1e1e;
-  z-index: 1000;
+.bot-heading-box:hover {
+  background: rgba(249, 115, 22, 0.18); /* slightly more visible orange on hover */
+  border: none !important;
+  box-shadow: 0 0 6px rgba(249, 115, 22, 0.15);
 }
 
 @media (max-width: 768px) {
   .bot-sidebar {
     width: 100% !important;
+    height: calc(100vh - 55px) !important;
   }
 }
