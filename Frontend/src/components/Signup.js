@@ -92,7 +92,7 @@ export default function SignupPage() {
       </form>
       <p>
         Already have an account?{" "}
-        <span style={{ color: "blue", cursor: "pointer" }} onClick={() => navigate("/login")}>
+        <span style={{ color: "var(--terminal-purple)", cursor: "pointer" }} onClick={() => navigate("/login")}>
           Login here
         </span>
       </p>
