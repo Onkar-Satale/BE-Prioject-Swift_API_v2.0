@@ -278,7 +278,7 @@
 @media (max-width: 768px) {
   .bot-sidebar {
     width: 100% !important;
-    height: calc(100vh - 55px) !important;
-    height: calc(calc(var(--vh, 1vh) * 100) - 55px) !important;
+    height: 100vh !important;
+    height: calc(var(--vh, 1vh) * 100) !important;
   }
 }

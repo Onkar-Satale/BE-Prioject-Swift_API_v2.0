@@ -562,8 +562,8 @@ body {
   .app {
     height: calc(100vh - 55px) !important;
     height: calc(calc(var(--vh, 1vh) * 100) - 55px) !important;
-    margin-bottom: 55px;
-    overflow-y: auto;
+    margin-bottom: 0 !important;
+    overflow: hidden !important;
   }
 
   .top-bar {
