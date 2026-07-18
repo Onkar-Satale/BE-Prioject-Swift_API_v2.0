@@ -112,3 +112,13 @@ body {
   color: var(--terminal-white);
   background: rgba(168, 85, 247, 0.1);
 }
+
+.doc-page a {
+  color: var(--terminal-purple) !important;
+  text-decoration: underline !important;
+  transition: color 0.15s ease;
+}
+
+.doc-page a:hover {
+  color: var(--terminal-white) !important;
+}

@@ -33,7 +33,7 @@ body {
   background: transparent;
   border: none;
   color: var(--terminal-text-dim);
-  font-size: 20px;
+  font-size: 16px !important;
   padding: 12px;
   cursor: pointer;
   position: relative;
@@ -464,23 +464,37 @@ body {
 }
 
 .status-2xx,
-.status-200, .status-201, .status-202, .status-204 {
+.status-200,
+.status-201,
+.status-202,
+.status-204 {
   background-color: var(--terminal-green);
   box-shadow: 0 0 6px var(--terminal-green);
 }
 
 .status-3xx,
-.status-300, .status-301, .status-302, .status-304 {
+.status-300,
+.status-301,
+.status-302,
+.status-304 {
   background-color: #eab308;
 }
 
 .status-4xx,
-.status-400, .status-401, .status-403, .status-404, .status-405, .status-408 {
+.status-400,
+.status-401,
+.status-403,
+.status-404,
+.status-405,
+.status-408 {
   background-color: #ef4444;
 }
 
 .status-5xx,
-.status-500, .status-501, .status-502, .status-503 {
+.status-500,
+.status-501,
+.status-502,
+.status-503 {
   background-color: #b91c1c;
 }
 
@@ -628,7 +642,8 @@ body {
     gap: 4px;
   }
 
-  .view-btn, .save-btn {
+  .view-btn,
+  .save-btn {
     padding: 4px 8px;
     font-size: 12px;
   }

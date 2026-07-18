@@ -531,10 +531,55 @@ export default function PostmanClone() {
   };
 
   const handleHistorySelect = (item) => {
+    const fullUrlString = item.url || "";
     setMethod(item.method || "GET");
-    setUrl(item.url || "");
     setResponse("");
     setStatus(item.status ?? null);
+
+    if (!fullUrlString) {
+      setUrl("");
+      setParamsObj([{ key: "", value: "", description: "" }]);
+      return;
+    }
+
+    try {
+      // Try parsing as absolute URL
+      const parsedUrl = new URL(fullUrlString);
+      const baseUrl = parsedUrl.origin + parsedUrl.pathname;
+      setUrl(baseUrl);
+
+      const searchParams = Array.from(parsedUrl.searchParams.entries());
+      if (searchParams.length > 0) {
+        const newParams = searchParams.map(([key, value]) => ({
+          key,
+          value,
+          description: ""
+        }));
+        newParams.push({ key: "", value: "", description: "" });
+        setParamsObj(newParams);
+      } else {
+        setParamsObj([{ key: "", value: "", description: "" }]);
+      }
+    } catch (e) {
+      // Fallback for relative or incomplete URLs
+      if (fullUrlString.includes("?")) {
+        const parts = fullUrlString.split("?");
+        const baseUrl = parts[0];
+        setUrl(baseUrl);
+
+        const searchParams = new URLSearchParams(parts[1]);
+        const newParams = Array.from(searchParams.entries()).map(([key, value]) => ({
+          key,
+          value,
+          description: ""
+        }));
+        newParams.push({ key: "", value: "", description: "" });
+        setParamsObj(newParams);
+      } else {
+        setUrl(fullUrlString);
+        setParamsObj([{ key: "", value: "", description: "" }]);
+      }
+    }
   };
 
   // -------------------------------------------
