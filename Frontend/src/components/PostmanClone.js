@@ -172,7 +172,7 @@ export default function PostmanClone() {
 
     const doDrag = (event) => {
       const currentY = event.type === 'touchmove' ? event.touches[0].clientY : event.clientY;
-      const newHeight = startHeight + (currentY - startY);
+      const newHeight = startHeight - (currentY - startY);
       setResponseHeight(newHeight > 100 ? newHeight : 100); // minimum 100px
     };
 
