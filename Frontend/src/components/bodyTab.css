@@ -138,7 +138,7 @@
 /* ==== No Body Hint ==== */
 .no-body-hint {
   padding: 10px;
-  background-color: #000000;
+  background-color: var(--terminal-bg);
   color: #bbb;
   font-size: 13px;
   border: 1px dashed var(--terminal-border);
@@ -156,7 +156,7 @@
 /* ==== Shared Hint Box Style ==== */
 .body-hint {
   padding: 10px;
-  background-color: #000000;
+  background-color: var(--terminal-bg);
   color: #c0c0c0;
   font-size: 14px;
   border: 1px dashed var(--terminal-border);
@@ -169,7 +169,7 @@
 /* ==== No Body Hint (kept separate if you want different look) ==== */
 .no-body-hint {
   padding: 10px;
-  background-color: #000000;
+  background-color: var(--terminal-bg);
   color: #d1d1d1;
   font-size: 14px;
   border: 1px dashed var(--terminal-border);
@@ -240,7 +240,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 6px 12px;
-  background-color: #000000;
+  background-color: var(--terminal-bg);
   border: 1px solid var(--terminal-border);
   border-radius: 6px;
   margin-top: 7px;
@@ -279,5 +279,5 @@
 #json-editor .ace_gutter,
 #json-editor .ace_scroller,
 #json-editor .ace_content {
-  background-color: #000000 !important;
+  background-color: var(--terminal-bg) !important;
 }
