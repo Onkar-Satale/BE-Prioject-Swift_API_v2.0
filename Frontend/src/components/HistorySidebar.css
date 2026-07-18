@@ -26,7 +26,7 @@
 
 .history-header h3 {
   margin: 0;
-  font-size: 13px;
+  font-size: 16px !important;
   color: var(--terminal-white);
   font-weight: bold;
 }
@@ -124,7 +124,7 @@
 /* URL text */
 .url {
   color: var(--terminal-text-bright);
-  font-size: 12px;
+  font-size: 13.5px !important;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -140,7 +140,7 @@
   gap: 6px;
   margin-top: 6px;
   color: var(--terminal-text-dim);
-  font-size: 11px;
+  font-size: 12px !important;
 }
 
 .history-meta .status {
@@ -183,7 +183,7 @@
   padding: 6px 12px;
   color: var(--terminal-text-dim);
   font-family: var(--terminal-font);
-  font-size: 11px;
+  font-size: 12.5px !important;
   font-weight: bold;
   cursor: pointer;
   display: flex;

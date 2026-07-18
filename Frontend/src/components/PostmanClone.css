@@ -311,7 +311,7 @@ body {
 
 .response-left h4 {
   margin: 0;
-  font-size: 13px;
+  font-size: 16px !important;
   font-weight: bold;
   color: var(--terminal-white);
 }
@@ -643,7 +643,7 @@ body {
   }
 
   .response-left h4 {
-    font-size: 13px;
+    font-size: 15px !important;
   }
 
   .view-buttons {
