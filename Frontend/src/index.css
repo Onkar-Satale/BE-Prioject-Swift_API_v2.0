@@ -143,3 +143,29 @@ button:active {
   transform: scale(0.97) !important;
   transition: transform 0.05s ease !important;
 }
+
+/* Global text size scale up for mobile screens */
+@media (max-width: 768px) {
+  html,
+  body,
+  p,
+  span,
+  div,
+  li,
+  label,
+  pre,
+  td,
+  th,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  input,
+  textarea,
+  select,
+  button {
+    font-size: 13.8px !important;
+  }
+}
