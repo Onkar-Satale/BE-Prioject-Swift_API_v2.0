@@ -6,6 +6,7 @@
   right: 0;
   width: 360px;
   height: 100vh;
+  height: calc(var(--vh, 1vh) * 100);
   background: var(--terminal-bg);
   box-shadow: -4px 0 20px rgba(0, 0, 0, 0.6);
   border-left: 1px solid var(--terminal-border);
@@ -278,5 +279,6 @@
   .bot-sidebar {
     width: 100% !important;
     height: calc(100vh - 55px) !important;
+    height: calc(calc(var(--vh, 1vh) * 100) - 55px) !important;
   }
 }

@@ -13,6 +13,7 @@ body {
 .layout {
   display: flex;
   height: 100vh;
+  height: calc(var(--vh, 1vh) * 100);
   overflow: hidden;
   background-color: var(--terminal-bg);
 }
@@ -551,6 +552,7 @@ body {
     left: 0;
     width: 100vw;
     height: calc(100vh - 55px);
+    height: calc(calc(var(--vh, 1vh) * 100) - 55px);
     z-index: 999;
     background: var(--terminal-bg);
     border-right: none;
@@ -559,6 +561,7 @@ body {
 
   .app {
     height: calc(100vh - 55px) !important;
+    height: calc(calc(var(--vh, 1vh) * 100) - 55px) !important;
     margin-bottom: 55px;
     overflow-y: auto;
   }
