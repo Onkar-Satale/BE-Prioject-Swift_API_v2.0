@@ -410,7 +410,7 @@ export default function BotSidebar({
         {/* HEADER */}
         <div className="bot-header">
           <div className="bot-header-left">
-            <h3 style={{ color: "#ff8810", fontWeight: "bold" }}>JARVIS is here to HELP !</h3>
+            <h3 style={{ color: "#ff8810", fontWeight: "bold", margin: 0, whiteSpace: "nowrap" }} className="bot-title">JARVIS is here to HELP !</h3>
           </div>
           <button className="close-btn" onClick={onClose}>✖</button>
         </div>
@@ -531,19 +531,20 @@ export default function BotSidebar({
             <span></span>
             <span></span>
           </div>
-          <h3 style={{ color: "#ff8810", fontWeight: "bold", fontSize: "14px", margin: 0, whiteSpace: "nowrap" }}>
+          <h3 style={{ color: "#ff8810", fontWeight: "bold", margin: 0, whiteSpace: "nowrap" }} className="bot-title">
             JARVIS is here to HELP !
           </h3>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
           <button 
             onClick={() => setShowClearConfirm(true)} 
-            style={{ background: "none", border: "none", color: "#fff", cursor: "pointer", fontSize: "14px", padding: 0, display: "flex", alignItems: "center" }} 
+            className="refresh-btn"
+            style={{ background: "none", border: "none", color: "#fff", cursor: "pointer", padding: 0, display: "flex", alignItems: "center" }} 
             title="Refresh/Clear Chat"
           >
             🔄
           </button>
-          <button className="close-btn" onClick={onClose} style={{ padding: 0, display: "flex", alignItems: "center", fontSize: "16px" }}>✖</button>
+          <button className="close-btn" onClick={onClose} style={{ padding: 0, display: "flex", alignItems: "center" }}>✖</button>
         </div>
       </div>
 

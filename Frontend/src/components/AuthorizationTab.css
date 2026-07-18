@@ -107,5 +107,4 @@
 .auth-input:focus {
   outline: none;
   border-color: var(--terminal-purple);
-  box-shadow: 0 0 6px var(--terminal-purple-glow);
 }

@@ -34,7 +34,6 @@ body {
   padding: 24px;
   border-radius: 4px;
   border: 1px solid var(--terminal-border);
-  box-shadow: 0 10px 30px var(--terminal-purple-glow);
   box-sizing: border-box;
 }
 
@@ -70,7 +69,6 @@ textarea:-webkit-autofill {
 .support-form input:focus,
 .support-form textarea:focus {
   border-color: var(--terminal-purple);
-  box-shadow: 0 0 6px var(--terminal-purple-glow);
 }
 
 /* Labels */
@@ -123,7 +121,6 @@ textarea:-webkit-autofill {
 .support-form button[type="submit"]:hover {
   background-color: var(--terminal-purple-dim);
   color: var(--terminal-white);
-  box-shadow: 0 0 8px var(--terminal-purple-glow);
 }
 
 .support-form button[type="submit"]:disabled {
@@ -150,7 +147,6 @@ textarea:-webkit-autofill {
   border-color: var(--terminal-purple);
   color: var(--terminal-white);
   background: rgba(168, 85, 247, 0.1);
-  box-shadow: 0 0 6px rgba(168, 85, 247, 0.2);
 }
 
 /* Success status text styling */

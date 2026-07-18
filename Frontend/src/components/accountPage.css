@@ -80,7 +80,6 @@
   font-size: 18px !important;
   color: var(--terminal-purple);
   margin-right: 6px;
-  text-shadow: 0 0 10px var(--terminal-purple-glow);
 }
 
 .header-actions {
@@ -109,7 +108,6 @@
   border-color: var(--terminal-purple);
   color: var(--terminal-white);
   background: rgba(168, 85, 247, 0.1);
-  box-shadow: 0 0 6px rgba(168, 85, 247, 0.2);
 }
 
 .logout-btn:hover,
@@ -156,7 +154,6 @@
   font-size: 11px;
   line-height: 1.25;
   margin-top: 10px;
-  text-shadow: 0 0 8px var(--terminal-purple-glow);
 }
 
 /* Structured Account Details */
@@ -254,7 +251,6 @@
 
 .terminal-link-btn:hover {
   color: var(--terminal-white);
-  text-shadow: 0 0 6px var(--terminal-purple-glow);
 }
 
 /* Terminal Footer */
@@ -274,7 +270,6 @@
 .terminal-purple-link {
   color: var(--terminal-purple);
   font-weight: bold;
-  text-shadow: 0 0 6px var(--terminal-purple-glow);
 }
 
 .terminal-status-light {
@@ -427,7 +422,6 @@
   max-width: 320px;
   width: 90%;
   border-radius: 6px;
-  box-shadow: 0 10px 30px rgba(168, 85, 247, 0.15);
   display: flex;
   flex-direction: column;
   gap: 14px;

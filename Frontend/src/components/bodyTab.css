@@ -273,3 +273,11 @@
   color: var(--terminal-white);
   border-color: var(--terminal-purple);
 }
+
+/* Force Ace Editor background to be black */
+#json-editor,
+#json-editor .ace_gutter,
+#json-editor .ace_scroller,
+#json-editor .ace_content {
+  background-color: #000000 !important;
+}

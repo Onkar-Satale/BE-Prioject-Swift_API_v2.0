@@ -49,7 +49,7 @@ input,
 textarea,
 select,
 button {
-  font-size: 12px !important;
+  font-size: 12.4px !important;
 }
 
 /* Global scrollbars styling */
@@ -107,7 +107,11 @@ textarea:-webkit-autofill:active {
   border-radius: 4px !important;
   z-index: 9999 !important;
   font-size: 11px !important;
-  box-shadow: 0 4px 20px var(--terminal-purple-glow) !important;
+  font-family: var(--terminal-font), monospace !important;
+  font-weight: bold !important;
+  line-height: 1.4 !important;
+  text-align: left !important;
+  box-shadow: none !important;
   animation: slideIn 0.25s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
   white-space: normal !important;
   word-break: break-word !important;
@@ -123,4 +127,19 @@ textarea:-webkit-autofill:active {
     transform: translateX(0);
     opacity: 1;
   }
+}
+
+/* Eliminate 300ms touch delay on mobile/touch screens */
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation !important;
+}
+
+/* Snappy instant tactile click feedback for all buttons */
+button:active {
+  transform: scale(0.97) !important;
+  transition: transform 0.05s ease !important;
 }

@@ -10,8 +10,12 @@ class HistoryService {
   }
 
   async pushHistoryItem(userId, historyEntry) {
-    // We make sure it has an _id so we can return it reliably
-    const newEntry = { ...historyEntry, _id: new mongoose.Types.ObjectId() };
+    // We make sure it has an _id and time so we can return it reliably
+    const newEntry = { 
+      ...historyEntry, 
+      _id: new mongoose.Types.ObjectId(),
+      time: historyEntry.time || new Date()
+    };
     
     await User.findByIdAndUpdate(userId, {
       $push: { 

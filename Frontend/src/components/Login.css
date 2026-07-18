@@ -19,7 +19,6 @@
   padding: 30px 25px;
   border-radius: 6px;
   border: 1px solid var(--terminal-border);
-  box-shadow: 0 10px 30px var(--terminal-purple-glow);
   width: 100%;
   max-width: 400px;
   display: flex;
@@ -33,7 +32,6 @@
   font-weight: bold;
   margin-bottom: 20px;
   color: var(--terminal-white);
-  text-shadow: 0 0 6px var(--terminal-purple-glow);
 }
 
 .login-page label {
@@ -56,7 +54,6 @@
 
 .login-page input:focus {
   border-color: var(--terminal-purple);
-  box-shadow: 0 0 6px var(--terminal-purple-glow);
 }
 
 .login-page button {
@@ -75,7 +72,6 @@
 .login-page button:hover {
   background-color: var(--terminal-purple-dim);
   color: var(--terminal-white);
-  box-shadow: 0 0 8px var(--terminal-purple-glow);
 }
 
 .login-page button:disabled {
@@ -110,5 +106,4 @@
 
 .login-page p span:hover {
   color: var(--terminal-white);
-  text-shadow: 0 0 6px var(--terminal-purple-glow);
 }

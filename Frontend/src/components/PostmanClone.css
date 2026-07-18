@@ -48,7 +48,6 @@ body {
   background: rgba(168, 85, 247, 0.1);
   border-radius: 4px;
   color: var(--terminal-white);
-  box-shadow: 0 0 6px var(--terminal-purple-glow);
 }
 
 .tooltip {
@@ -68,7 +67,6 @@ body {
   pointer-events: none;
   transition: opacity 0.2s ease, transform 0.2s ease;
   z-index: 1000;
-  box-shadow: 0 0 8px var(--terminal-purple-glow);
 }
 
 .sidebar-btn:hover .tooltip {
@@ -174,7 +172,6 @@ body {
 .params-table input:focus {
   outline: none;
   border: 1px solid var(--terminal-purple) !important;
-  box-shadow: 0 0 6px var(--terminal-purple-glow) !important;
 }
 
 /* Redesigned flat Send button */
@@ -195,7 +192,6 @@ body {
 .send-btn:hover {
   background: var(--terminal-purple-dim);
   color: var(--terminal-white);
-  box-shadow: 0 0 8px var(--terminal-purple-glow);
 }
 
 /* --- TABS --- */
@@ -344,7 +340,6 @@ body {
   background: rgba(168, 85, 247, 0.1);
   border-color: var(--terminal-purple);
   color: var(--terminal-white);
-  box-shadow: 0 0 6px var(--terminal-purple-glow);
 }
 
 /* Orange Accent Save Button */

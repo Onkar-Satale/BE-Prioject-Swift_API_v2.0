@@ -18,6 +18,17 @@ import { PostmanContext } from "../context/PostmanContext";
 import { showToast } from "../utils/toast";
 
 
+const getUserIdFromToken = () => {
+  const token = localStorage.getItem("authToken");
+  if (!token) return null;
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload.id || payload._id || null;
+  } catch {
+    return null;
+  }
+};
+
 export default function PostmanClone() {
   const {
     method, setMethod,
@@ -38,7 +49,23 @@ export default function PostmanClone() {
   // const [response, setResponse] = useState("");
   // const [status, setStatus] = useState(null);
   // const [activeTab, setActiveTab] = useState("Params");
-  const [history, setHistory] = useState([]);
+  const [history, setHistory] = useState(() => {
+    try {
+      const userId = getUserIdFromToken();
+      if (!userId) return [];
+      const saved = localStorage.getItem(`userHistory_${userId}`);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    const userId = getUserIdFromToken();
+    if (userId) {
+      localStorage.setItem(`userHistory_${userId}`, JSON.stringify(history));
+    }
+  }, [history]);
   const [activePanel, setActivePanel] = useState(
     sessionStorage.getItem("activePanel") || null
   );
@@ -473,13 +500,16 @@ export default function PostmanClone() {
     try {
       // OPTIMISTIC UI: Remove from list instantly
       setHistory(prev => prev.filter(item => item._id !== historyId));
+      showToast("🗑️ History item deleted!"); // Show toast instantly
 
-      await deleteHistoryItem(historyId); // ✅ uses authToken internally
-      showToast("🗑️ History item deleted!");
-      // Removed loadUserHistory() to prevent lag
+      // Execute network request in background
+      deleteHistoryItem(historyId).catch((err) => {
+        console.error("Failed to delete history item:", err);
+        loadUserHistory(); // recover if failed
+      });
     } catch (err) {
       console.error("Failed to delete history item:", err);
-      await loadUserHistory(); // recover if failed
+      loadUserHistory();
     }
   };
 
@@ -487,13 +517,16 @@ export default function PostmanClone() {
     try {
       // OPTIMISTIC UI: Clear list instantly
       setHistory([]);
+      showToast("🧹 All history cleared!"); // Show toast instantly
 
-      await clearHistory(); // ✅ uses authToken internally
-      showToast("🧹 All history cleared!");
-      // Removed loadUserHistory() to prevent lag
+      // Execute network request in background
+      clearHistory().catch((err) => {
+        console.error("Failed to clear history:", err);
+        loadUserHistory(); // recover if failed
+      });
     } catch (err) {
       console.error("Failed to clear history:", err);
-      await loadUserHistory(); // recover if failed
+      loadUserHistory();
     }
   };
 
@@ -556,16 +589,14 @@ export default function PostmanClone() {
         </button>
       </div>
 
-      {activePanel === "history" && (
-        <div className="sidebar-large">
-          <HistorySidebar
-            items={history}
-            onSelect={handleHistorySelect}
-            onDelete={handleHistoryDelete}
-            onClear={handleHistoryClear}
-          />
-        </div>
-      )}
+      <div className="sidebar-large" style={{ display: activePanel === "history" ? "block" : "none" }}>
+        <HistorySidebar
+          items={history}
+          onSelect={handleHistorySelect}
+          onDelete={handleHistoryDelete}
+          onClear={handleHistoryClear}
+        />
+      </div>
 
       {activePanel === "account" && (
         <div className="sidebar-large">

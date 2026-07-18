@@ -5,12 +5,17 @@ import "./HistorySidebar.css";
 function groupByDate(items) {
   const groups = {};
 
-  const sorted = [...items].sort(
-    (a, b) => new Date(b.time) - new Date(a.time)
-  );
+  const sorted = [...items].sort((a, b) => {
+    const timeA = a.time ? new Date(a.time) : new Date(0);
+    const timeB = b.time ? new Date(b.time) : new Date(0);
+    return timeB - timeA;
+  });
 
   sorted.forEach((h) => {
-    const d = new Date(h.time);
+    let d = new Date(h.time);
+    if (isNaN(d.getTime())) {
+      d = new Date(0); // fallback to unix epoch if invalid
+    }
     const today = new Date();
     const yesterday = new Date();
     yesterday.setDate(today.getDate() - 1);
@@ -50,15 +55,17 @@ export default function HistorySidebar({ items = [], onSelect, onDelete, onClear
       {/* Single Item Delete Modal */}
       {itemToDelete && (
         <div className="modal-overlay">
-          <div className="confirm-modal">
-            <h3>⚠️ Delete Request</h3>
-            <p>Do you want to delete this request from history?</p>
+          <div className="confirm-modal terminal-modal">
+            <div className="modal-title">⚠️ DELETE REQUEST</div>
+            <div className="modal-body-text">
+              Do you want to delete this request from history?
+            </div>
             <div className="modal-actions">
-              <button className="btn-no" onClick={() => setItemToDelete(null)}>No, Cancel</button>
+              <button className="btn-no" onClick={() => setItemToDelete(null)}>[ NO, CANCEL ]</button>
               <button className="btn-yes" onClick={() => {
                 onDelete(itemToDelete);
                 setItemToDelete(null);
-              }}>Yes, Delete</button>
+              }}>[ YES, DELETE ]</button>
             </div>
           </div>
         </div>
@@ -67,15 +74,17 @@ export default function HistorySidebar({ items = [], onSelect, onDelete, onClear
       {/* Clear Confirmation Modal */}
       {showClearConfirm && (
         <div className="modal-overlay">
-          <div className="confirm-modal">
-            <h3>⚠️ Clear History</h3>
-            <p>Do you really want to delete all requests in history?</p>
+          <div className="confirm-modal terminal-modal">
+            <div className="modal-title">⚠️ CLEAR HISTORY</div>
+            <div className="modal-body-text">
+              Do you really want to delete all requests in history?
+            </div>
             <div className="modal-actions">
-              <button className="btn-no" onClick={() => setShowClearConfirm(false)}>No, Cancel</button>
+              <button className="btn-no" onClick={() => setShowClearConfirm(false)}>[ NO, CANCEL ]</button>
               <button className="btn-yes" onClick={() => {
                 setShowClearConfirm(false);
                 onClear();
-              }}>Yes, Delete All</button>
+              }}>[ YES, DELETE ALL ]</button>
             </div>
           </div>
         </div>
@@ -122,7 +131,10 @@ export default function HistorySidebar({ items = [], onSelect, onDelete, onClear
                       <span className="duration">{h.duration || 0} ms</span>
                       <span className="dot">•</span>
                       <span className="time">
-                        {new Date(h.time).toLocaleTimeString()}
+                        {(() => {
+                          const t = new Date(h.time);
+                          return isNaN(t.getTime()) ? "00:00:00" : t.toLocaleTimeString();
+                        })()}
                       </span>
                       <button className="del" onClick={() => setItemToDelete(h._id)}>
                         ✕
