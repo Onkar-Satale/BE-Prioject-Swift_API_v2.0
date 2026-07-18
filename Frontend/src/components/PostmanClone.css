@@ -622,7 +622,8 @@ body {
 
   .response {
     max-height: 60vh !important;
-    min-height: 180px;
+    min-height: 100px !important;
+    flex-shrink: 1 !important;
   }
 
   .response-header {
