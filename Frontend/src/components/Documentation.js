@@ -153,7 +153,7 @@ const Documentation = () => {
       </section>
 
       <section>
-        <h2>Further Reading</h2>
+        <h2>Further Reading & Academic References</h2>
         <p>
           For more in-depth API concepts, authentication strategies, and HTTP standards,
           visit:
@@ -162,6 +162,38 @@ const Documentation = () => {
           <li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP" target="_blank" rel="noreferrer">MDN Web Docs: HTTP</a></li>
           <li><a href="https://swagger.io/docs/" target="_blank" rel="noreferrer">Swagger API Documentation Guide</a></li>
           <li><a href="https://www.postman.com/" target="_blank" rel="noreferrer">Postman Learning Center</a></li>
+        </ul>
+
+        <h3>Research Papers & PDF Resources (AI API Testing & Debugging)</h3>
+        <p>
+          If you are interested in the academic research powering AI-driven API testing, debugging, and root-cause analysis, explore these research papers:
+        </p>
+        <ul>
+          <li>
+            <strong>APITestGenie (2026):</strong> Generating Web API Tests from Requirements and API Specifications with LLMs.
+            <br />
+            <a href="https://arxiv.org/pdf/2604.02039" target="_blank" rel="noreferrer">Download PDF (arXiv:2604.02039)</a>
+          </li>
+          <li>
+            <strong>RCACopilot (EuroSys '24):</strong> Automatic Root Cause Analysis via Large Language Models for Cloud Incidents (Microsoft Research).
+            <br />
+            <a href="https://arxiv.org/pdf/2305.15778" target="_blank" rel="noreferrer">Download PDF (arXiv:2305.15778)</a>
+          </li>
+          <li>
+            <strong>AgentDebug (2025):</strong> Where LLM Agents Fail and How They Can Learn From Failures (Systematic Agent Debugging).
+            <br />
+            <a href="https://arxiv.org/pdf/2509.25370" target="_blank" rel="noreferrer">Download PDF (arXiv:2509.25370)</a>
+          </li>
+          <li>
+            <strong>AutoRestTest (2025):</strong> Black-Box Testing of RESTful APIs with LLMs and Reinforcement Learning.
+            <br />
+            <a href="https://arxiv.org/pdf/2501.08600" target="_blank" rel="noreferrer">Download PDF (arXiv:2501.08600)</a>
+          </li>
+          <li>
+            <strong>OpenRCA (ICLR 2025):</strong> Can Large Language Models Locate the Root Cause of Software Failures?
+            <br />
+            <a href="https://openreview.net/pdf?id=M4qNIzQYpd" target="_blank" rel="noreferrer">Download PDF (ICLR 2025 Paper)</a>
+          </li>
         </ul>
       </section>
     </div>

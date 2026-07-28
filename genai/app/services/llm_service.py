@@ -1,11 +1,14 @@
-import logging
-from groq import AsyncGroq
-from app.config.settings import settings
-from app.schemas.request import AnalyzeRequest, BotRequest
+import logging  # Logging module
 
-logger = logging.getLogger(__name__)
+from groq import AsyncGroq  # Async Groq client for LLM requests
 
-# Single global instance for AsyncGroq connection pooling
+from app.config.settings import settings  # Application settings
+
+from app.schemas.request import AnalyzeRequest, BotRequest  # Request schemas
+
+logger = logging.getLogger(__name__)  # Create logger for this file
+
+# Create one global Groq client (reused for all requests)
 groq_client = AsyncGroq(api_key=settings.GROQ_API_KEY)
 
 # ---------------- SYSTEM MESSAGES & PROMPTS ----------------
@@ -459,32 +462,47 @@ Always prioritize helping the user understand APIs and solve their backend probl
 
 # ---------------- CORE SERVICE LOGIC ----------------
 
+# Generate AI analysis for the given API request
 async def generate_analysis(req: AnalyzeRequest) -> dict:
-    """
-    Main orchestrator for generating LLM analysis based on the feature type.
-    """
-    # 1. Select the content format based on the feature
+
+    # Build the prompt from the request data
     user_content = build_user_prompt(req)
 
     try:
+        # Send the prompt to the Groq LLM
         res = await groq_client.chat.completions.create(
+
+            # Select the LLM model
             model="llama-3.3-70b-versatile",
+
+            # Send system and user prompts
             messages=[
                 {"role": "system", "content": GLOBAL_SYSTEM_PROMPT},
                 {"role": "user", "content": user_content}
             ],
+
+            # Control response randomness
             temperature=0.5,
+
+            # Limit response length
             max_tokens=400
         )
+
+        # Extract AI-generated text
         explanation = res.choices[0].message.content
+
+        # Return response to the route
         return {
             "type": req.feature,
             "text": explanation
         }
 
     except Exception as e:
+
+        # Log the error for debugging
         logger.error(f"Groq API Error: {str(e)}", exc_info=True)
-        # Never expose raw backend internal errors to frontend
+
+        # Return a safe error message to the frontend
         return {
             "type": req.feature,
             "text": "❌ An internal error occurred while connecting to the AI backend. Please try again later."
