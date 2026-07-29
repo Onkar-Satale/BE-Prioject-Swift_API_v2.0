@@ -1,15 +1,11 @@
 import express from 'express';
-import rateLimit from 'express-rate-limit';
 import cors from 'cors';
 import morgan from 'morgan';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import swaggerUi from 'swagger-ui-express';
-import YAML from 'yamljs';
 import logger from './utils/logger.js';
 import errorHandler from './middlewares/errorHandler.js';
+import { authRateLimiter, apiRateLimiter } from './middlewares/rateLimiter.js';
 import authRoutes from './routes/auth.js';
 import historyRoutes from './routes/history.js';
 import aiRoutes from './routes/ai.js';
@@ -17,21 +13,23 @@ import { proxyRequestHandler } from './controllers/requestController.js';
 import { requestProxyValidator } from './validators/requestValidator.js';
 import auth from './middlewares/auth.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 const app = express();
+
+// Trust reverse proxy so Express gets the client's real IP (used for rate limiting)
 app.set("trust proxy", 1);
 
-// 1. Security Middlewares
+// Add common security-related HTTP headers
 app.use(helmet());
-const allowedOrigins = process.env.ALLOWED_ORIGINS 
+
+// Read allowed frontend URLs from the environment
+const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(url => url.trim())
   : [];
 
+// Allow requests only from trusted frontend origins
 app.use(cors({
   origin: function (origin, callback) {
-    // Dynamically allow origins hitting the local proxy from dev servers
+    // Allow Postman and local development servers
     if (!origin || allowedOrigins.includes(origin) || origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
       callback(null, true);
     } else {
@@ -39,66 +37,35 @@ app.use(cors({
       callback(new Error('CORS blocked origin'), false);
     }
   },
-  credentials: true
+  credentials: true // Allow HTTP-only cookies (Refresh Token)
 }));
 
-// 2. Parsers
+// Parse JSON, form-data and cookies from incoming requests
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
-app.use(cookieParser()); // Enable HTTP-only cookie parsing
+app.use(cookieParser());
 
-// OpenAPI / Swagger Documentation
-try {
-  const swaggerDocument = YAML.load(path.join(__dirname, "docs/swagger.yaml"));
-  app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-} catch (e) {
-  logger.error("Failed to load swagger.yaml", e);
-}
-
-// 3. Activity Logging
+// Log every incoming HTTP request
 app.use(morgan("dev"));
 
-// 4. Rate Limiting
-const authRateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, 
-  max: 30, 
-  standardHeaders: true, 
-  legacyHeaders: false, 
-  message: {
-    success: false,
-    error: 'Too many authentication attempts from this IP, please try again after 15 minutes',
-  },
-});
-
-const apiRateLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, 
-  max: 200, 
-  standardHeaders: true, 
-  legacyHeaders: false, 
-  message: {
-    success: false,
-    error: 'Too many requests from this IP, please try again after a minute',
-  },
-});
-
-// Apply rate limiters
+// Apply stricter rate limiting only to authentication routes
 app.use("/api/login", authRateLimiter);
 app.use("/api/register", authRateLimiter);
 
-// 5. Mount API Routes
-// Direct mount for Gateway API Proxy matching PackMate travel-chat direct declaration
+// Request pipeline: Rate Limiter → Authentication → Validation → Controller
 app.post('/api/request', apiRateLimiter, auth, requestProxyValidator, proxyRequestHandler);
 
+// Register application routes
 app.use('/api', authRoutes);
 app.use('/api/history', historyRoutes);
 app.use('/api/ai', aiRoutes);
 
-// Health check
+// Health check endpoint used by deployment platforms
 app.get('/', (req, res) => {
   res.json({ success: true, message: 'Backend is running securely' });
 });
 
-// 6. Centralized Error Pipeline
+// Keep the global error handler last so it can catch errors from all routes
 app.use(errorHandler);
 
 export default app;

@@ -1,13 +1,5 @@
-import { body, validationResult } from 'express-validator';
-import { ApiError } from '../utils/ApiError.js';
-
-const validateRequest = (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return next(new ApiError(401, "Invalid credentials"));
-  }
-  next();
-};
+import { body } from 'express-validator';
+import { validateRequest } from './requestValidator.js';
 
 const registerValidator = [
   body("firstName").trim().notEmpty().withMessage("First name is required").isLength({ max: 50 }).withMessage("First name must be at most 50 characters long"),

@@ -1,26 +1,26 @@
-import os  # Access environment variables
-from dotenv import find_dotenv, load_dotenv  # Find and load .env file
+import os
+from dotenv import find_dotenv, load_dotenv
 
-# Find the .env file
+# Locate the .env file
 env_path = find_dotenv()
 
-# Load variables from .env if found
+# Load environment variables if the .env file exists
 if env_path:
     load_dotenv(dotenv_path=env_path, override=True)
 
-# Store application configuration
+# Centralized application configuration
 class Settings:
-    # Read Groq API key from .env
+    # API key used to access Groq LLM services
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY")
 
-    # Read API secret or use default if missing
+    # Shared secret used to authenticate requests from the backend
     GENAI_API_SECRET: str = os.getenv(
         "GENAI_API_SECRET"
     )
 
-# Create a global settings object
+# Create a single shared configuration instance
 settings = Settings()
 
-# Stop the app if the Groq API key is missing
+# Stop startup if the Groq API key is missing
 if not settings.GROQ_API_KEY:
     raise Exception("GROQ_API_KEY is missing. Please set it in the .env file.")

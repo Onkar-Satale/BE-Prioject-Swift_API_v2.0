@@ -1,5 +1,5 @@
 import { param } from 'express-validator';
-import { validateRequest } from '../middlewares/validate.js';
+import { validateRequest } from './requestValidator.js';
 
 const deleteHistoryValidator = [
   param("historyId").trim().notEmpty().withMessage("History ID is required"),

@@ -1,5 +1,5 @@
 import { body } from 'express-validator';
-import { validateRequest } from '../middlewares/validate.js';
+import { validateRequest } from './requestValidator.js';
 
 const botValidator = [
   body("message").trim().notEmpty().withMessage("Message is required"),
