@@ -1,16 +1,16 @@
-# Base image with Python 3.9 (slim = smaller and lighter image)
-FROM python:3.9-slim
+FROM python:3.12-slim
 
 # Set /app as the working directory inside the container
 WORKDIR /app
 
-# Copy dependency list first (helps Docker cache dependencies)
-COPY requirements.txt .
+# Prevent Python from buffering stdout and stderr
+ENV PYTHONUNBUFFERED=1
 
-# Install all required Python packages
+# Install dependencies first (leverages Docker layer cache)
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the entire project into the container
+# Copy application source code
 COPY . .
 
 # Inform Docker that the app runs on port 8000
