@@ -41,7 +41,7 @@ Swift API uses a decoupled microservices architecture designed for high throughp
 
 <div align="center">
 
-![Swift API System Architecture](assets/Architecture.png?v=6&raw=true)
+![Swift API System Architecture](assets/Architecture.png?v=9&raw=true)
 
 *Comprehensive System Design Architecture Diagram illustrating Frontend SPA, API Gateway Proxy, Python GenAI Microservice, Groq LLM Cloud Engine, and MongoDB Atlas Persistence.*
 
@@ -206,11 +206,13 @@ npm start
 <div align="center">
 
 ### 👁️ API Request & Response Client
-![Testing Interface](assets/Testing.png?raw=true)
+<img src="assets/Testing.png?raw=true" alt="Testing Interface" width="82%" />
+
 *Send HTTP requests with custom headers, body payloads, and inspect formatted JSON responses.*
 
 ### 🤖 AI-Powered Error Debugger
-![AI Debugger](assets/Genai.png?raw=true)
+<img src="assets/Genai.png?raw=true" alt="AI Debugger" width="82%" />
+
 *Receive instant AI-generated root cause analysis and actionable fix recommendations for API errors.*
 
 ### 🔑 Authentication & Security
