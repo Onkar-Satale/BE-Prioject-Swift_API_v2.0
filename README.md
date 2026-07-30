@@ -206,16 +206,11 @@ npm start
 
 <div align="center">
 
-### 👁️ API Request & Response Client
-<img src="assets/Testing.png" alt="Testing Interface" width="480" />
-
-*Send HTTP requests with custom headers, body payloads, and inspect formatted JSON responses.*
-
-### 🤖 AI-Powered Error Debugger
-<img src="assets/Genai.png" alt="AI Debugger" width="480" />
-
-
-*Receive instant AI-generated root cause analysis and actionable fix recommendations for API errors.*
+### 👁️ API Client & 🤖 AI Debugger
+| Request & Response Client | AI Error Debugger |
+| :---: | :---: |
+| ![Testing Interface](assets/Testing.png?raw=true) | ![AI Debugger](assets/Genai.png?raw=true) |
+| *Send HTTP requests & inspect JSON responses.* | *AI root cause analysis & recommendations.* |
 
 ### 🔑 Authentication & Security
 | Login Interface | Registration |
