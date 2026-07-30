@@ -206,23 +206,44 @@ npm start
 
 <div align="center">
 
-### 👁️ API Client & 🤖 AI Debugger
-| Request & Response Client | AI Error Debugger |
-| :---: | :---: |
-| ![Testing Interface](assets/Testing.png?raw=true) | ![AI Debugger](assets/Genai.png?raw=true) |
-| *Send HTTP requests & inspect JSON responses.* | *AI root cause analysis & recommendations.* |
-
-### 🔑 Authentication & Security
-| Login Interface | Registration |
-| :---: | :---: |
-| ![Login Page](assets/Login.png?raw=true) | ![Signup Page](assets/Signup.png?raw=true) |
-| *Secure user authentication with JWT.* | *User onboarding and validation.* |
-
-### 🧾 Headers Configuration & User Account
-| Request Headers | Account Overview |
-| :---: | :---: |
-| ![Headers Page](assets/Headers.png?raw=true) | ![Account Page](assets/Account.png?raw=true) |
-| *Flexible key-value header customization.* | *Manage user profiles and settings.* |
+<table width="100%">
+  <tr>
+    <td width="50%" align="center"><b>👁️ Request & Response Client</b></td>
+    <td width="50%" align="center"><b>🤖 AI Error Debugger</b></td>
+  </tr>
+  <tr>
+    <td><img src="assets/Testing.png?raw=true" width="100%" alt="Testing Interface" /></td>
+    <td><img src="assets/Genai.png?raw=true" width="100%" alt="AI Debugger" /></td>
+  </tr>
+  <tr>
+    <td align="center"><i>Send HTTP requests & inspect JSON responses.</i></td>
+    <td align="center"><i>AI root cause analysis & recommendations.</i></td>
+  </tr>
+  <tr>
+    <td align="center"><b>🔑 Login Interface</b></td>
+    <td align="center"><b>🔒 Registration Page</b></td>
+  </tr>
+  <tr>
+    <td><img src="assets/Login.png?raw=true" width="100%" alt="Login Page" /></td>
+    <td><img src="assets/Signup.png?raw=true" width="100%" alt="Signup Page" /></td>
+  </tr>
+  <tr>
+    <td align="center"><i>Secure user authentication with JWT.</i></td>
+    <td align="center"><i>User onboarding and validation.</i></td>
+  </tr>
+  <tr>
+    <td align="center"><b>🧾 Headers Configuration</b></td>
+    <td align="center"><b>👤 User Account</b></td>
+  </tr>
+  <tr>
+    <td><img src="assets/Headers.png?raw=true" width="100%" alt="Headers Page" /></td>
+    <td><img src="assets/Account.png?raw=true" width="100%" alt="Account Page" /></td>
+  </tr>
+  <tr>
+    <td align="center"><i>Flexible key-value header customization.</i></td>
+    <td align="center"><i>Manage user profiles and settings.</i></td>
+  </tr>
+</table>
 
 </div>
 
