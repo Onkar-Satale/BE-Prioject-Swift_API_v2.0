@@ -29,7 +29,7 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
 // Allow requests only from trusted frontend origins
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow Postman and local development servers
+    // Allow Swift API client and local development servers
     if (!origin || allowedOrigins.includes(origin) || origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
       callback(null, true);
     } else {

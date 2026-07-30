@@ -56,6 +56,7 @@ export const logout = () => {
   localStorage.removeItem("username");
   localStorage.removeItem("email");
   localStorage.removeItem("createdAt");
+  sessionStorage.removeItem("swiftApiState");
   sessionStorage.removeItem("postmanCloneState");
   sessionStorage.removeItem("lastRequest");
   sessionStorage.removeItem("lastResponse");

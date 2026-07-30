@@ -9,12 +9,12 @@ import AccountPage from "./AccountPage";
 import HistorySidebar from "../components/HistorySidebar";
 import ParamsTab from "./ParamsTab";
 import { getHistory, deleteHistoryItem, clearHistory } from "../services/historyService";
-import "./PostmanClone.css";
+import "./SwiftAPIClient.css";
 import RequestBar from "./RequestBar";
 import BotSidebar from "./BotSidebar";
 import AuthorizationTab from "./AuthorizationTab";
 import { useContext } from "react";
-import { PostmanContext } from "../context/PostmanContext";
+import { SwiftAPIContext } from "../context/SwiftAPIContext";
 import { showToast } from "../utils/toast";
 
 
@@ -29,7 +29,7 @@ const getUserIdFromToken = () => {
   }
 };
 
-export default function PostmanClone() {
+export default function SwiftAPIClient() {
   const {
     method, setMethod,
     url, setUrl,
@@ -40,15 +40,10 @@ export default function PostmanClone() {
     response, setResponse,
     status, setStatus,
     messages, setMessages,
-    auth, setAuth // 🔹 ADD THIS
-  } = useContext(PostmanContext);
+    auth, setAuth
+  } = useContext(SwiftAPIContext);
 
-  // const [method, setMethod] = useState("GET");
   const [currentUserId, setCurrentUserId] = useState(null);
-  // const [url, setUrl] = useState("");
-  // const [response, setResponse] = useState("");
-  // const [status, setStatus] = useState(null);
-  // const [activeTab, setActiveTab] = useState("Params");
   const [history, setHistory] = useState(() => {
     try {
       const userId = getUserIdFromToken();
@@ -93,9 +88,6 @@ export default function PostmanClone() {
   }, [url]);
 
   const [bodyContent, setBodyContent] = useState("");
-  // const [headersObj, setHeadersObj] = useState([
-  //   { key: "", value: "" }
-  // ]);
 
   const navigate = useNavigate();
   const responseRef = useRef(null);
@@ -106,9 +98,7 @@ export default function PostmanClone() {
   useEffect(() => {
     sessionStorage.setItem("responseHeight", responseHeight);
   }, [responseHeight]);
-  // const [paramsObj, setParamsObj] = useState([
-  //   { key: "", value: "", description: "" }
-  // ]);
+
   const [showBot, setShowBot] = useState(
     sessionStorage.getItem("showBot") === "true"
   );
@@ -116,13 +106,6 @@ export default function PostmanClone() {
   useEffect(() => {
     sessionStorage.setItem("showBot", showBot);
   }, [showBot]);
-  // const [messages, setMessages] = useState([
-  //   {
-  //     from: "bot",
-  //     text: "Hi 👋 I’m your API assistant. Send a request and I’ll explain errors, fixes, and next steps."
-  //   }
-  // ]);
-
 
   // 🔹 Sync auth to headersObj automatically
   useEffect(() => {
@@ -152,17 +135,9 @@ export default function PostmanClone() {
   }, [auth, setHeadersObj]);
 
   const [bodyType, setBodyType] = useState("none");
-  // const [rawBody, setRawBody] = useState('{\n  "example": "value"\n}');
   const [requestBody, setRequestBody] = useState(null);
   const [apiContext, setApiContext] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
-
-
-
-
-
-
-  // const responseRef = useRef(null);
 
   const startResizing = (e) => {
     e.preventDefault();
@@ -198,7 +173,7 @@ export default function PostmanClone() {
     }
   };
 
-  // Ensure Postman-like param rows: always keep 1 empty row
+  // Ensure Swift API param rows: always keep 1 empty row
   const cleanParams = (arr) => {
     const filled = arr.filter(
       (p) =>
@@ -228,11 +203,10 @@ export default function PostmanClone() {
     try {
       const payload = JSON.parse(atob(token.split(".")[1]));
       const userId = payload.id || payload._id;
-      setCurrentUserId(userId);           // store in state
+      setCurrentUserId(userId);
       localStorage.setItem("currentUserId", userId);
 
       const savedCount = localStorage.getItem(`requestCount_${userId}`);
-      // Removed setRequestCount logic }
     } catch (err) {
       console.error("Failed to decode token:", err);
     }
@@ -268,7 +242,7 @@ export default function PostmanClone() {
   // -------------------------------------------
   const loadUserHistory = async () => {
     try {
-      const h = await getHistory(); // ✅ uses authToken internally
+      const h = await getHistory();
       setHistory(Array.isArray(h) ? [...h].reverse() : []);
     } catch (err) {
       console.error("Failed to load history:", err);
@@ -277,7 +251,7 @@ export default function PostmanClone() {
   };
 
   useEffect(() => {
-    loadUserHistory(); // fetch history
+    loadUserHistory();
 
     if (!lastResponse) {
       setResponse("");
@@ -302,14 +276,11 @@ export default function PostmanClone() {
           return acc;
         }, {}),
         status: lastRequest.status ?? "OK",
-        responseTime: 0, // optional, last request time unknown
+        responseTime: 0,
         response: lastResponse || { error: "No response available" }
       });
     }
   }, []);
-
-
-
 
   // -------------------------------------------
   // URL Validator
@@ -331,7 +302,7 @@ export default function PostmanClone() {
     setResponse("");
     setStatus(null);
 
-    const token = localStorage.getItem("authToken"); // ✅ use correct key
+    const token = localStorage.getItem("authToken");
     if (!token) {
       setErrorMsg("You must be logged in to send requests.");
       return;
@@ -347,20 +318,13 @@ export default function PostmanClone() {
       return;
     }
 
-
-    // ----------------------------
-    // Convert headers from array to object
-    // ----------------------------
     const headers = {};
     headersObj.forEach(h => {
       if (h.key) headers[h.key] = h.value;
     });
 
-    // Add default Content-Type if not provided
     if (!headers["Content-Type"]) headers["Content-Type"] = "application/json";
 
-
-    // APPLY AUTH FROM AUTH TAB
     if (auth.type === "bearer" && auth.token) {
       headers["Authorization"] = `Bearer ${auth.token}`;
     }
@@ -369,9 +333,6 @@ export default function PostmanClone() {
       const encoded = btoa(`${auth.username}:${auth.password}`);
       headers["Authorization"] = `Basic ${encoded}`;
     }
-
-    // Add auth token
-
 
     setLoading(true);
     const start = performance.now();
@@ -388,10 +349,7 @@ export default function PostmanClone() {
         }
       }
 
-      // Build final URL with query params
-      // Build final URL with cleaned query params
       let finalUrl = url;
-
       const validParams = paramsObj.filter((p) => p.key.trim() !== "");
 
       if (validParams.length) {
@@ -407,26 +365,21 @@ export default function PostmanClone() {
         finalUrl += finalUrl.includes("?") ? `&${queryString}` : `?${queryString}`;
       }
 
-      // NEW: send backend auth in custom header
       const backendToken = localStorage.getItem("authToken");
-
       const backendUrl = process.env.REACT_APP_BACKEND_URL;
       const res = await fetch(`${backendUrl}/api/request`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${backendToken}`, // ✅ use proper auth header
+          "Authorization": `Bearer ${backendToken}`,
         },
         body: JSON.stringify({
           url: finalUrl,
           method,
-          headers: headers, // contains Basic or Bearer token for target API
+          headers: headers,
           body: bodyPayload,
         }),
       });
-
-
-
 
       const data = await res.json();
 
@@ -434,18 +387,8 @@ export default function PostmanClone() {
         setErrorMsg(data.error || "Request failed.");
         setStatus("ERR");
         setResponse({ error: data.error });
-
         return;
       }
-
-
-      // ===============================
-      // 🤖 AI RESPONSE HANDLING
-      // ===============================
-
-
-
-
 
       const respBody = data.body ?? data.result ?? data;
       const currentUserId = localStorage.getItem("currentUserId");
@@ -455,10 +398,6 @@ export default function PostmanClone() {
         localStorage.setItem(`requestCount_${currentUserId}`, total);
       }
 
-
-      // ----------------------------
-      // PERSIST LAST RESPONSE LOCALLY
-      // ----------------------------
       setResponse(respBody);
       setLastResponse(respBody);
       setLastRequest({ url, method, body: bodyPayload, status: data.status ?? res.status ?? "OK" });
@@ -471,10 +410,6 @@ export default function PostmanClone() {
       setStatus(data.status ?? res.status ?? "OK");
       const statusCode = data.status ?? res.status;
 
-
-      // ===============================
-      // 🧠 SAVE API CONTEXT FOR AI BOT
-      // ===============================
       const duration = Math.round(performance.now() - start);
 
       setApiContext({
@@ -486,7 +421,6 @@ export default function PostmanClone() {
         response: respBody || { error: "No response body available" }
       });
 
-      // OPTIMISTIC UI UPDATE: Instantly show in history without waiting for DB fetch
       setHistory(prev => [
         {
           _id: data.historyId || "temp-" + Date.now(),
@@ -498,8 +432,6 @@ export default function PostmanClone() {
         },
         ...prev
       ]);
-
-      // Re-fetch skipped here to prevent UI flash, optimistic update handles it.
     } catch (err) {
       console.error("Request failed:", err);
       setErrorMsg("Request failed: " + err.message);
@@ -507,23 +439,17 @@ export default function PostmanClone() {
       setResponse({ error: err.message });
     } finally {
       setLoading(false);
-      // responseRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   };
 
-  // -------------------------------------------
-  // HISTORY HANDLERS
-  // -------------------------------------------
   const handleHistoryDelete = async (historyId) => {
     try {
-      // OPTIMISTIC UI: Remove from list instantly
       setHistory(prev => prev.filter(item => item._id !== historyId));
-      showToast("🗑️ History item deleted!"); // Show toast instantly
+      showToast("🗑️ History item deleted!");
 
-      // Execute network request in background
       deleteHistoryItem(historyId).catch((err) => {
         console.error("Failed to delete history item:", err);
-        loadUserHistory(); // recover if failed
+        loadUserHistory();
       });
     } catch (err) {
       console.error("Failed to delete history item:", err);
@@ -533,14 +459,12 @@ export default function PostmanClone() {
 
   const handleHistoryClear = async () => {
     try {
-      // OPTIMISTIC UI: Clear list instantly
       setHistory([]);
-      showToast("🧹 All history cleared!"); // Show toast instantly
+      showToast("🧹 All history cleared!");
 
-      // Execute network request in background
       clearHistory().catch((err) => {
         console.error("Failed to clear history:", err);
-        loadUserHistory(); // recover if failed
+        loadUserHistory();
       });
     } catch (err) {
       console.error("Failed to clear history:", err);
@@ -561,7 +485,6 @@ export default function PostmanClone() {
     }
 
     try {
-      // Try parsing as absolute URL
       const parsedUrl = new URL(fullUrlString);
       const baseUrl = parsedUrl.origin + parsedUrl.pathname;
       setUrl(baseUrl);
@@ -579,7 +502,6 @@ export default function PostmanClone() {
         setParamsObj([{ key: "", value: "", description: "" }]);
       }
     } catch (e) {
-      // Fallback for relative or incomplete URLs
       if (fullUrlString.includes("?")) {
         const parts = fullUrlString.split("?");
         const baseUrl = parts[0];
@@ -600,18 +522,11 @@ export default function PostmanClone() {
     }
   };
 
-  // -------------------------------------------
-  // Copy to clipboard
-  // -------------------------------------------
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(typeof text === "string" ? text : JSON.stringify(text, null, 2));
     showToast("✅ Copied to clipboard!");
   };
 
-
-  // -------------------------------------------
-  // RENDER
-  // -------------------------------------------
   return (
     <div className="layout">
       {/* Sidebar */}
@@ -680,7 +595,6 @@ export default function PostmanClone() {
 
           <RequestBar url={url} setUrl={setUrl} paramsObj={paramsObj} />
 
-
           <button
             type="submit"
             className="send-btn"
@@ -690,7 +604,6 @@ export default function PostmanClone() {
             {loading ? "Sending..." : "Send"}
           </button>
         </form>
-
 
         {errorMsg && <div className="error-box">{errorMsg}</div>}
 
@@ -733,7 +646,6 @@ export default function PostmanClone() {
               />
             )}
 
-
             {activeTab === "Headers" && (
               <HeadersTab 
                 headers={headersObj} 
@@ -744,11 +656,10 @@ export default function PostmanClone() {
               <BodyTab
                 bodyType={bodyType}
                 setBodyType={setBodyType}
-                body={rawBody}           // ✅ map rawBody → body
-                setBody={setRawBody}     // ✅ map setRawBody → setBody
+                body={rawBody}
+                setBody={setRawBody}
                 onBodyChange={setRequestBody}
               />
-
             )}
             {activeTab === "Authorization" && (
               <AuthorizationTab auth={auth} setAuth={setAuth} />
@@ -807,7 +718,7 @@ export default function PostmanClone() {
               <button
                 type="button"
                 onClick={(e) => {
-                  e.stopPropagation(); // prevent outer click listener bugs
+                  e.stopPropagation();
                   const token = localStorage.getItem("authToken");
                   if (!token) {
                     showToast("⚠️ Please log in to use the AI Assistant.");
@@ -823,10 +734,7 @@ export default function PostmanClone() {
               >
                 Help
               </button>
-
-
             </div>
-
           </div>
           <div className="response-body" style={{ overflow: "auto", maxHeight: "585px" }}>
             {loading ? (
@@ -892,9 +800,8 @@ export default function PostmanClone() {
           setMessages={setMessages}
           currentApiContext={apiContext}
           setHeadersObj={setHeadersObj}
-          setActiveTab={setActiveTab} // optional
-          setShowBot={setShowBot} // 🔹 PASS IT HERE
-
+          setActiveTab={setActiveTab}
+          setShowBot={setShowBot}
         />
       )}
     </div>

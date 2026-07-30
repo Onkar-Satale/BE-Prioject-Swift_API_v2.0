@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState, useContext, useRef } from "react";
 import { getToken, logout } from "../services/authService";
 import { showToast } from "../utils/toast";
-import { PostmanContext } from "../context/PostmanContext";
+import { SwiftAPIContext } from "../context/SwiftAPIContext";
 
 // GRID CONFIGURATION
 const GRID_ROWS = 22;
@@ -164,7 +164,7 @@ export default function AccountPage() {
     }
   };
 
-  const { resetContext } = useContext(PostmanContext);
+  const { resetContext } = useContext(SwiftAPIContext);
 
   const handleLogout = () => {
     setShowLogoutConfirm(false);

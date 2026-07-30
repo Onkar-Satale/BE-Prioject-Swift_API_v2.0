@@ -40,7 +40,7 @@
   font-weight: bold;
 }
 
-/* Row background (Postman-like separation) */
+/* Row background (Swift API style separation) */
 .params-table tbody tr {
   background-color: transparent;
   /* ✅ ADDED */

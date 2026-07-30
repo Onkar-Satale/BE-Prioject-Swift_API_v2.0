@@ -10,9 +10,9 @@ const Documentation = () => {
       <section>
         <h2>Introduction</h2>
         <p>
-          Welcome to the API testing application! This platform allows you to send HTTP requests
+          Welcome to Swift API! This platform allows you to send HTTP requests
           to any API endpoint, inspect responses, and manage headers, query parameters, and body
-          content. It's a lightweight alternative to Postman with full support for AI assistance.
+          content with full support for AI debugging assistance.
         </p>
       </section>
 
@@ -161,7 +161,7 @@ const Documentation = () => {
         <ul>
           <li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP" target="_blank" rel="noreferrer">MDN Web Docs: HTTP</a></li>
           <li><a href="https://swagger.io/docs/" target="_blank" rel="noreferrer">Swagger API Documentation Guide</a></li>
-          <li><a href="https://www.postman.com/" target="_blank" rel="noreferrer">Postman Learning Center</a></li>
+          <li><a href="https://restfulapi.net/" target="_blank" rel="noreferrer">RESTful API Design Standards</a></li>
         </ul>
 
         <h3>Research Papers & PDF Resources (AI API Testing & Debugging)</h3>

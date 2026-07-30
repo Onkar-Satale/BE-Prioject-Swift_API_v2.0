@@ -1,188 +1,257 @@
-# 🚀 Swift API – Smart API Testing and Development Tool
+# ⚡ Swift API – Smart Full-Stack API Testing & AI Debugging Platform
 
-![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
-![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
-![NodeJS](https://img.shields.io/badge/node.js-6DA55F?style=for-the-badge&logo=node.js&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)
-![MongoDB](https://img.shields.io/badge/MongoDB-%234ea94b.svg?style=for-the-badge&logo=mongodb&logoColor=white)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://swift-api-iota.vercel.app/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+[![React](https://img.shields.io/badge/React-18-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![NodeJS](https://img.shields.io/badge/Node.js-Express-6DA55F?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Database-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
+[![Groq](https://img.shields.io/badge/Groq-AI%20LLM-F05032?style=for-the-badge&logo=openai&logoColor=white)](https://groq.com/)
 
-**Swift API** is a full-stack web application designed to streamline API testing and development. 
-
-It allows developers to send requests, view responses, manage API workflows, and now includes an **AI-powered debugging assistant** that helps identify and explain API errors. The platform combines developer productivity tools with intelligent assistance, making API development faster and easier.
-
----
-
-## ✨ Features
-
-- **📨 Send HTTP Requests:** Send API requests using `GET`, `POST`, `PUT`, `DELETE` methods with custom headers and body.
-- **📚 Request History:** Automatically saves previously sent requests so developers can reuse them quickly.
-- **🗂️ Collections Management:** Organize APIs into collections to structure testing workflows.
-- **✨ JSON Syntax Highlighting:** Pretty formatted JSON responses for easy debugging and readability.
-- **🔒 Authentication Support:** Supports JWT tokens and Bearer authentication for secured API testing.
-- **🖥️ Modern Developer Interface:** Clean and responsive frontend built with React for an intuitive experience.
-- **⚡ Fast Backend Architecture:** Powered by Node.js and Express.js for efficient request processing.
-- **💾 Persistent Storage:** Uses MongoDB to store request history, collections, and user data.
-- **👥 Multi-User Support:** Developers can register and log in securely to manage their personal API workflows.
-- **🔧 Extendable Developer Tool:** The architecture is designed so developers can easily add new API testing utilities.
+**Swift API** is a modern, full-stack API client and developer productivity platform. Built as a lightweight, intelligent alternative to Postman, Swift API provides seamless HTTP request testing, workflow organization, authentication management, and an **intelligent AI-powered debugging assistant** driven by Groq LLM to instantly explain API failures and recommend actionable fixes.
 
 ---
 
-## 🤖 NEW: AI-Powered API Debugging Assistant
+## 🌐 Live Demos
 
-Swift API now includes an AI debugging assistant powered by **GenAI using the Groq API** and a **Python FastAPI backend**. This intelligent assistant helps developers quickly understand and fix API errors during testing.
-
-### 🧠 AI Assistant Capabilities:
-- **🔍 Root Cause Analysis:** Analyzes API errors and suggests the possible reason behind the failure.
-- **📖 Simple Error Explanation:** Converts complex backend error messages into developer-friendly explanations.
-- **🛠️ Suggested Fixes:** Provides guidance on how to resolve API issues.
-- **⚡ Faster Debugging Workflow:** Reduces time spent searching documentation or StackOverflow.
-- **💬 Interactive AI Help Button:** Developers can click the AI Help button when an error occurs and receive intelligent insights.
+| Service | Host Platform | Live URL |
+| :--- | :--- | :--- |
+| **Frontend Application** | Vercel | [https://swift-api-iota.vercel.app/](https://swift-api-iota.vercel.app/) |
+| **Express Backend API** | Render | [https://swift-api-lz1n.onrender.com/](https://swift-api-lz1n.onrender.com/) |
+| **GenAI FastAPI Microservice** | Render | [https://swift-api-genai.onrender.com/](https://swift-api-genai.onrender.com/) |
 
 ---
 
-### AI Backend Architecture
+## ✨ Key Features
+
+- 📨 **Multi-Method Request Engine:** Send `GET`, `POST`, `PUT`, `DELETE`, `PATCH` requests with custom headers, query params, and JSON/Form payload support.
+- 🤖 **AI-Powered Error Debugger:** One-click AI diagnosis on HTTP error responses (`4xx`, `5xx`) powered by Groq LLM and FastAPI microservice.
+- 📚 **Persistent Request History:** Automatically records request history in MongoDB for instant recall and re-testing.
+- 🗂️ **Collections & Workflows:** Organize requests into structured collections for grouped testing workflows.
+- 🔒 **Secure Authentication:** JWT-based user authentication featuring access/refresh token rotation and HTTP-only cookies.
+- 👁️ **JSON Formatter & Syntax Highlighting:** Integrated code view with formatted JSON response structures and Ace editor capabilities.
+- ⚡ **Rate Limiting & Security:** Express rate limiters, Helmet HTTP headers, CORS protection, and secure inter-service API keys.
+- 📱 **Modern Developer Interface:** Dark/light responsive UI built with React.
+
+---
+
+## 🧠 AI Debugging Assistant Architecture
+
+Swift API integrates an isolated Python FastAPI microservice that processes failed request payloads, status codes, and error tracebacks through Groq's high-speed LLM models to provide instant root-cause analysis.
 
 ```mermaid
 graph TD;
-    Frontend[Frontend React] -->|Request| Backend[Node.js Express Backend];
-    Backend -->|Analyze Error| AI[Python FastAPI AI Service];
-    AI -->|Prompt generation| Groq[Groq LLM API];
-    Groq -->|Insight| AI;
-    AI -->|AI Response| Backend;
-    Backend -->|Formatted Help| Frontend;
+    User[Developer / Frontend UI] -->|1. HTTP Request| NodeBackend[Node.js Express Backend];
+    NodeBackend -->|2. Proxy Request| TargetAPI[Target External API];
+    TargetAPI -->|3. Error Response 4xx/5xx| NodeBackend;
+    NodeBackend -->|4. Pass Error Payload| AIService[Python FastAPI GenAI Microservice];
+    AIService -->|5. Structured Prompt| Groq[Groq LLM Engine];
+    Groq -->|6. Root Cause & Solution| AIService;
+    AIService -->|7. Formatted Diagnosis| NodeBackend;
+    NodeBackend -->|8. AI Insight Modal| User;
 ```
 
-
----
-## 📸 Screenshots
-
-### 🔑 Login Page
-<img src="assets/Login.png" width="700" height="400" />
-*Secure login using JWT and password hashing.*
-
-### 📝 Signup Page
-<img src="assets/Signup.png" width="700" height="400" />
-*User registration page with validation.*
-
-### 🧾 Headers / Request Configuration
-<img src="assets/Headers.png" width="700" height="400" />
-*Configure headers for API requests.*
-
-### 👁️ Testing API Requests
-<img src="assets/Testing.png" width="700" height="400" />
-*Send API requests and view formatted responses.*
-
-### 👤 Account / Profile Page
-<img src="assets/Account.png" width="700" height="400" />
-*User account page showing profile and settings.*
-
-### 🤖 AI-Powered Debugging
-<img src="assets/Genai.png" width="700" height="400" />
-*AI assistant analyzing API errors and suggesting fixes.*
-
 ---
 
+## 📂 Repository Structure
 
-## 🧠 Tech Stack
-
-**Frontend**
-- React, JavaScript, HTML, CSS, CSS Modules
-
-**Backend**
-- Node.js, Express.js, JWT (JSON Web Token)
-
-**AI Service**
-- Python, FastAPI, Groq API (LLM Integration)
-
-**Database**
-- MongoDB
-
-**Development Tools**
-- npm, Postman (for backend testing), VS Code
+```
+Swift_API/
+├── assets/                     # Application screenshots and visuals
+│   ├── Login.png
+│   ├── Signup.png
+│   ├── Headers.png
+│   ├── Testing.png
+│   ├── Account.png
+│   └── Genai.png
+├── backend/                    # Node.js + Express REST API Server
+│   ├── config/                 # DB & environment configuration
+│   ├── controllers/            # Request processing & auth handlers
+│   ├── middlewares/            # JWT auth, rate limiting, error handling
+│   ├── models/                 # Mongoose schemas User, History, Collection
+│   ├── routes/                 # Express API endpoints
+│   ├── services/               # GenAI integration service
+│   ├── app.js                  # Express app initialization
+│   ├── server.js               # Server entry point
+│   └── package.json
+├── frontend/                   # React.js Single Page Application
+│   ├── public/
+│   ├── src/                    # Components, pages, context, and styles
+│   └── package.json
+└── genai/                      # Python FastAPI GenAI Microservice
+    ├── app/                    # FastAPI routes, schemas, and LLM prompt logic
+    ├── main.py                 # Uvicorn entry point
+    ├── requirements.txt        # Python dependencies
+    └── Dockerfile              # Container deployment file
+```
 
 ---
 
-## ⚙️ Setup & Installation
+## 🛠️ Tech Stack
 
-### 1. Clone the repository
+| Tier | Technology | Purpose |
+| :--- | :--- | :--- |
+| **Frontend** | React 18, React Router v7, Ace Editor, CSS Modules | Interactive UI & Request Client |
+| **Primary Backend** | Node.js, Express.js, Mongoose, Winston | Core API, Proxy Gateway, Auth, History |
+| **AI Microservice** | Python 3.10+, FastAPI, Uvicorn, Groq SDK | GenAI Error Diagnostics Engine |
+| **Database** | MongoDB / MongoDB Atlas | Persistent storage for users & history |
+| **Security** | JWT, bcryptjs, Helmet, Express Rate Limit | Token Auth, Encryption, Security Headers |
+| **Hosting & DevOps** | Vercel, Render, Docker | Continuous Deployment & Hosting |
+
+---
+
+## ⚙️ Environment Configuration
+
+Before running the application locally, set up the `.env` configuration files for each component service.
+
+### 1. Backend Configuration (`backend/.env`)
+```env
+PORT=5000
+NODE_ENV=development
+MONGO_URI=mongodb://localhost:27017/swift_api
+JWT_SECRET=your_jwt_access_secret_key
+JWT_REFRESH_SECRET=your_jwt_refresh_secret_key
+FRONTEND_URL=http://localhost:3000
+ALLOWED_ORIGINS=http://localhost:3000
+GENAI_SERVICE_URL=http://127.0.0.1:8000
+GENAI_API_SECRET=your_shared_inter_service_secret
+```
+
+### 2. Frontend Configuration (`frontend/.env`)
+```env
+REACT_APP_BACKEND_URL=http://localhost:5000
+REACT_APP_WEB3FORMS_KEY=your_web3forms_key_optional
+```
+
+### 3. AI Service Configuration (`genai/.env`)
+```env
+GROQ_API_KEY=your_groq_api_key
+GENAI_API_SECRET=your_shared_inter_service_secret
+```
+
+---
+
+## 🚀 Local Installation & Setup
+
+### Prerequisites
+- **Node.js**: v18.x or higher
+- **Python**: v3.10 or higher
+- **MongoDB**: Local instance running on port `27017` or MongoDB Atlas URI
+- **Groq API Key**: Obtainable from [Groq Console](https://console.groq.com/)
+
+---
+
+### Step-by-Step Setup
+
+#### 1️⃣ Clone the Repository
 ```bash
 git clone https://github.com/Onkar-Satale/Swift_API_mern-.git
 cd Swift_API_mern-
 ```
 
-### 2. Install dependencies & Start Backend
+#### 2️⃣ Setup & Start Express Backend
 ```bash
 cd backend
 npm install
-npm start
+npm run dev
 ```
-*Server will run on: `http://localhost:5000`*
+> *Backend server runs at:* `http://localhost:5000`
 
-### 3. Install dependencies & Start Frontend
-Open a new terminal session and run:
+#### 3️⃣ Setup & Start FastAPI GenAI Microservice
+Open a new terminal window:
 ```bash
-cd Frontend
+cd genai
+
+# Create virtual environment
+python -m venv venv
+
+# Activate virtual environment
+# Windows (PowerShell / CMD):
+.\venv\Scripts\activate
+# macOS / Linux:
+source venv/bin/activate
+
+# Install dependencies and start server
+pip install -r requirements.txt
+python main.py
+```
+> *GenAI service runs at:* `http://127.0.0.1:8000`
+
+#### 4️⃣ Setup & Start React Frontend
+Open a third terminal window:
+```bash
+cd frontend
 npm install
 npm start
 ```
-*Frontend will run on: `http://localhost:3000`*
-
-### 4. Install dependencies & Start AI Service
-Open a third terminal session and run the python service (ensure you set the `GROQ_API_KEY` in your `.env`):
-```bash
-cd ai-service
-# Create a virtual environment
-python -m venv venv
-# Activate virtual environment
-# On Windows: venv\Scripts\activate
-# On Mac/Linux: source venv/bin/activate
-
-pip install -r requirements.txt
-python -m uvicorn main:app --port 8001
-```
-*AI Service will run on `http://127.0.0.1:8001`*
+> *Frontend web app runs at:* `http://localhost:3000`
 
 ---
 
-## 📝 Usage
+## 📡 API Reference Overview
 
-1. **🖊️ Register/Login:** Sign up or log in as a developer.
-2. **🔗 Enter an API endpoint:** Paste the URL you wish to test.
-3. **⚙️ Select Request Method:** Choose between `GET`, `POST`, `PUT`, or `DELETE`.
-4. **📦 Configure Request:** Add headers and a request body if needed.
-5. **📤 Send Request:** Execute the request and view the formatted JSON response.
-6. **💾 Save and Reuse:** Save the request to a collection or access it through your Request History.
-7. **🤖 AI Debugging:** If an API error (e.g., 400, 500) occurs, click the **AI Assistant Help** button to get an intelligent breakdown and debugging suggestions!
-
----
-
-## 🤝 Contribution
-
-Contributions are always welcome to improve **Swift API**!
-
-1. **Fork the repository** 🍴
-2. **Create a new branch** 🌿
-   ```bash
-   git checkout -b feature-name
-   ```
-3. **Commit changes** 🛠️
-   ```bash
-   git commit -m "Add feature XYZ"
-   ```
-4. **Push changes** 🚀
-   ```bash
-   git push origin feature-name
-   ```
-5. **Open a Pull Request on GitHub** 🔃
+| Endpoint | Method | Auth Required | Description |
+| :--- | :--- | :--- | :--- |
+| `/api/register` | `POST` | No | Register a new developer account |
+| `/api/login` | `POST` | No | Authenticate user and issue JWT cookies |
+| `/api/logout` | `POST` | Yes | Revoke tokens and clear cookies |
+| `/api/refresh-token` | `GET` | No | Obtain a new access token via refresh cookie |
+| `/api/request` | `POST` | Yes | Proxy & execute target HTTP API requests |
+| `/api/history` | `GET` | Yes | Fetch authenticated user's request history |
+| `/api/history` | `POST` | Yes | Save a request configuration to history |
+| `/api/history` | `DELETE` | Yes | Clear saved request history |
+| `/api/ai/explain` | `POST` | Yes | Send error response payload to GenAI for diagnosis |
 
 ---
 
-## 🌐 Links & About
+## 📸 Screenshots & Visual Walkthrough
 
-- **Repository:** [https://github.com/Onkar-Satale/Swift_API_mern-](https://github.com/Onkar-Satale/Swift_API_mern-)
-- Frontend (Vercel): https://swift-api-iota.vercel.app/
-- Backend (Render): https://swift-api-lz1n.onrender.com/
-- GenAI Service (Render): https://swift-api-genai.onrender.com/
+<div align="center">
 
-**Swift API** is designed for developers and teams to simplify API testing, debugging, and workflow management. With the integration of GenAI-powered debugging assistance, the platform goes beyond a simple Postman clone and becomes a smart developer productivity tool. It is lightweight, fast, customizable, and continuously evolving to support modern backend development workflows.
+### 👁️ API Request & Response Client
+![Testing Interface](assets/Testing.png)
+*Send HTTP requests with custom headers, body payloads, and inspect formatted JSON responses.*
 
+### 🤖 AI-Powered Error Debugger
+![AI Debugger](assets/Genai.png)
+*Receive instant AI-generated root cause analysis and actionable fix recommendations for API errors.*
+
+### 🔑 Authentication & Security
+| Login Interface | Registration |
+| :---: | :---: |
+| ![Login Page](assets/Login.png) | ![Signup Page](assets/Signup.png) |
+| *Secure user authentication with JWT.* | *User onboarding and validation.* |
+
+### 🧾 Headers Configuration & User Account
+| Request Headers | Account Overview |
+| :---: | :---: |
+| ![Headers Page](assets/Headers.png) | ![Account Page](assets/Account.png) |
+| *Flexible key-value header customization.* | *Manage user profiles and settings.* |
+
+</div>
+
+---
+
+## 🤝 Contributing
+
+Contributions are greatly appreciated! To contribute:
+
+1. **Fork** the repository
+2. **Create** a feature branch: `git checkout -b feature/amazing-feature`
+3. **Commit** your changes: `git commit -m 'Add amazing feature'`
+4. **Push** to the branch: `git push origin feature/amazing-feature`
+5. **Open** a Pull Request
+
+---
+
+## 📄 License
+
+Distributed under the **MIT License**. See `LICENSE` for more information.
+
+---
+
+## 👨‍💻 Author & Maintainer
+
+- **Onkar Satale**
+- **GitHub:** [@Onkar-Satale](https://github.com/Onkar-Satale)
+- **Project Repo:** [Swift API MERN Repository](https://github.com/Onkar-Satale/Swift_API_mern-)

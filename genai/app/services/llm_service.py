@@ -63,7 +63,7 @@ You ONLY assist with topics related to:
 • Validation
 • Error Handling
 • API Design
-• Postman
+• Swift API
 • cURL
 • fetch()
 • Axios
@@ -382,7 +382,7 @@ Answer ONLY questions related to:
 • Django REST
 • Spring Boot
 • ASP.NET APIs
-• Postman
+• Swift API
 • cURL
 • Axios
 • fetch()

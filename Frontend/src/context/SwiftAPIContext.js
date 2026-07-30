@@ -1,12 +1,12 @@
 import { createContext, useState, useEffect } from "react";
 
-export const PostmanContext = createContext();
+export const SwiftAPIContext = createContext();
 
-export const PostmanProvider = ({ children }) => {
+export const SwiftAPIProvider = ({ children }) => {
   // Load initial state from sessionStorage safely
   const getInitialState = () => {
     try {
-      return JSON.parse(sessionStorage.getItem("postmanCloneState")) || {};
+      return JSON.parse(sessionStorage.getItem("swiftApiState")) || {};
     } catch {
       return {};
     }
@@ -43,7 +43,7 @@ export const PostmanProvider = ({ children }) => {
       auth,
       response, status, messages
     };
-    sessionStorage.setItem("postmanCloneState", JSON.stringify(stateToSave));
+    sessionStorage.setItem("swiftApiState", JSON.stringify(stateToSave));
   }, [method, url, headersObj, paramsObj, rawBody, activeTab, auth, response, status, messages]);
 
   // Reset Context for logout or new login
@@ -68,7 +68,7 @@ export const PostmanProvider = ({ children }) => {
   };
 
   return (
-    <PostmanContext.Provider
+    <SwiftAPIContext.Provider
       value={{
         method, setMethod,
         url, setUrl,
@@ -76,14 +76,14 @@ export const PostmanProvider = ({ children }) => {
         paramsObj, setParamsObj,
         rawBody, setRawBody,
         activeTab, setActiveTab,
-        auth, setAuth,       // ✅ add auth here
+        auth, setAuth,
         response, setResponse,
         status, setStatus,
         messages, setMessages,
-        resetContext         // 🔹 new reset function
+        resetContext
       }}
     >
       {children}
-    </PostmanContext.Provider>
+    </SwiftAPIContext.Provider>
   );
 };

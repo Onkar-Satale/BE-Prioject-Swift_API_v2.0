@@ -1,22 +1,22 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import PostmanClone from "./components/PostmanClone";
+import SwiftAPIClient from "./components/SwiftAPIClient";
 import AccountPage from "./components/AccountPage";
 import LoginPage from "./components/LoginPage";
 import Signup from "./components/Signup";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Documentation from "./components/Documentation";
 import ContactSupport from "./components/ContactSupport";
-import { PostmanProvider } from "./context/PostmanContext"; // 🔹 add this
+import { SwiftAPIProvider } from "./context/SwiftAPIContext";
 
 
 export default function App() {
   return (
-      <PostmanProvider>  {/* 🔹 wrap here */}
+      <SwiftAPIProvider>
 
         <Router>
           <Routes>
             {/* Public routes */}
-            <Route path="/" element={<PostmanClone />} />
+            <Route path="/" element={<SwiftAPIClient />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/documentation" element={<Documentation />} />
@@ -33,6 +33,7 @@ export default function App() {
             />
           </Routes>
         </Router>
-      </PostmanProvider>
+      </SwiftAPIProvider>
   );
 }
+

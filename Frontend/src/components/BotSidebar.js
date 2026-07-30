@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useContext } from "react";
 import "./BotSidebar.css";
-import { PostmanContext } from "../context/PostmanContext";
+import { SwiftAPIContext } from "../context/SwiftAPIContext";
 import { showToast } from "../utils/toast";
 
 
@@ -24,7 +24,7 @@ export default function BotSidebar({
   const [copiedIndex, setCopiedIndex] = useState(null);
   const [featureLoading, setFeatureLoading] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
-  const { messages, setMessages } = useContext(PostmanContext);
+  const { messages, setMessages } = useContext(SwiftAPIContext);
 
   const handleClearBot = () => {
     setMessages([
@@ -101,7 +101,7 @@ export default function BotSidebar({
   //     "Authorization: Bearer <token>",
   //     "Content-Type: application/json",
   //     "Accept: application/json",
-  //     "User-Agent: Postman-Clone"
+  //     "User-Agent: Swift-API"
   //   ].join("\n");
   // };
 
