@@ -2,7 +2,8 @@
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://swift-api-iota.vercel.app/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
-[![React](https://img.shields.io/badge/React-18-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![React](https://img.shields.io/badge/Re
+act-18-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
 [![NodeJS](https://img.shields.io/badge/Node.js-Express-6DA55F?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Database-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
@@ -206,12 +207,13 @@ npm start
 <div align="center">
 
 ### 👁️ API Request & Response Client
-<img src="assets/Testing.png" alt="Testing Interface" width="650" />
+<img src="assets/Testing.png" alt="Testing Interface" width="480" />
 
 *Send HTTP requests with custom headers, body payloads, and inspect formatted JSON responses.*
 
 ### 🤖 AI-Powered Error Debugger
-<img src="assets/Genai.png" alt="AI Debugger" width="650" />
+<img src="assets/Genai.png" alt="AI Debugger" width="480" />
+
 
 *Receive instant AI-generated root cause analysis and actionable fix recommendations for API errors.*
 
