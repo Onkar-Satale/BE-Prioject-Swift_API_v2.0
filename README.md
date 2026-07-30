@@ -35,21 +35,17 @@
 
 ---
 
-## 🧠 AI Debugging Assistant Architecture
+## 🧠 System Architecture & Design
 
-Swift API integrates an isolated Python FastAPI microservice that processes failed request payloads, status codes, and error tracebacks through Groq's high-speed LLM models to provide instant root-cause analysis.
+Swift API uses a decoupled microservices architecture designed for high throughput, security, and real-time AI diagnostic capabilities. 
 
-```mermaid
-graph TD;
-    User[Developer / Frontend UI] -->|1. HTTP Request| NodeBackend[Node.js Express Backend];
-    NodeBackend -->|2. Proxy Request| TargetAPI[Target External API];
-    TargetAPI -->|3. Error Response 4xx/5xx| NodeBackend;
-    NodeBackend -->|4. Pass Error Payload| AIService[Python FastAPI GenAI Microservice];
-    AIService -->|5. Structured Prompt| Groq[Groq LLM Engine];
-    Groq -->|6. Root Cause & Solution| AIService;
-    AIService -->|7. Formatted Diagnosis| NodeBackend;
-    NodeBackend -->|8. AI Insight Modal| User;
-```
+<div align="center">
+
+![Swift API System Architecture](assets/Architecture.png?raw=true)
+
+*Comprehensive System Design Architecture Diagram illustrating Frontend SPA, API Gateway Proxy, Python GenAI Microservice, Groq LLM Cloud Engine, and MongoDB Atlas Persistence.*
+
+</div>
 
 ---
 
@@ -57,7 +53,8 @@ graph TD;
 
 ```
 Swift_API/
-├── assets/                     # Application screenshots and visuals
+├── assets/                     # Application screenshots & architecture diagrams
+│   ├── Architecture.png
 │   ├── Login.png
 │   ├── Signup.png
 │   ├── Headers.png
