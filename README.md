@@ -41,7 +41,7 @@ Swift API uses a decoupled microservices architecture designed for high throughp
 
 <div align="center">
 
-![Swift API System Architecture](assets/Architecture.png?v=5&raw=true)
+![Swift API System Architecture](assets/Architecture.png?v=6&raw=true)
 
 *Comprehensive System Design Architecture Diagram illustrating Frontend SPA, API Gateway Proxy, Python GenAI Microservice, Groq LLM Cloud Engine, and MongoDB Atlas Persistence.*
 
