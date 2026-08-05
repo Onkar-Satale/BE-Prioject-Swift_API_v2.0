@@ -1,7 +1,7 @@
 import express from 'express';
 import { register, login, refreshToken, logout, deleteAccount } from '../controllers/authController.js';
 import { registerValidator, loginValidator } from '../validators/authValidator.js';
-import auth from '../middlewares/auth.js';
+import auth from '../middlewares/authMiddleware.js';
 
 // Create a router for authentication endpoints
 const router = express.Router();

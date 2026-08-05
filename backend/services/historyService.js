@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import User from '../models/User.js';
+import User from '../models/userModel.js';
 
 class HistoryService {
   async getHistory(userId) {

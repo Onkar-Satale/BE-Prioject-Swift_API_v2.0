@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
-import historySchema from './History.js';
+import historySchema from './historyModel.js';
 
 // Define User schema
 const userSchema = new mongoose.Schema({

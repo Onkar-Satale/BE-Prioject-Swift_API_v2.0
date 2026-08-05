@@ -4,14 +4,14 @@ import morgan from 'morgan';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import logger from './utils/logger.js';
-import errorHandler from './middlewares/errorHandler.js';
-import { authRateLimiter, apiRateLimiter } from './middlewares/rateLimiter.js';
-import authRoutes from './routes/auth.js';
-import historyRoutes from './routes/history.js';
-import aiRoutes from './routes/ai.js';
+import errorHandler from './middlewares/errorHandlerMiddleware.js';
+import { authRateLimiter, apiRateLimiter } from './middlewares/rateLimiterMiddleware.js';
+import authRoutes from './routes/authRoute.js';
+import historyRoutes from './routes/historyRoute.js';
+import aiRoutes from './routes/aiRoute.js';
 import { proxyRequestHandler } from './controllers/requestController.js';
 import { requestProxyValidator } from './validators/requestValidator.js';
-import auth from './middlewares/auth.js';
+import auth from './middlewares/authMiddleware.js';
 
 const app = express();
 

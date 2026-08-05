@@ -64,11 +64,11 @@ Swift_API/
 │   └── Genai.png
 ├── backend/                    # Node.js + Express REST API Server
 │   ├── config/                 # DB & environment configuration
-│   ├── controllers/            # Request processing & auth handlers
-│   ├── middlewares/            # JWT auth, rate limiting, error handling
-│   ├── models/                 # Mongoose schemas User, History, Collection
-│   ├── routes/                 # Express API endpoints
-│   ├── services/               # GenAI integration service
+│   ├── controllers/            # Request processing & auth handlers (authController, etc.)
+│   ├── middlewares/            # Auth, rate limiting & error handling (authMiddleware, errorHandlerMiddleware, rateLimiterMiddleware)
+│   ├── models/                 # Mongoose schemas & models (userModel, historyModel)
+│   ├── routes/                 # Express API endpoints (authRoute, historyRoute, aiRoute)
+│   ├── services/               # Core business & GenAI integration services (authService, historyService, requestService)
 │   ├── app.js                  # Express app initialization
 │   ├── server.js               # Server entry point
 │   └── package.json

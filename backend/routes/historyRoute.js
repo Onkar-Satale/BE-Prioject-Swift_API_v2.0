@@ -1,7 +1,7 @@
 import express from 'express';
 import { deleteHistoryValidator } from '../validators/historyValidator.js';
 import { fetchHistoryHandler, deleteHistoryHandler, clearHistoryHandler } from '../controllers/historyController.js';
-import auth from '../middlewares/auth.js';
+import auth from '../middlewares/authMiddleware.js';
 
 // Create a router for history-related endpoints
 const router = express.Router();
