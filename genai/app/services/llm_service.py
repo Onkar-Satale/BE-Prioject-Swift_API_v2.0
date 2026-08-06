@@ -1,14 +1,17 @@
-import logging  # Logging module
+"""
+Groq LLM Integration Service
+Manages system prompts, dynamic user prompt generation per feature (smart error translator,
+header analysis, security audit, etc.), and async calls to Groq (Llama-3.3-70b).
+"""
 
-from groq import AsyncGroq  # Async Groq client for LLM requests
+import logging
+from groq import AsyncGroq
+from app.config.settings import settings
+from app.schemas.request import AnalyzeRequest, BotRequest
 
-from app.config.settings import settings  # Application settings
+logger = logging.getLogger(__name__)
 
-from app.schemas.request import AnalyzeRequest, BotRequest  # Request schemas
-
-logger = logging.getLogger(__name__)  # Create logger for this file
-
-# Create one global Groq client (reused for all requests)
+# Shared Groq async client instance
 groq_client = AsyncGroq(api_key=settings.GROQ_API_KEY)
 
 # ---------------- SYSTEM MESSAGES & PROMPTS ----------------
@@ -462,60 +465,42 @@ Always prioritize helping the user understand APIs and solve their backend probl
 
 # ---------------- CORE SERVICE LOGIC ----------------
 
-# Generate AI analysis for the given API request
 async def generate_analysis(req: AnalyzeRequest) -> dict:
-
-    # Build the prompt from the request data
+    """
+    Constructs feature-specific user prompt and sends async request to Groq LLM API.
+    Returns structured dict containing feature type and AI output text.
+    """
     user_content = build_user_prompt(req)
 
     try:
-        # Send the prompt to the Groq LLM
         res = await groq_client.chat.completions.create(
-
-            # Select the LLM model
             model="llama-3.3-70b-versatile",
-
-            # Send system and user prompts
             messages=[
                 {"role": "system", "content": GLOBAL_SYSTEM_PROMPT},
                 {"role": "user", "content": user_content}
             ],
-
-            # Control response randomness
             temperature=0.5,
-
-            # Limit response length
             max_tokens=400
         )
-
-        # Extract AI-generated text
         explanation = res.choices[0].message.content
 
-        # Return response to the route
         return {
             "type": req.feature,
             "text": explanation
         }
-
     except Exception as e:
-
-        # Log the error for debugging
         logger.error(f"Groq API Error: {str(e)}", exc_info=True)
-
-        # Return a safe error message to the frontend
         return {
             "type": req.feature,
             "text": "❌ An internal error occurred while connecting to the AI backend. Please try again later."
         }
 
-
 def build_user_prompt(req: AnalyzeRequest) -> str:
     """
-    Constructs the optimized user prompt based on the requested feature.
+    Constructs structured user prompts formatted with markdown section headers
+    based on the requested analysis feature type.
     """
-    # Use response body if available, otherwise use a default message
     error_content = req.response or "No response body provided."
-     # Common API request/response details reused across prompts
     base_request_info = f"""
 Request:
 Method: {req.method}
@@ -526,7 +511,6 @@ Response:
 Status Code: {req.status}
 Response Body: {error_content}
 """
-    # Prompt for translating API errors into simple explanations
     if req.feature == "smart_error_translator":
         return f"""STRUCTURE YOUR RESPONSE EXACTLY LIKE THIS:
 ### 🕵️ What Happened
@@ -546,7 +530,6 @@ Response Body: {error_content}
 Now explain this error based on these details:
 {base_request_info}"""
     
-    # Prompt for detecting header mistakes
     elif req.feature == "header_silly_mistakes":
         return f"""STRUCTURE YOUR RESPONSE EXACTLY LIKE THIS:
 ### 🔍 Header Inspection
@@ -567,7 +550,6 @@ Analyze only for spelling mistakes, wrong capitalization, duplicates, or format 
 Headers:
 {req.headers}"""
 
-    # Prompt for deciding whether the request should be retried
     elif req.feature == "retry_recommendation":
         return f"""STRUCTURE YOUR RESPONSE EXACTLY LIKE THIS:
 ### 🔄 Retry Decision
@@ -589,7 +571,6 @@ Status Code: {req.status}
 Response:
 {error_content}"""
     
-    # Prompt for API usage optimization and best practices
     elif req.feature == "api_usage_tips":
         return f"""STRUCTURE YOUR RESPONSE EXACTLY LIKE THIS:
 ### 💡 Overview
@@ -610,7 +591,6 @@ Response:
 Analyze this API call and recommend best practices:
 {base_request_info}"""
 
-    # Prompt for security analysis of the API request
     elif req.feature == "security_judge":
         return f"""STRUCTURE YOUR RESPONSE EXACTLY LIKE THIS:
 ### 🛡️ Security Audit
@@ -630,7 +610,6 @@ Analyze this API call and recommend best practices:
 Analyze this API call strictly for security issues:
 {base_request_info}"""
       
-    # Prompt for performance-related analysis
     elif req.feature == "advanced_response_time":
         return f"""STRUCTURE YOUR RESPONSE EXACTLY LIKE THIS:
 ### ⚡ Performance Eval
@@ -650,9 +629,7 @@ Analyze this API call strictly for security issues:
 Analyze for performance:
 Status Code: {req.status}"""
 
-    # Default prompt for general root cause analysis
     else:
-        # Default payload (Root Cause Analysis, missing specific instruction logic, falls back to JARVIS logic)
         return f"""STRUCTURE YOUR RESPONSE EXACTLY LIKE THIS:
 ### 🧠 Diagnosis
 (explain what happened in 2-3 friendly lines)
@@ -671,21 +648,15 @@ Status Code: {req.status}"""
 Now analyze this API call:
 {base_request_info}"""
 
-# Generate chatbot response using conversation history and current API context
 async def generate_bot_response(req: BotRequest) -> dict:
     """
-    Generates a response for general chatbot queries, enforcing API testing boundaries
-    and using the current API context if relevant.
+    Generates a conversational response for developer queries using Groq LLM,
+    attaching current API context and previous conversation history when provided.
     """
-
-    # Initialize API context as empty
     context_str = ""
 
-    # Add current API details if available
     if req.currentApiContext:
         ctx = req.currentApiContext
-
-        # Format API details into text for the LLM
         context_str = (
             f"\n\nCurrent API Context Details:\n"
             f"- Method: {ctx.get('method', 'N/A')}\n"
@@ -696,58 +667,34 @@ async def generate_bot_response(req: BotRequest) -> dict:
             f"- Response Body: {ctx.get('response', 'N/A')}\n"
         )
 
-    # Combine user message with API context
     user_content = f"User Message: {req.message}{context_str}"
-
-    # Start conversation with the chatbot system prompt
     messages = [{"role": "system", "content": BOT_SYSTEM_PROMPT}]
 
-    # Include previous conversation history (if any)
     if req.requestHistory:
-
-        # Skip the default welcome message to avoid repetition
         for msg in req.requestHistory:
-
-            # Get sender and message text
             from_user = msg.get("from")
             text = msg.get("text") or ""
-
-            # Add only valid conversation messages
             if text and ("Hi 👋" not in text and "API assistant" not in text):
-
-                # Convert frontend sender into LLM role
                 role = "user" if from_user == "user" else "assistant"
-
-                # Add message to conversation history
                 messages.append({"role": role, "content": text})
 
-    # Add the latest user question
     messages.append({"role": "user", "content": user_content})
 
     try:
-        # Send conversation to Groq LLM
         res = await groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=messages,
             temperature=0.5,
             max_tokens=500
         )
-
-        # Extract generated response
         explanation = res.choices[0].message.content
 
-        # Return chatbot response
         return {
             "type": "bot_response",
             "text": explanation
         }
-
     except Exception as e:
-
-        # Log the error for debugging
         logger.error(f"Groq API Chat Bot Error: {str(e)}", exc_info=True)
-
-        # Return a safe error message
         return {
             "type": "bot_response",
             "text": "❌ An error occurred while generating a response. Please try again."

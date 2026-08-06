@@ -1,6 +1,9 @@
 import { body } from 'express-validator';
 import { validateRequest } from './requestValidator.js';
 
+/**
+ * Input validation schema for AI Chatbot prompt requests (/api/ai/bot).
+ */
 const botValidator = [
   body("message").trim().notEmpty().withMessage("Message is required"),
   body("currentApiContext").optional(),
@@ -9,6 +12,9 @@ const botValidator = [
   validateRequest,
 ];
 
+/**
+ * Input validation schema for AI API response analysis requests (/api/ai/analyze).
+ */
 const analyzeValidator = [
   body("url").optional(),
   body("method").optional(),

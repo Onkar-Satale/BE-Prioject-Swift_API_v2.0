@@ -1,5 +1,8 @@
 import mongoose from 'mongoose';
 
+/**
+ * Subdocument schema representing an executed API request entry in user history.
+ */
 const historySchema = new mongoose.Schema(
   {
     method: String,

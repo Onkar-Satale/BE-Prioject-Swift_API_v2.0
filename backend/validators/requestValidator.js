@@ -2,8 +2,8 @@ import { body, validationResult } from 'express-validator';
 import { ApiError } from '../utils/ApiError.js';
 
 /**
- * Common middleware function that checks express-validator results.
- * Forwards a 400 ApiError if any validation rules failed.
+ * Common middleware function that evaluates express-validator validation chains.
+ * Forwards an operational 400 ApiError if validation constraints fail.
  */
 export const validateRequest = (req, res, next) => {
   const errors = validationResult(req);
@@ -15,7 +15,7 @@ export const validateRequest = (req, res, next) => {
 };
 
 /**
- * Validation schema for the /api/request endpoint.
+ * Validation schema for proxy API requests (/api/request).
  */
 export const requestProxyValidator = [
   body("url").trim().notEmpty().withMessage("URL is required").isURL().withMessage("Must be a valid URL"),

@@ -1,3 +1,9 @@
+/**
+ * Winston Logging Module
+ * Configures application loggers with file rotation (5MB max size per log file, max 5 files)
+ * for `error.log` and `combined.log`, along with formatted console logging in development mode.
+ */
+
 import winston from 'winston';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -16,8 +22,8 @@ const logger = winston.createLogger({
     new winston.transports.File({ 
       filename: path.join(__dirname, "../logs/error.log"), 
       level: "error",
-      maxsize: 5 * 1024 * 1024, // 5MB limit per file
-      maxFiles: 5, // Keep maximum 5 rotated files
+      maxsize: 5 * 1024 * 1024,
+      maxFiles: 5,
       format: winston.format.combine(
         winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
         winston.format.json()
@@ -25,8 +31,8 @@ const logger = winston.createLogger({
     }),
     new winston.transports.File({ 
       filename: path.join(__dirname, "../logs/combined.log"),
-      maxsize: 5 * 1024 * 1024, // 5MB limit
-      maxFiles: 5, // Keep maximum 5 rotated files
+      maxsize: 5 * 1024 * 1024,
+      maxFiles: 5,
       format: winston.format.combine(
         winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
         winston.format.json()
@@ -35,7 +41,6 @@ const logger = winston.createLogger({
   ],
 });
 
-// Write console output naturally when running in development mode
 if (process.env.NODE_ENV !== "production") {
   logger.add(
     new winston.transports.Console({

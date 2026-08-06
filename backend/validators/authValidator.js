@@ -1,6 +1,10 @@
 import { body } from 'express-validator';
 import { validateRequest } from './requestValidator.js';
 
+/**
+ * Validation schema for user registration requests (/api/register).
+ * Enforces email syntax and password strength rules (min 8 chars, 1 uppercase, 1 lowercase, 1 number).
+ */
 const registerValidator = [
   body("firstName").trim().notEmpty().withMessage("First name is required").isLength({ max: 50 }).withMessage("First name must be at most 50 characters long"),
   body("lastName").optional().trim().isLength({ max: 50 }).withMessage("Last name must be at most 50 characters long"),
@@ -13,6 +17,9 @@ const registerValidator = [
   validateRequest,
 ];
 
+/**
+ * Validation schema for user login requests (/api/login).
+ */
 const loginValidator = [
   body("email").trim().isEmail().withMessage("Invalid email format"),
   body("password").notEmpty().withMessage("Password is required"),

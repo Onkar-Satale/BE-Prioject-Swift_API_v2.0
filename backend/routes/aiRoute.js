@@ -4,26 +4,18 @@ import { botHandler, analyzeHandler } from '../controllers/aiController.js';
 import authMiddleware from '../middlewares/authMiddleware.js';
 import { aiRateLimiter } from '../middlewares/rateLimiterMiddleware.js';
 
-// Create a router for AI-related endpoints
+/**
+ * AI Service Routes (/api/ai)
+ * Requires JWT authentication and applies AI-specific rate limiting.
+ */
 const router = express.Router();
 
-// Protect all AI routes with authentication
 router.use(authMiddleware);
 
-// Handle AI chatbot requests
-router.post(
-  '/bot',
-  aiRateLimiter,
-  botValidator,
-  botHandler
-);
+// AI Chatbot interaction endpoint
+router.post('/bot', aiRateLimiter, botValidator, botHandler);
 
-// Handle AI API analysis requests
-router.post(
-  '/analyze',
-  aiRateLimiter,
-  analyzeValidator,
-  analyzeHandler
-);
+// API response analysis & suggestions endpoint
+router.post('/analyze', aiRateLimiter, analyzeValidator, analyzeHandler);
 
 export default router;

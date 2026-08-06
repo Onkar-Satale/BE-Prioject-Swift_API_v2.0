@@ -1,3 +1,9 @@
+/**
+ * Express Application Configuration
+ * Sets up core middlewares (Helmet, CORS, body parsers, logging), route handlers,
+ * rate limiters, proxy request endpoint, and global error handling.
+ */
+
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
@@ -15,21 +21,18 @@ import auth from './middlewares/authMiddleware.js';
 
 const app = express();
 
-// Trust reverse proxy so Express gets the client's real IP (used for rate limiting)
+// Trust top reverse proxy layer for accurate client IP identification (rate limiters)
 app.set("trust proxy", 1);
 
-// Add common security-related HTTP headers
+// Security headers & CORS configuration
 app.use(helmet());
 
-// Read allowed frontend URLs from the environment
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(url => url.trim())
   : [];
 
-// Allow requests only from trusted frontend origins
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow Swift API client and local development servers
     if (!origin || allowedOrigins.includes(origin) || origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
       callback(null, true);
     } else {
@@ -37,35 +40,33 @@ app.use(cors({
       callback(new Error('CORS blocked origin'), false);
     }
   },
-  credentials: true // Allow HTTP-only cookies (Refresh Token)
+  credentials: true
 }));
 
-// Parse JSON, form-data and cookies from incoming requests
+// Body parsing and request logging
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use(cookieParser());
-
-// Log every incoming HTTP request
 app.use(morgan("dev"));
 
-// Apply stricter rate limiting only to authentication routes
+// Rate limiting for sensitive auth endpoints
 app.use("/api/login", authRateLimiter);
 app.use("/api/register", authRateLimiter);
 
-// Request pipeline: Rate Limiter → Authentication → Validation → Controller
+// API proxy request execution pipeline
 app.post('/api/request', apiRateLimiter, auth, requestProxyValidator, proxyRequestHandler);
 
-// Register application routes
+// API route registrations
 app.use('/api', authRoutes);
 app.use('/api/history', historyRoutes);
 app.use('/api/ai', aiRoutes);
 
-// Health check endpoint used by deployment platforms
+// Health check endpoint
 app.get('/', (req, res) => {
   res.json({ success: true, message: 'Backend is running securely' });
 });
 
-// Keep the global error handler last so it can catch errors from all routes
+// Centralized error handling middleware (must remain last)
 app.use(errorHandler);
 
 export default app;
