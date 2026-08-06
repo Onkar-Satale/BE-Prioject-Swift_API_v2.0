@@ -15,9 +15,7 @@ const setRefreshCookie = (res, token) => {
   });
 };
 
-/**
- * Registers a new user account, creates JWT access & refresh tokens, and attaches refresh cookie.
- */
+// Registers a new user account, creates JWT access & refresh tokens, and attaches refresh cookie.
 export const register = async (req, res, next) => {
   try {
     const { email, password, firstName, lastName } = req.body;
@@ -47,9 +45,7 @@ export const register = async (req, res, next) => {
   }
 };
 
-/**
- * Authenticates user credentials, generates access & refresh tokens, and returns user metadata.
- */
+// Authenticates user credentials, generates access & refresh tokens, and returns user metadata.
 export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -81,9 +77,7 @@ export const login = async (req, res, next) => {
   }
 };
 
-/**
- * Issues a new JWT access token using a valid HTTP-only refresh cookie.
- */
+// Issues a new JWT access token using a valid HTTP-only refresh cookie.
 export const refreshToken = async (req, res, next) => {
   try {
     const { refreshToken } = req.cookies;
@@ -104,9 +98,7 @@ export const refreshToken = async (req, res, next) => {
   }
 };
 
-/**
- * Logs out the user by invalidating the refresh token in the DB and clearing the refresh cookie.
- */
+// Logs out the user by invalidating the refresh token in the DB and clearing the refresh cookie.
 export const logout = async (req, res, next) => {
   try {
     const { refreshToken } = req.cookies;
@@ -125,9 +117,7 @@ export const logout = async (req, res, next) => {
   }
 };
 
-/**
- * Permanently deletes the authenticated user's account and clears auth cookie.
- */
+// Permanently deletes the authenticated user's account and clears auth cookie.
 export const deleteAccount = async (req, res, next) => {
   try {
     const userId = req.userId;

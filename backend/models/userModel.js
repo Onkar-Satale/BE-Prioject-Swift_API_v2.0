@@ -2,9 +2,7 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import historySchema from './historyModel.js';
 
-/**
- * User Schema definition for authentication, history logs, and access tokens.
- */
+// User Schema definition for authentication, history logs, and access tokens.
 const userSchema = new mongoose.Schema({
   firstName: {
     type: String,
@@ -44,24 +42,18 @@ const userSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-/**
- * Mongoose pre-save hook to hash user passwords using bcrypt (12 salt rounds).
- */
+// Mongoose pre-save hook to hash user passwords using bcrypt (12 salt rounds).
 userSchema.pre("save", async function () {
   if (!this.isModified("password")) return;
   this.password = await bcrypt.hash(this.password, 12);
 });
 
-/**
- * Instance method to compare plain password with stored bcrypt hash.
- */
+// Instance method to compare plain password with stored bcrypt hash.
 userSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
-/**
- * Custom toJSON method ensuring sensitive fields (password, refreshToken) are omitted from JSON outputs.
- */
+// Custom toJSON method ensuring sensitive fields (password, refreshToken) are omitted from JSON outputs.
 userSchema.methods.toJSON = function () {
   const obj = this.toObject();
   delete obj.password;

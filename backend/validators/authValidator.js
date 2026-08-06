@@ -17,9 +17,7 @@ const registerValidator = [
   validateRequest,
 ];
 
-/**
- * Validation schema for user login requests (/api/login).
- */
+// Validation schema for user login requests (/api/login).
 const loginValidator = [
   body("email").trim().isEmail().withMessage("Invalid email format"),
   body("password").notEmpty().withMessage("Password is required"),

@@ -1,6 +1,4 @@
-/**
- * Custom Error class for operational API errors with HTTP status codes.
- */
+// Custom Error class for operational API errors with HTTP status codes.
 class ApiError extends Error {
   constructor(statusCode, message, isOperational = true, stack = '') {
     super(message);

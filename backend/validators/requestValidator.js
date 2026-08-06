@@ -14,9 +14,7 @@ export const validateRequest = (req, res, next) => {
   next();
 };
 
-/**
- * Validation schema for proxy API requests (/api/request).
- */
+// Validation schema for proxy API requests (/api/request).
 export const requestProxyValidator = [
   body("url").trim().notEmpty().withMessage("URL is required").isURL().withMessage("Must be a valid URL"),
   body("method").trim().notEmpty().withMessage("Method is required"),

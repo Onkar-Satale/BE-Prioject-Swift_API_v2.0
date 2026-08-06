@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
 import logger from '../utils/logger.js';
-
 /**
  * Connects to MongoDB using connection string from MONGO_URI environment variable.
  * Terminates process immediately on connection failure.

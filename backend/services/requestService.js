@@ -2,9 +2,7 @@ import axios from 'axios';
 import { ApiError } from '../utils/ApiError.js';
 import historyService from './historyService.js';
 
-/**
- * Service providing proxy HTTP request execution and user history tracking.
- */
+// Service providing proxy HTTP request execution and user history tracking.
 class RequestService {
   /**
    * Executes an outgoing HTTP request on behalf of the client.
@@ -47,9 +45,7 @@ class RequestService {
     };
   }
 
-  /**
-   * Executes a proxy HTTP request and saves the result into the user's history log.
-   */
+  // Executes a proxy HTTP request and saves the result into the user's history log.
   async executeAndSaveRequest(userId, { url, method, headers, params, body }) {
     const proxyResult = await this.executeProxyRequest({ url, method, headers, params, body });
 

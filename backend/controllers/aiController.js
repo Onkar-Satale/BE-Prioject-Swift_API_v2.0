@@ -3,7 +3,6 @@ import { ApiError } from '../utils/ApiError.js';
 
 const genaiUrl = process.env.GENAI_SERVICE_URL;
 const genaiApiSecret = process.env.GENAI_API_SECRET;
-
 /**
  * Handles Axios communication errors when calling the external GenAI FastAPI service.
  * Converts FastAPI error payloads into operational ApiErrors.
@@ -16,9 +15,7 @@ const handleAxiosError = (err, next) => {
   return next(new ApiError(500, 'Failed to communicate with GenAI service', false, err.stack));
 };
 
-/**
- * Handles AI chatbot requests by forwarding prompt and API context to the GenAI microservice.
- */
+// Handles AI chatbot requests by forwarding prompt and API context to the GenAI microservice.
 export const botHandler = async (req, res, next) => {
   try {
     const response = await axios.post(`${genaiUrl}/bot`, {
@@ -36,9 +33,7 @@ export const botHandler = async (req, res, next) => {
   }
 };
 
-/**
- * Handles request/response analysis by sending raw execution payload to the GenAI microservice.
- */
+// Handles request/response analysis by sending raw execution payload to the GenAI microservice.
 export const analyzeHandler = async (req, res, next) => {
   try {
     const response = await axios.post(`${genaiUrl}/analyze`, req.body, {

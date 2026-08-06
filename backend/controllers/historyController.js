@@ -1,9 +1,7 @@
 import historyService from '../services/historyService.js';
 import { ApiError } from '../utils/ApiError.js';
 
-/**
- * Retrieves the request execution history for the authenticated user (latest 50 entries).
- */
+//Retrieves the request execution history for the authenticated user (latest 50 entries).
 export const fetchHistoryHandler = async (req, res, next) => {
   try {
     const history = await historyService.getHistory(req.userId);
@@ -16,9 +14,7 @@ export const fetchHistoryHandler = async (req, res, next) => {
   }
 };
 
-/**
- * Deletes a single request history entry by ID for the authenticated user.
- */
+// Deletes a single request history entry by ID for the authenticated user.
 export const deleteHistoryHandler = async (req, res, next) => {
   try {
     const { historyId } = req.params;
@@ -32,9 +28,7 @@ export const deleteHistoryHandler = async (req, res, next) => {
   }
 };
 
-/**
- * Clears all request history entries for the authenticated user.
- */
+// Clears all request history entries for the authenticated user.
 export const clearHistoryHandler = async (req, res, next) => {
   try {
     const result = await historyService.clearHistory(req.userId);
