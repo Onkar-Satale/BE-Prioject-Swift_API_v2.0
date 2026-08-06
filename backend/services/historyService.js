@@ -1,9 +1,7 @@
 import mongoose from 'mongoose';
 import User from '../models/userModel.js';
 
-/**
- * Service managing user API request history records.
- */
+// Service managing user API request history records.
 class HistoryService {
   // Fetches the 50 most recent request history entries for a user in reverse chronological order.
   async getHistory(userId) {
