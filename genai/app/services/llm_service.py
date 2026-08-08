@@ -4,12 +4,9 @@ Manages system prompts, dynamic user prompt generation per feature (smart error 
 header analysis, security audit, etc.), and async calls to Groq (Llama-3.3-70b).
 """
 
-import logging
 from groq import AsyncGroq
-from app.config.settings import settings
+from app.config.settings import settings, logger
 from app.schemas.request import AnalyzeRequest, BotRequest
-
-logger = logging.getLogger(__name__)
 
 # Shared Groq async client instance
 groq_client = AsyncGroq(api_key=settings.GROQ_API_KEY)

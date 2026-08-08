@@ -1,20 +1,19 @@
 FROM python:3.12-slim
 
-# Set /app as the working directory inside the container
+# Set working directory
 WORKDIR /app
 
-# Prevent Python from buffering stdout and stderr
+# Environment configuration
 ENV PYTHONUNBUFFERED=1
 
-# Install dependencies first (leverages Docker layer cache)
+# Install dependencies (leverages layer caching)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application source code
 COPY . .
 
-# Inform Docker that the app runs on port 8000
 EXPOSE 8000
 
-# Start the FastAPI app using Uvicorn
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Start Uvicorn server using dynamic environment PORT
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
