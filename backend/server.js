@@ -25,7 +25,7 @@ process.on('unhandledRejection', (reason) => {
 connectDB();
 
 // Ensure required security environment variables exist before startup
-if (!process.env.JWT_SECRET || !process.env.JWT_REFRESH_SECRET) {
+if ((!process.env.JWT_ACCESS_SECRET && !process.env.JWT_SECRET) || !process.env.JWT_REFRESH_SECRET) {
   throw new Error("Missing JWT environment variables");
 }
 

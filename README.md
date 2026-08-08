@@ -107,7 +107,7 @@ Before running the application locally, set up the `.env` configuration files fo
 PORT=5000
 NODE_ENV=development
 MONGO_URI=mongodb://localhost:27017/swift_api
-JWT_SECRET=your_jwt_access_secret_key
+JWT_ACCESS_SECRET=your_jwt_access_secret_key
 JWT_REFRESH_SECRET=your_jwt_refresh_secret_key
 FRONTEND_URL=http://localhost:3000
 ALLOWED_ORIGINS=http://localhost:3000
