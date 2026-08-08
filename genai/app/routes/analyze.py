@@ -3,6 +3,7 @@ AI Service Router (/analyze and /bot)
 Provides endpoints for API analysis/debugging features and conversational AI assistant queries.
 """
 
+from fastapi import APIRouter, Depends, HTTPException, Request
 from app.config.settings import logger
 from app.dependencies import verify_api_key
 from app.schemas.request import AnalyzeRequest, BotRequest
