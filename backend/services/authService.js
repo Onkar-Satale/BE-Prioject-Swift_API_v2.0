@@ -2,7 +2,7 @@ import User from '../models/userModel.js';
 import jwt from 'jsonwebtoken';
 
 // Service encapsulating user authentication, password verification, and JWT operations.
- class AuthService {
+class AuthService {
   // Finds user by email including the password field (override select: false).
   async findUserByEmail(email) {
     const lowercasedEmail = email ? email.toLowerCase() : email;
