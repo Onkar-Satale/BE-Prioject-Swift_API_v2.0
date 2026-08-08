@@ -19,7 +19,7 @@ const handleAxiosError = (err, next) => {
 export const botHandler = async (req, res, next) => {
   try {
     const response = await axios.post(`${genaiUrl}/bot`, {
-      userId: req.userId || req.body.userId || 'guest',
+      userId: req.userId || req.body.userId,
       message: req.body.message,
       currentApiContext: req.body.currentApiContext,
       requestHistory: req.body.requestHistory || []

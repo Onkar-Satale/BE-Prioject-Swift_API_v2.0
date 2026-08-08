@@ -39,7 +39,7 @@ class HistoryService {
     });
   }
 
-  //Clears all history entries for a user document.
+  // Clears all history entries for a user document.
   async clearHistory(userId) {
     return await User.findByIdAndUpdate(userId, { $set: { history: [] } });
   }

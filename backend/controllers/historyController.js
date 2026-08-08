@@ -1,7 +1,7 @@
 import historyService from '../services/historyService.js';
 import { ApiError } from '../utils/ApiError.js';
 
-//Retrieves the request execution history for the authenticated user (latest 50 entries).
+// Retrieves the request execution history for the authenticated user (latest 50 entries).
 export const fetchHistoryHandler = async (req, res, next) => {
   try {
     const history = await historyService.getHistory(req.userId);
