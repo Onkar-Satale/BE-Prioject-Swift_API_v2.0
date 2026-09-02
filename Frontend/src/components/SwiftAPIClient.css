@@ -5,6 +5,7 @@ html,
 body {
   height: 100%;
   margin: 0;
+  overflow: hidden !important;
   background-color: var(--terminal-bg);
   color: var(--terminal-text-bright);
   font-family: var(--terminal-font);

@@ -18,9 +18,13 @@
 }
 
 html,
-body {
+body,
+#root {
   margin: 0;
   padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden !important;
   background-color: var(--terminal-bg);
   color: var(--terminal-text-bright);
   font-family: var(--terminal-font) !important;
