@@ -5,23 +5,62 @@ import "./FlowStudioModal.css";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
 
-// Helper to safely extract nested properties using a dot path like "data.user.id" or "0.id"
+// Helper to safely extract nested properties using a dot path like "id", "data.user.id", "response.body.id", "0.id"
 function getValueByPath(obj, path) {
-  if (!obj || !path) return undefined;
-  const parts = path.split(".");
-  let current = obj;
+  if (obj === null || obj === undefined || !path) return undefined;
+
+  let target = obj;
+  if (typeof target === "string") {
+    try {
+      target = JSON.parse(target);
+    } catch {}
+  }
+
+  // Clean path: strip leading "response.body.", "response.data.", "body.", "data." if present
+  let cleanPath = String(path).trim();
+  if (cleanPath.startsWith("response.body.")) cleanPath = cleanPath.slice("response.body.".length);
+  else if (cleanPath.startsWith("response.data.")) cleanPath = cleanPath.slice("response.data.".length);
+  else if (cleanPath.startsWith("response.")) cleanPath = cleanPath.slice("response.".length);
+  else if (cleanPath.startsWith("body.")) cleanPath = cleanPath.slice("body.".length);
+
+  if (!cleanPath) return target;
+
+  const parts = cleanPath.split(".").filter(Boolean);
+  let current = target;
   for (const part of parts) {
     if (current === null || current === undefined) return undefined;
-    current = current[part];
+    const indexMatch = part.match(/^\[?(\d+)\]?$/);
+    if (indexMatch && Array.isArray(current)) {
+      current = current[parseInt(indexMatch[1], 10)];
+    } else {
+      current = current[part];
+    }
   }
   return current;
 }
 
 // Helper to interpolate {{varName}} in string URLs, headers, and body
 function interpolateVariables(template, variables) {
+  if (!template || !variables) return template;
+  if (typeof template === "object") {
+    try {
+      const str = JSON.stringify(template);
+      const replaced = str.replace(/\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g, (_, varName) => {
+        const key = varName.trim();
+        const val = variables[key];
+        return val !== undefined ? (typeof val === "object" ? JSON.stringify(val) : String(val)) : `{{${varName}}}`;
+      });
+      return JSON.parse(replaced);
+    } catch {
+      return template;
+    }
+  }
   if (typeof template !== "string") return template;
-  return template.replace(/\{\{\s*([a-zA-Z0-9_-]+)\s*\}\}/g, (_, varName) => {
-    return variables[varName] !== undefined ? variables[varName] : `{{${varName}}}`;
+
+  return template.replace(/\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g, (_, varName) => {
+    const key = varName.trim();
+    const val = variables[key];
+    return val !== undefined ? String(val) : `{{${varName}}}`;
   });
 }
 
@@ -210,7 +249,9 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
         const json = await res.json();
         const duration = Date.now() - startTime;
         responseStatus = json.status || res.status;
-        responseData = json.data;
+        
+        // Extract body correctly from json.body or json.data
+        responseData = json.body !== undefined ? json.body : (json.data !== undefined ? json.data : json);
 
         const expected = step.expectedStatus || 200;
         stepPassed = responseStatus === expected || (expected === 200 && responseStatus >= 200 && responseStatus < 300);
@@ -219,15 +260,16 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
           errorMsg = `Status ${responseStatus} did not match expected ${expected}`;
         }
 
-        // 3. If Step Passed -> Extract Variables
+        // 3. If Step Passed -> Extract Variables into localVars
         const extractedThisStep = {};
-        if (stepPassed && responseData) {
+        if (stepPassed && responseData !== undefined && responseData !== null) {
           (step.extractVariables || []).forEach(vRule => {
             if (vRule.varName && vRule.jsonPath) {
               const val = getValueByPath(responseData, vRule.jsonPath);
-              if (val !== undefined) {
-                extractedThisStep[vRule.varName] = val;
-                localVars[vRule.varName] = val;
+              if (val !== undefined && val !== null) {
+                const cleanKey = vRule.varName.trim();
+                extractedThisStep[cleanKey] = val;
+                localVars[cleanKey] = val;
               }
             }
           });
@@ -647,17 +689,30 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
                   return (
                     <div key={step.stepId || idx} className={`runner-step-card ${statusClass}`}>
                       <div className="runner-step-top">
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
                           <span className="step-number-badge">{idx + 1}</span>
                           <span className="runner-step-title">{step.name}</span>
-                          <span style={{ color: "#a6e3a1", fontWeight: "700", fontSize: "11px" }}>{step.method}</span>
-                          <span style={{ color: "#a6adc8", fontSize: "11px", fontFamily: "monospace" }}>{step.url}</span>
+                          <span style={{ color: "#34d399", fontWeight: "700", fontSize: "11px" }}>{step.method}</span>
+                          <span style={{ color: "#a1a1aa", fontSize: "11px", fontFamily: "monospace" }}>
+                            {result?.url || interpolateVariables(step.url, runtimeVars)}
+                          </span>
                         </div>
                         {statusTag}
                       </div>
 
+                      {result?.extracted && Object.keys(result.extracted).length > 0 && (
+                        <div style={{ fontSize: "10.5px", color: "#fbbf24", display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
+                          <span>📥 Extracted:</span>
+                          {Object.entries(result.extracted).map(([k, v]) => (
+                            <span key={k} style={{ background: "#18181f", border: "1px solid #27272a", padding: "1px 6px", borderRadius: "3px", color: "#34d399" }}>
+                              <strong>{k}</strong> = {JSON.stringify(v)}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
                       {result && result.duration > 0 && (
-                        <div style={{ fontSize: "11px", color: "#6c7086" }}>
+                        <div style={{ fontSize: "10.5px", color: "#71717a" }}>
                           Response Time: {result.duration}ms {result.error && `| Error: ${result.error}`}
                         </div>
                       )}
