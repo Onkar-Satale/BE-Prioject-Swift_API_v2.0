@@ -9,6 +9,7 @@ import AccountPage from "./AccountPage";
 import HistorySidebar from "../components/HistorySidebar";
 import ParamsTab from "./ParamsTab";
 import { getHistory, deleteHistoryItem, clearHistory } from "../services/historyService";
+import { authenticatedFetch } from "../services/authService";
 import "./SwiftAPIClient.css";
 import RequestBar from "./RequestBar";
 import BotSidebar from "./BotSidebar";
@@ -340,12 +341,8 @@ export default function SwiftAPIClient() {
         previousAttempts
       };
 
-      const res = await fetch(`${backendUrl}/api/ai/failure-assist`, {
+      const res = await authenticatedFetch(`${backendUrl}/api/ai/failure-assist`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": token ? `Bearer ${token}` : ""
-        },
         body: JSON.stringify(assistPayload)
       });
 
@@ -458,15 +455,10 @@ export default function SwiftAPIClient() {
       }
 
       const finalUrl = url.trim();
-
-      const backendToken = localStorage.getItem("authToken");
       const backendUrl = process.env.REACT_APP_BACKEND_URL;
-      const res = await fetch(`${backendUrl}/api/request`, {
+
+      const res = await authenticatedFetch(`${backendUrl}/api/request`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${backendToken}`,
-        },
         body: JSON.stringify({
           url: finalUrl,
           method,
@@ -581,16 +573,11 @@ export default function SwiftAPIClient() {
       } else {
         // 🔹 V2 RAG: Index verified resolution episode into RAG memory if an auto-fix was resolved
         if (appliedFixInfo) {
-          const backendToken = localStorage.getItem("authToken");
           const backendUrl = process.env.REACT_APP_BACKEND_URL;
           const userIdentifier = localStorage.getItem("userId") || getUserIdFromToken() || "guest";
 
-          fetch(`${backendUrl}/api/ai/rag/index-episode`, {
+          authenticatedFetch(`${backendUrl}/api/ai/rag/index-episode`, {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": backendToken ? `Bearer ${backendToken}` : ""
-            },
             body: JSON.stringify({
               userId: userIdentifier,
               method,
