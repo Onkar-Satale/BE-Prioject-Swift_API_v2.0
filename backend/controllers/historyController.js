@@ -5,10 +5,7 @@ import { ApiError } from '../utils/ApiError.js';
 export const fetchHistoryHandler = async (req, res, next) => {
   try {
     const history = await historyService.getHistory(req.userId);
-    if (!history) {
-      return next(new ApiError(404, 'User not found'));
-    }
-    res.json(history);
+    res.json(history || []);
   } catch (error) {
     next(error);
   }

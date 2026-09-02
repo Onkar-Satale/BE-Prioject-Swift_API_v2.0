@@ -5,10 +5,15 @@ import User from '../models/userModel.js';
 class HistoryService {
   // Fetches the 50 most recent request history entries for a user in reverse chronological order.
   async getHistory(userId) {
-    const user = await User.findById(userId, { history: { $slice: -50 } });
-    if (!user) return null;
+    try {
+      if (!mongoose.Types.ObjectId.isValid(userId)) return [];
+      const user = await User.findById(userId, { history: { $slice: -50 } });
+      if (!user) return [];
 
-    return Array.isArray(user.history) ? user.history.slice().reverse() : [];
+      return Array.isArray(user.history) ? user.history.slice().reverse() : [];
+    } catch {
+      return [];
+    }
   }
 
   // Appends a new API request history entry to the user's history array, capping total items at 100.
