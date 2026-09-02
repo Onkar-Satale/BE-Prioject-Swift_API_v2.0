@@ -15,6 +15,7 @@
   --terminal-text-dim: #a1a1aa;
   --terminal-text-bright: #f4f4f5;
   --terminal-font: "Courier New", Courier, Monaco, "Fira Code", monospace;
+  --terminal-font-size: 12.5px;
 }
 
 html,
@@ -53,7 +54,7 @@ input,
 textarea,
 select,
 button {
-  font-size: 12.4px !important;
+  font-size: var(--terminal-font-size) !important;
 }
 
 /* Global scrollbars styling */
@@ -150,26 +151,7 @@ button:active {
 
 /* Global text size scale up for mobile screens */
 @media (max-width: 768px) {
-  html,
-  body,
-  p,
-  span,
-  div,
-  li,
-  label,
-  pre,
-  td,
-  th,
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6,
-  input,
-  textarea,
-  select,
-  button {
-    font-size: 13.8px !important;
+  :root {
+    --terminal-font-size: 15px;
   }
 }

@@ -5,62 +5,213 @@ import "./FlowStudioModal.css";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
 
-// Helper to safely extract nested properties using a dot path like "id", "data.user.id", "response.body.id", "0.id"
-function getValueByPath(obj, path) {
+// Helper to safely extract nested properties from response data or full response wrapper
+export function getValueByPath(obj, path, fullResponse = null) {
   if (obj === null || obj === undefined || !path) return undefined;
 
-  let target = obj;
-  if (typeof target === "string") {
-    try {
-      target = JSON.parse(target);
-    } catch {}
-  }
+  const resolve = (root, pathStr) => {
+    if (root === null || root === undefined || typeof pathStr !== "string") return undefined;
+    let target = root;
+    if (typeof target === "string") {
+      try {
+        target = JSON.parse(target);
+      } catch {}
+    }
 
-  // Clean path: strip leading "response.body.", "response.data.", "body.", "data." if present
-  let cleanPath = String(path).trim();
-  if (cleanPath.startsWith("response.body.")) cleanPath = cleanPath.slice("response.body.".length);
-  else if (cleanPath.startsWith("response.data.")) cleanPath = cleanPath.slice("response.data.".length);
-  else if (cleanPath.startsWith("response.")) cleanPath = cleanPath.slice("response.".length);
-  else if (cleanPath.startsWith("body.")) cleanPath = cleanPath.slice("body.".length);
+    // Convert bracket notation [0] or ['key'] or ["key"] into dot notation .0 or .key
+    const normalized = pathStr
+      .trim()
+      .replace(/\[['"]?([^'"\]]+)['"]?\]/g, '.$1')
+      .replace(/^\./, '');
 
-  if (!cleanPath) return target;
+    const parts = normalized.split('.').map(p => p.trim()).filter(Boolean);
+    let current = target;
 
-  const parts = cleanPath.split(".").filter(Boolean);
-  let current = target;
-  for (const part of parts) {
-    if (current === null || current === undefined) return undefined;
-    const indexMatch = part.match(/^\[?(\d+)\]?$/);
-    if (indexMatch && Array.isArray(current)) {
-      current = current[parseInt(indexMatch[1], 10)];
-    } else {
+    for (const part of parts) {
+      if (current === null || current === undefined) return undefined;
+      if (typeof current === "string") {
+        try {
+          current = JSON.parse(current);
+        } catch {}
+      }
       current = current[part];
     }
+    return current;
+  };
+
+  const rawPath = String(path).trim();
+
+  // 1. Try resolving exact path on obj (e.g. responseData)
+  let val = resolve(obj, rawPath);
+  if (val !== undefined && val !== null) return val;
+
+  // 2. Strip common prefixes (response.body., response.data., response., body., data.) and resolve on obj
+  const cleanedPath = rawPath
+    .replace(/^response\.body\./i, '')
+    .replace(/^response\.data\./i, '')
+    .replace(/^response\./i, '')
+    .replace(/^body\./i, '')
+    .replace(/^data\./i, '');
+
+  if (cleanedPath !== rawPath) {
+    val = resolve(obj, cleanedPath);
+    if (val !== undefined && val !== null) return val;
   }
-  return current;
+
+  // 3. Array / Object Cross-Compatibility Fallbacks:
+  // 3A. If obj is an Array and user didn't specify array index (e.g. user typed "name" or "updated_at" on an array response)
+  if (Array.isArray(obj) && obj.length > 0) {
+    const arrayItemVal = resolve(obj[0], cleanedPath);
+    if (arrayItemVal !== undefined && arrayItemVal !== null) return arrayItemVal;
+  }
+
+  // 3B. If obj is a single Object and user specified array index (e.g. user typed "0.updated_at" on a single object response)
+  if (typeof obj === "object" && !Array.isArray(obj)) {
+    const strippedIndex = cleanedPath.replace(/^0\./, '').replace(/^\[0\]\./, '');
+    if (strippedIndex !== cleanedPath) {
+      const objVal = resolve(obj, strippedIndex);
+      if (objVal !== undefined && objVal !== null) return objVal;
+    }
+  }
+
+  // 4. Fallback: Try resolving on fullResponse object if available
+  if (fullResponse && typeof fullResponse === "object") {
+    val = resolve(fullResponse, rawPath);
+    if (val !== undefined && val !== null) return val;
+
+    val = resolve(fullResponse, cleanedPath);
+    if (val !== undefined && val !== null) return val;
+
+    if (fullResponse.body) {
+      val = resolve(fullResponse.body, cleanedPath);
+      if (val !== undefined && val !== null) return val;
+      if (Array.isArray(fullResponse.body) && fullResponse.body.length > 0) {
+        val = resolve(fullResponse.body[0], cleanedPath);
+        if (val !== undefined && val !== null) return val;
+      }
+    }
+    if (fullResponse.data) {
+      val = resolve(fullResponse.data, cleanedPath);
+      if (val !== undefined && val !== null) return val;
+      if (Array.isArray(fullResponse.data) && fullResponse.data.length > 0) {
+        val = resolve(fullResponse.data[0], cleanedPath);
+        if (val !== undefined && val !== null) return val;
+      }
+    }
+  }
+
+  return undefined;
 }
 
-// Helper to interpolate {{varName}} in string URLs, headers, and body
-function interpolateVariables(template, variables) {
-  if (!template || !variables) return template;
+// Helper to interpolate {{varName}} in string URLs, headers, params, and body
+export function interpolateVariables(template, variables) {
+  if (!template || !variables || typeof variables !== "object") return template;
+
+  const replaceString = (str) => {
+    if (typeof str !== "string") return str;
+    return str.replace(/\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g, (match, rawKey) => {
+      const key = rawKey.trim();
+
+      // 1. Direct key match
+      if (variables[key] !== undefined && variables[key] !== null) {
+        return typeof variables[key] === "object" ? JSON.stringify(variables[key]) : String(variables[key]);
+      }
+
+      // 2. Stripped prefix key match (e.g. response.body.login -> login)
+      const cleanKey = key
+        .replace(/^response\.body\./i, '')
+        .replace(/^response\.data\./i, '')
+        .replace(/^response\./i, '')
+        .replace(/^body\./i, '')
+        .replace(/^data\./i, '')
+        .replace(/^vars\./i, '')
+        .replace(/^variables\./i, '');
+
+      if (variables[cleanKey] !== undefined && variables[cleanKey] !== null) {
+        return typeof variables[cleanKey] === "object" ? JSON.stringify(variables[cleanKey]) : String(variables[cleanKey]);
+      }
+
+      // 3. Case-insensitive key match fallback
+      const lowerKey = key.toLowerCase();
+      const lowerCleanKey = cleanKey.toLowerCase();
+      const found = Object.entries(variables).find(([k]) => {
+        const kLower = k.toLowerCase();
+        return kLower === lowerKey || kLower === lowerCleanKey;
+      });
+
+      if (found && found[1] !== undefined && found[1] !== null) {
+        return typeof found[1] === "object" ? JSON.stringify(found[1]) : String(found[1]);
+      }
+
+      return match; // Return unchanged if variable is not found in pool
+    });
+  };
+
+  if (typeof template === "string") {
+    return replaceString(template);
+  }
+
   if (typeof template === "object") {
     try {
-      const str = JSON.stringify(template);
-      const replaced = str.replace(/\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g, (_, varName) => {
-        const key = varName.trim();
-        const val = variables[key];
-        return val !== undefined ? (typeof val === "object" ? JSON.stringify(val) : String(val)) : `{{${varName}}}`;
-      });
+      const stringified = JSON.stringify(template);
+      const replaced = replaceString(stringified);
       return JSON.parse(replaced);
     } catch {
       return template;
     }
   }
-  if (typeof template !== "string") return template;
 
-  return template.replace(/\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g, (_, varName) => {
-    const key = varName.trim();
-    const val = variables[key];
-    return val !== undefined ? String(val) : `{{${varName}}}`;
+  return template;
+}
+
+// Helper to render templates with {{varName}} highlighted in green (if resolved) or red (if unresolved)
+export function renderHighlightedTemplate(template, variables = {}) {
+  if (!template || typeof template !== "string") return template;
+
+  const parts = template.split(/(\{\{\s*[a-zA-Z0-9_.-]+\s*\}\})/g);
+  if (parts.length <= 1) return template;
+
+  return parts.map((part, idx) => {
+    const match = part.match(/^\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}$/);
+    if (!match) return <span key={idx}>{part}</span>;
+
+    const rawKey = match[1].trim();
+    const cleanKey = rawKey
+      .replace(/^response\.body\./i, '')
+      .replace(/^response\.data\./i, '')
+      .replace(/^response\./i, '')
+      .replace(/^body\./i, '')
+      .replace(/^data\./i, '')
+      .replace(/^vars\./i, '')
+      .replace(/^variables\./i, '');
+
+    const resolvedVal = variables[rawKey] !== undefined ? variables[rawKey] : variables[cleanKey];
+    const isResolved = resolvedVal !== undefined && resolvedVal !== null;
+
+    if (isResolved) {
+      const displayVal = typeof resolvedVal === "object" ? JSON.stringify(resolvedVal) : String(resolvedVal);
+      return (
+        <span
+          key={idx}
+          className="flow-var-tag resolved"
+          title={`Resolved: ${displayVal}`}
+        >
+          {`{{${rawKey}}}`}
+          <span className="flow-var-preview">{displayVal.length > 20 ? `${displayVal.slice(0, 18)}…` : displayVal}</span>
+        </span>
+      );
+    }
+
+    return (
+      <span
+        key={idx}
+        className="flow-var-tag unresolved"
+        title="Unresolved: Variable not yet extracted in preceding steps"
+      >
+        {`{{${rawKey}}}`}
+        <span className="flow-var-preview unres">unresolved</span>
+      </span>
+    );
   });
 }
 
@@ -94,8 +245,27 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
   const [pausedForHealing, setPausedForHealing] = useState(null); // { stepIdx, diagnosis, step }
   const [healedCount, setHealedCount] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [expandedResponses, setExpandedResponses] = useState({});
+
+  const toggleResponseView = (idx) => {
+    setExpandedResponses(prev => ({ ...prev, [idx]: !prev[idx] }));
+  };
 
   const isCancelledRef = useRef(false);
+
+  // Sync state when flow prop changes
+  React.useEffect(() => {
+    if (flow) {
+      setName(flow.name || "New API Pipeline Flow");
+      setDescription(flow.description || "");
+      if (Array.isArray(flow.steps) && flow.steps.length > 0) {
+        setSteps(flow.steps);
+      }
+      if (flow.initialVariables) {
+        setRuntimeVars(flow.initialVariables);
+      }
+    }
+  }, [flow]);
 
   // Save Flow definition
   const handleSaveFlow = async () => {
@@ -157,7 +327,10 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
       const existing = copy[stepIdx].extractVariables || [];
       copy[stepIdx] = {
         ...copy[stepIdx],
-        extractVariables: [...existing, { varName: `var_${Date.now().toString().slice(-4)}`, jsonPath: "id" }]
+        extractVariables: [
+          ...existing,
+          { varName: `var_${existing.length + 1}`, jsonPath: "id" }
+        ]
       };
       return copy;
     });
@@ -214,11 +387,13 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
       const step = localSteps[i];
 
       // 1. Resolve variable interpolations & sanitize URL
-      let rawResolvedUrl = interpolateVariables(step.url, localVars);
+      const rawTemplateUrl = step.url;
+      const rawResolvedUrl = interpolateVariables(step.url, localVars);
       let cleanUrl = String(rawResolvedUrl || "").trim();
-      if (cleanUrl.match(/^(GET|POST|PUT|DELETE|PATCH)\s+/i)) {
+      while (cleanUrl.match(/^(GET|POST|PUT|DELETE|PATCH)\s+/i)) {
         cleanUrl = cleanUrl.replace(/^(GET|POST|PUT|DELETE|PATCH)\s+/i, "").trim();
       }
+      cleanUrl = cleanUrl.replace(/\s+\//g, '/').replace(/\/\s+/g, '/');
       if (!cleanUrl.startsWith("http://") && !cleanUrl.startsWith("https://")) {
         cleanUrl = `https://${cleanUrl}`;
       }
@@ -231,6 +406,14 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
       if (!resolvedHeaders["Content-Type"]) {
         resolvedHeaders["Content-Type"] = "application/json";
       }
+      if (!resolvedHeaders["User-Agent"]) {
+        resolvedHeaders["User-Agent"] = "SwiftAPIClient/1.0";
+      }
+
+      const resolvedParams = {};
+      Object.entries(step.params || {}).forEach(([k, v]) => {
+        if (k) resolvedParams[k] = interpolateVariables(v, localVars);
+      });
 
       let resolvedBody = step.body;
       if (typeof resolvedBody === "string" && resolvedBody.trim()) {
@@ -241,8 +424,15 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
           resolvedBody = interpolateVariables(resolvedBody, localVars);
         }
       } else if (resolvedBody && typeof resolvedBody === "object") {
-        resolvedBody = JSON.parse(interpolateVariables(JSON.stringify(resolvedBody), localVars));
+        resolvedBody = interpolateVariables(resolvedBody, localVars);
       }
+
+      // 🔍 Debug Logging: Step Details, Template URL, Current Pool, and Resolved URL
+      console.log(`\n=================== [FlowRunner] STEP ${i + 1}: "${step.name || step.stepId}" ===================`);
+      console.log(`[FlowRunner] Step ${i + 1} Template URL:`, rawTemplateUrl);
+      console.log(`[FlowRunner] Step ${i + 1} Configured Extraction Rules:`, step.extractVariables || []);
+      console.log(`[FlowRunner] Current execution variable pool:`, JSON.parse(JSON.stringify(localVars)));
+      console.log(`[FlowRunner] Step ${i + 1} Resolved URL:`, resolvedUrl);
 
       // 2. Execute Step via Backend Proxy
       const startTime = Date.now();
@@ -259,7 +449,7 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
             url: resolvedUrl,
             headers: resolvedHeaders,
             body: resolvedBody || null,
-            params: step.params || {}
+            params: resolvedParams || {}
           })
         });
 
@@ -277,12 +467,12 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
           errorMsg = `Status ${responseStatus} did not match expected ${expected}`;
         }
 
-        // 3. If Step Passed -> Extract Variables into localVars
+        // 3. If Step Passed -> Extract Variables into localVars ONLY from user-configured extractVariables
         const extractedThisStep = {};
         if (stepPassed && responseData !== undefined && responseData !== null) {
           (step.extractVariables || []).forEach(vRule => {
             if (vRule.varName && vRule.jsonPath) {
-              const val = getValueByPath(responseData, vRule.jsonPath);
+              const val = getValueByPath(responseData, vRule.jsonPath, json);
               if (val !== undefined && val !== null) {
                 const cleanKey = vRule.varName.trim();
                 extractedThisStep[cleanKey] = val;
@@ -290,8 +480,15 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
               }
             }
           });
+
           setRuntimeVars({ ...localVars });
         }
+
+        // 🔍 Debug Logging: Response Data, Extracted Variables, and Updated Pool
+        console.log(`[FlowRunner] Step ${i + 1} Response (Status ${responseStatus}):`, responseData);
+        console.log(`[FlowRunner] Extracted variables from Step ${i + 1}:`, JSON.parse(JSON.stringify(extractedThisStep)));
+        console.log(`[FlowRunner] Current execution variable pool (after extraction):`, JSON.parse(JSON.stringify(localVars)));
+        console.log(`=================================================================================\n`);
 
         const stepResultItem = {
           stepId: step.stepId,
@@ -303,6 +500,7 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
           passed: stepPassed,
           error: errorMsg,
           extracted: extractedThisStep,
+          responseBody: responseData,
           healed: false
         };
 
@@ -398,7 +596,7 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
   const handleApplyHealingAndResume = async () => {
     if (!pausedForHealing) return;
 
-    const { stepIdx, step, diagnosis, currentVars, results, healedCount: curHealed, currentSteps: curSteps } = pausedForHealing;
+    const { stepIdx, diagnosis, currentVars, results, healedCount: curHealed, currentSteps: curSteps } = pausedForHealing;
     const autoFix = diagnosis?.autoFix;
 
     const mutatedSteps = [...curSteps];
@@ -587,6 +785,12 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
                         placeholder="https://api.example.com/items/{{itemId}}"
                       />
                     </div>
+                    {step.url && step.url.includes("{{") && (
+                      <div style={{ fontSize: "11px", color: "#a1a1aa", marginTop: "4px", display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
+                        <span style={{ color: "#71717a" }}>Variable Preview:</span>
+                        <span>{renderHighlightedTemplate(step.url, runtimeVars)}</span>
+                      </div>
+                    )}
 
                     {/* Variable Extractions for this step */}
                     <div className="variables-extraction-box">
@@ -603,13 +807,19 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
                         </button>
                       </div>
 
+                      {(!step.extractVariables || step.extractVariables.length === 0) && (
+                        <div style={{ fontSize: "10.5px", color: "#71717a", marginTop: "4px", fontStyle: "italic" }}>
+                          💡 No extraction rules yet. Click "+ Extract Var" to map any JSON response field (e.g. userId = user.id, token = token, orderId = order.id).
+                        </div>
+                      )}
+
                       {(step.extractVariables || []).map((vRule, vIdx) => (
                         <div key={vIdx} className="var-extract-row">
                           <input
                             type="text"
                             className="var-extract-input"
                             style={{ width: "130px" }}
-                            placeholder="Variable (e.g. token)"
+                            placeholder="Variable (e.g. userId, token)"
                             value={vRule.varName}
                             onChange={(e) => handleUpdateExtractVar(idx, vIdx, "varName", e.target.value)}
                           />
@@ -618,7 +828,7 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
                             type="text"
                             className="var-extract-input"
                             style={{ flex: 1 }}
-                            placeholder="JSON Path (e.g. data.id or token)"
+                            placeholder="JSON Path (e.g. user.id, data.token, 0.name)"
                             value={vRule.jsonPath}
                             onChange={(e) => handleUpdateExtractVar(idx, vIdx, "jsonPath", e.target.value)}
                           />
@@ -714,26 +924,64 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
                           <span className="runner-step-title">{step.name}</span>
                           <span style={{ color: "#34d399", fontWeight: "700", fontSize: "11px" }}>{step.method}</span>
                           <span style={{ color: "#a1a1aa", fontSize: "11px", fontFamily: "monospace" }}>
-                            {result?.url || interpolateVariables(step.url, runtimeVars)}
+                            {result?.url || renderHighlightedTemplate(step.url, runtimeVars)}
                           </span>
                         </div>
                         {statusTag}
                       </div>
 
-                      {result?.extracted && Object.keys(result.extracted).length > 0 && (
-                        <div style={{ fontSize: "10.5px", color: "#fbbf24", display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
-                          <span>📥 Extracted:</span>
-                          {Object.entries(result.extracted).map(([k, v]) => (
-                            <span key={k} style={{ background: "#18181f", border: "1px solid #27272a", padding: "1px 6px", borderRadius: "3px", color: "#34d399" }}>
-                              <strong>{k}</strong> = {JSON.stringify(v)}
-                            </span>
-                          ))}
+                      {result && result.duration > 0 && (
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "10.5px", color: "#71717a", flexWrap: "wrap", gap: "6px" }}>
+                          <span>Response Time: {result.duration}ms {result.error && `| Error: ${result.error}`}</span>
+                          {result.responseBody && (
+                            <button
+                              style={{ background: "transparent", border: "none", color: "#38bdf8", cursor: "pointer", fontSize: "10.5px", textDecoration: "underline", padding: 0 }}
+                              onClick={() => toggleResponseView(idx)}
+                            >
+                              {expandedResponses[idx] ? "▲ Hide Response JSON" : "▼ View Response JSON"}
+                            </button>
+                          )}
                         </div>
                       )}
 
-                      {result && result.duration > 0 && (
-                        <div style={{ fontSize: "10.5px", color: "#71717a" }}>
-                          Response Time: {result.duration}ms {result.error && `| Error: ${result.error}`}
+                      {/* Expandable Response JSON Viewer */}
+                      {expandedResponses[idx] && result?.responseBody && (
+                        <div style={{ background: "#09090d", border: "1px solid #1f1f23", borderRadius: "4px", padding: "8px", maxHeight: "180px", overflowY: "auto", fontFamily: "monospace", fontSize: "10.5px", color: "#a6adc8", whiteSpace: "pre-wrap" }}>
+                          {JSON.stringify(result.responseBody, null, 2)}
+                        </div>
+                      )}
+
+                      {/* 📥 Output Variables from this Step (Only Explicitly Extracted) */}
+                      {result && (
+                        <div className="runner-step-outputs-box">
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2px" }}>
+                            <span style={{ fontSize: "10.5px", fontWeight: "700", color: "#38bdf8" }}>
+                              📥 Output Variables:
+                            </span>
+                          </div>
+                          {result.extracted && Object.keys(result.extracted).length > 0 ? (
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
+                              {Object.entries(result.extracted).map(([outKey, outVal]) => (
+                                <button
+                                  key={outKey}
+                                  className="output-var-chip"
+                                  title={`Click to copy {{${outKey}}}`}
+                                  onClick={() => {
+                                    if (navigator.clipboard) {
+                                      navigator.clipboard.writeText(`{{${outKey}}}`);
+                                    }
+                                  }}
+                                >
+                                  <span className="var-chip-name">{`{{${outKey}}}`}</span>
+                                  <span className="var-chip-val">: {typeof outVal === "object" ? JSON.stringify(outVal) : String(outVal)}</span>
+                                </button>
+                              ))}
+                            </div>
+                          ) : (
+                            <div style={{ fontSize: "10.5px", color: "#71717a", fontStyle: "italic" }}>
+                              No variables extracted.
+                            </div>
+                          )}
                         </div>
                       )}
 
