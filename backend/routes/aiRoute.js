@@ -1,7 +1,6 @@
 import express from 'express';
 import {
   botValidator,
-  analyzeValidator,
   failureAssistValidator,
   compareValidator,
   healthScoreValidator,
@@ -10,7 +9,6 @@ import {
 } from '../validators/aiValidator.js';
 import {
   botHandler,
-  analyzeHandler,
   failureAssistHandler,
   compareHandler,
   healthScoreHandler,
@@ -30,9 +28,6 @@ router.use(authMiddleware);
 
 // AI Chatbot interaction endpoint (V1)
 router.post('/bot', aiRateLimiter, botValidator, botHandler);
-
-// API response analysis & suggestions endpoint (V1)
-router.post('/analyze', aiRateLimiter, analyzeValidator, analyzeHandler);
 
 // Automatic AI Failure Assistant & Auto-Fix recommendation (V2 + RAG)
 router.post('/failure-assist', aiRateLimiter, failureAssistValidator, failureAssistHandler);

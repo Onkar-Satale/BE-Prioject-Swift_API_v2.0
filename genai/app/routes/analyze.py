@@ -1,5 +1,5 @@
 """
-AI Service Router (/analyze, /bot, /failure-assist, /compare, /health-score, /rag/index-episode, /rag/retrieve)
+AI Service Router (/bot, /failure-assist, /compare, /health-score, /rag/index-episode, /rag/retrieve)
 Provides endpoints for API analysis, debugging, auto-fix, RAG memory indexing, and retrieval.
 """
 
@@ -7,7 +7,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from app.config.settings import logger
 from app.dependencies import verify_api_key
 from app.schemas.request import (
-    AnalyzeRequest,
     BotRequest,
     FailureAssistRequest,
     CompareRequest,
@@ -16,7 +15,6 @@ from app.schemas.request import (
     RetrieveEpisodesRequest
 )
 from app.services.llm_service import (
-    generate_analysis,
     generate_bot_response,
     generate_failure_diagnosis,
     generate_history_comparison,
@@ -25,20 +23,6 @@ from app.services.llm_service import (
 from app.services.rag_service import rag_memory_store
 
 router = APIRouter(dependencies=[Depends(verify_api_key)])
-
-@router.post("/analyze")
-async def analyze_api(request: Request, req_data: AnalyzeRequest):
-    """Executes specialized AI analysis on API request/response pairs (V1)."""
-    logger.info(f"Incoming /analyze request for feature: {req_data.feature}")
-    try:
-        result = await generate_analysis(req_data)
-        return result
-    except Exception as e:
-        logger.error(f"Error executing analysis route: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail="An unexpected error occurred while processing the analysis."
-        )
 
 @router.post("/bot")
 async def bot_api(request: Request, req_data: BotRequest):

@@ -6,15 +6,7 @@ Defines structured input payload requirements for AI service endpoints (V1 & V2 
 from pydantic import BaseModel, Field
 from typing import Dict, Any, Optional, Union, List
 
-class AnalyzeRequest(BaseModel):
-    """Payload schema for API analysis and diagnostic endpoints."""
-    method: str
-    url: str
-    headers: Dict[str, Any] = Field(default_factory=dict)
-    body: Optional[Union[Dict, list, str, Any]] = None
-    status: Union[int, str] = Field(default=200, description="Valid HTTP status code or status string")
-    response: Optional[Union[Dict, list, str, Any]] = None
-    feature: str = Field("root_cause", description="AI analysis feature identifier")
+
 
 class BotRequest(BaseModel):
     """Payload schema for interactive developer assistant chatbot requests."""

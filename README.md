@@ -124,7 +124,7 @@ BE-Prioject-Swift_API_v2.0/
 └── genai/                         # Python FastAPI GenAI Microservice
     ├── app/
     │   ├── config/                # Settings & Groq API configuration
-    │   ├── routes/                # FastAPI routers (/analyze, /failure-assist, /rag)
+    │   ├── routes/                # FastAPI routers (/failure-assist, /compare, /health-score, /rag, /bot)
     │   ├── schemas/               # Pydantic models for validation
     │   └── services/
     │       ├── llm_service.py     # Groq LLM integration & prompt chains
@@ -224,6 +224,7 @@ npm start
 | `/api/request` | `POST` | Express | Proxy & execute target API requests |
 | `/api/history` | `GET` | Express | Retrieve user request history |
 | `/api/ai/failure-assist` | `POST` | GenAI | History-Grounded RAG failure diagnosis & fix |
+| `/api/ai/bot` | `POST` | GenAI | Context-aware conversational developer assistant |
 | `/api/ai/compare` | `POST` | GenAI | Differential comparison between 2 attempts |
 | `/api/ai/health-score` | `POST` | GenAI | Compute 0–100 API Health Score |
 | `/api/ai/rag/index-episode` | `POST` | GenAI | Index verified resolution episode into ChromaDB |

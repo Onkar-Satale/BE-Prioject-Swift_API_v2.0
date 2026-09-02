@@ -35,18 +35,7 @@ export const botHandler = async (req, res, next) => {
   }
 };
 
-// Handles request/response analysis by sending raw execution payload to the GenAI microservice (V1).
-export const analyzeHandler = async (req, res, next) => {
-  try {
-    const response = await axios.post(`${genaiUrl}/analyze`, req.body, {
-      headers: { 'x-api-key': genaiApiSecret }
-    });
 
-    res.json(response.data);
-  } catch (err) {
-    handleAxiosError(err, next);
-  }
-};
 
 // Handles automated failure diagnosis, root cause prediction, and auto-fix recommendations (V2 + RAG).
 export const failureAssistHandler = async (req, res, next) => {

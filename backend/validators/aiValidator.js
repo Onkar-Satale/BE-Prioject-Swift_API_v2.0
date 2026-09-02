@@ -10,17 +10,7 @@ const botValidator = [
   validateRequest,
 ];
 
-// Input validation schema for AI API response analysis requests (/api/ai/analyze).
-const analyzeValidator = [
-  body("url").optional(),
-  body("method").optional(),
-  body("headers").optional(),
-  body("body").optional(),
-  body("status").optional(),
-  body("response").optional(),
-  body("feature").trim().notEmpty().withMessage("Feature is required"),
-  validateRequest,
-];
+
 
 // Input validation schema for AI failure assistance requests (/api/ai/failure-assist).
 const failureAssistValidator = [
@@ -82,7 +72,6 @@ const retrieveEpisodesValidator = [
 
 export {
   botValidator,
-  analyzeValidator,
   failureAssistValidator,
   compareValidator,
   healthScoreValidator,

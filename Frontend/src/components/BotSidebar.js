@@ -17,11 +17,7 @@ export default function BotSidebar({
   onRerunRequest = null,
 }) {
   const [input, setInput] = useState("");
-  const [showPanel, setShowPanel] = useState(false);
-  const panelRef = useRef(null);
   const botBodyRef = useRef(null);
-  const [copiedIndex, setCopiedIndex] = useState(null);
-  const [featureLoading, setFeatureLoading] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [fixTokenInput, setFixTokenInput] = useState({});
   const [appliedFixes, setAppliedFixes] = useState({});
@@ -237,105 +233,8 @@ export default function BotSidebar({
   }, [messages]);
 
   /* ===============================
-     🔹 LOCAL (NO LLM) FEATURE LOGIC
+     🔹 SEND CONVERSATIONAL PROMPT
      =============================== */
-
-  const generateCurl = () => {
-    return `curl -X ${getMethod()} "${getUrl()}" \\
--H "Authorization: Bearer <token>" \\
--H "Content-Type: application/json"`;
-  };
-
-  const formatCurlForDisplay = (curlText) => {
-    const lines = curlText.split("\\\n");
-    const methodAndUrl = lines[0].replace("curl -X ", "").replace(/"/g, "").trim();
-    const parts = methodAndUrl.split(" ");
-    const methodText = parts[0] || "GET";
-    const urlText = parts.slice(1).join(" ") || "";
-
-    const headers = lines.slice(1).map((line) =>
-      line.replace("-H ", "").replace(/"/g, "").trim()
-    );
-
-    const getMethodColor = (m) => {
-      const upper = m.toUpperCase();
-      if (upper === "GET") return "#22c55e";
-      if (upper === "POST") return "#3b82f6";
-      if (upper === "PUT") return "#eab308";
-      if (upper === "DELETE") return "#ef4444";
-      return "var(--terminal-purple)";
-    };
-
-    return (
-      <>
-        <span className="curl-method" style={{ color: getMethodColor(methodText), fontWeight: "bold" }}>
-          {methodText}
-        </span>{" "}
-        <span className="curl-url" style={{ color: "var(--terminal-orange)" }}>
-          {urlText}
-        </span>
-        {"\n\n"}
-        <span className="curl-headers" style={{ color: "var(--terminal-text-dim)" }}>
-          {headers.join("\n")}
-        </span>
-      </>
-    );
-  };
-
-  const severityBadge = (status = 500) => {
-    if (status >= 200 && status < 300) {
-      return "🟢 Severity: LOW (Success) — Your request was successful! Everything worked as expected, and the server returned the data you asked for.";
-    }
-    if (status >= 400 && status < 500) {
-      return "🟡 Severity: MEDIUM (Client Error) — There was an issue with your request. Check the URL, headers, or body you sent. You may need to correct something before trying again.";
-    }
-    if (status >= 500 && status < 600) {
-      return "🔴 Severity: HIGH (Server Error) — Something went wrong on the server. This is usually not your fault. You can try again later or contact the server admin if the problem persists.";
-    }
-    return "⚪ Unknown Status — The server returned an unexpected response. Double-check your request or try again later.";
-  };
-
-  const responseTimeInsight = (ms = 850) => {
-    if (ms < 300) {
-      return `⚡ Fast Response (${ms} ms) — Excellent! The server responded very quickly, ensuring smooth performance for your requests.`;
-    }
-    if (ms < 1000) {
-      return `⏱️ Moderate Response (${ms} ms) — Decent speed. The server responded reasonably fast, but there might be room for improvement if performance is critical.`;
-    }
-    return `🐢 Slow Response (${ms} ms) — The server is taking longer than expected. Consider optimizing your request, checking server load, or reviewing network conditions to improve speed.`;
-  };
-
-  const statusCodeEducator = (code = 500) => {
-    const map = {
-      200: "OK – Your request was successful and the server returned the requested data.",
-      201: "Created – Your request was successful, and a new resource has been created.",
-      202: "Accepted – Request received but not yet processed. The server will process it asynchronously.",
-      204: "No Content – Request successful, but there is no data to return.",
-      301: "Moved Permanently – The resource has moved to a new URL. Update your request if needed.",
-      302: "Found / Temporary Redirect – The resource is temporarily at a different URL.",
-      304: "Not Modified – The resource has not changed since the last request.",
-      400: "Bad Request – The server could not understand your request. Check the URL, headers, or body.",
-      401: "Unauthorized – Authentication required or invalid credentials.",
-      403: "Forbidden – You do not have permission to access this resource.",
-      404: "Not Found – The requested resource or endpoint does not exist.",
-      405: "Method Not Allowed – The HTTP method used is not supported for this endpoint.",
-      408: "Request Timeout – The server timed out waiting for your request.",
-      429: "Too Many Requests – You have sent too many requests in a short time. Try again later.",
-      500: "Internal Server Error – The server encountered an unexpected error. Usually not your fault.",
-      501: "Not Implemented – The server does not support this functionality yet.",
-      502: "Bad Gateway – The server received an invalid response from an upstream server.",
-      503: "Service Unavailable – The server is currently overloaded or down. Try again later.",
-      504: "Gateway Timeout – The server did not get a response in time from an upstream server.",
-      505: "HTTP Version Not Supported – The server does not support the HTTP protocol version used.",
-    };
-
-    return `📘 Status ${code}: ${map[code] || "Unknown status code – The server returned an unrecognized response. Double-check your request or try again later."}`;
-  };
-
-  /* ===============================
-     🔹 SEND TO BACKEND
-     =============================== */
-
   const handleSend = async () => {
     const userQuery = input.trim();
     if (!userQuery) return;
@@ -389,138 +288,6 @@ export default function BotSidebar({
 
   const handleKeyPress = (e) => {
     if (e.key === "Enter") handleSend();
-  };
-
-  const getStatusCode = () => currentApiContext?.status ?? 500;
-  const getResponseTime = () => currentApiContext?.responseTime ?? 850;
-  const getUrl = () => currentApiContext?.url ?? "https://api.example.com/users";
-  const getMethod = () => currentApiContext?.method ?? "GET";
-
-  /* ===============================
-     🔹 PANEL BUTTON HANDLER (V1)
-     =============================== */
-
-  const handleOptionClick = (action) => {
-    let output = "";
-
-    switch (action) {
-      case "Copy cURL":
-        setMessages((prev) => [
-          ...prev,
-          {
-            from: "bot",
-            type: "curl",
-            text: generateCurl()
-          }
-        ]);
-        setShowPanel(false);
-        return;
-
-      case "Auto-fill Headers":
-        if (setHeadersObj) {
-          setHeadersObj([
-            { key: "Authorization", value: "Bearer <token>" },
-            { key: "Content-Type", value: "application/json" },
-            { key: "Accept", value: "application/json" },
-            { key: "User-Agent", value: "SWIFT_API" },
-            { key: "", value: "" }
-          ]);
-        }
-        if (setActiveTab) {
-          setActiveTab("Headers");
-        }
-        output = "✅ Headers auto-filled in Headers tab. You can remove ❌ or modify 📝 any header if not needed.";
-        break;
-
-      case "Severity Badge":
-        output = severityBadge(getStatusCode());
-        break;
-
-      case "Response Time Insight":
-        output = responseTimeInsight(getResponseTime());
-        break;
-
-      case "Status Code Educator":
-        output = statusCodeEducator(getStatusCode());
-        break;
-
-      case "Smart Error Translator":
-        handleAnalyzeFeature("smart_error_translator");
-        setShowPanel(false);
-        return;
-
-      default:
-        setInput(action);
-        handleSend();
-        setShowPanel(false);
-        return;
-    }
-
-    setMessages((prev) => [...prev, { from: "bot", text: output }]);
-    setShowPanel(false);
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (panelRef.current && !panelRef.current.contains(event.target)) {
-        setShowPanel(false);
-      }
-    };
-    if (showPanel) document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showPanel]);
-
-  const handleAnalyzeFeature = async (feature) => {
-    if (featureLoading) return;
-    setShowPanel(false);
-    setFeatureLoading(true);
-    setMessages((prev) => [...prev, { from: "bot", text: "AI is thinking... 🤔", isTemp: true }]);
-
-    const payload = {
-      method: currentApiContext?.method || "GET",
-      url: currentApiContext?.url || "",
-      headers: currentApiContext?.headers || {},
-      body: currentApiContext?.body || null,
-      status: currentApiContext?.status || 200,
-      response: currentApiContext?.response
-        ? JSON.stringify(currentApiContext.response).slice(0, 2000)
-        : "No response body available",
-      feature: feature
-    };
-
-    try {
-      const backendUrl = process.env.REACT_APP_BACKEND_URL;
-      const token = localStorage.getItem("authToken");
-
-      const res = await fetch(`${backendUrl}/api/ai/analyze`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": token ? `Bearer ${token}` : ""
-        },
-        body: JSON.stringify(payload)
-      });
-
-      const data = await res.json();
-      let textToDisplay = data.text;
-      if (!res.ok) {
-        textToDisplay = `⚠️ Error ${res.status}: ${data.error || data.message || data.detail || JSON.stringify(data)}`;
-      } else if (!textToDisplay) {
-        textToDisplay = "⚠️ Explanation unavailable.";
-      }
-
-      setMessages((prev) => [
-        ...prev.filter((msg) => !msg.isTemp),
-        { from: "bot", text: textToDisplay }
-      ]);
-    } catch (err) {
-      setMessages((prev) => [
-        ...prev.filter((msg) => !msg.isTemp),
-        { from: "bot", text: `❌ Error calling ${feature}: ${err.message}` }
-      ]);
-    } finally {
-      setFeatureLoading(false);
-    }
   };
 
   const parseBotMessage = (text) => {
@@ -597,7 +364,7 @@ export default function BotSidebar({
         <div className="bot-header">
           <div className="bot-header-left">
             <h3 style={{ color: "#ff8810", fontWeight: "bold", margin: 0, whiteSpace: "nowrap" }} className="bot-title">
-              JARVIS is here to HELP !
+              JARVIS AI Assistant
             </h3>
           </div>
           <button className="close-btn" onClick={onClose}>✖</button>
@@ -615,7 +382,7 @@ export default function BotSidebar({
           <div style={{ fontSize: "40px", marginBottom: "15px" }}>🔒</div>
           <h4 style={{ color: "#fff", marginBottom: "10px", fontSize: "18px" }}>Authentication Required</h4>
           <p style={{ fontSize: "14px", marginBottom: "20px", lineHeight: "1.5" }}>
-            Please log in to chat with J.A.R.V.I.S. and use the AI analysis features.
+            Please log in to chat with J.A.R.V.I.S. and utilize RAG auto-fix diagnostics.
           </p>
           <a
             href="/login"
@@ -644,13 +411,8 @@ export default function BotSidebar({
       {/* HEADER */}
       <div className="bot-header">
         <div className="bot-header-left">
-          <div className="panel-toggle" onClick={() => setShowPanel(!showPanel)}>
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
           <h3 style={{ color: "#ff8810", fontWeight: "bold", margin: 0, whiteSpace: "nowrap" }} className="bot-title">
-            JARVIS is here to HELP !
+            ⚡ JARVIS Auto-Fix & Diagnostics
           </h3>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
@@ -681,50 +443,10 @@ export default function BotSidebar({
         </div>
       )}
 
-      {/* PANEL (V1 TOOLS) */}
-      <div ref={panelRef} className={`bot-panel ${showPanel ? "open" : ""}`}>
-        <h3>Tools & Actions : </h3>
-        <h4>Advance Tools :</h4>
-        <button onClick={() => handleAnalyzeFeature("root_cause")}>Root-Cause Analysis</button>
-        <button onClick={() => handleOptionClick("Smart Error Translator")}>Smart Error Translator</button>
-
-        <h4>Basic Tools :</h4>
-        <button onClick={() => handleOptionClick("Copy cURL")}>Copy cURL</button>
-        <button onClick={() => handleOptionClick("Auto-fill Headers")}>Auto-fill Headers</button>
-        <button onClick={() => handleOptionClick("Severity Badge")}>Severity Badge</button>
-        <button onClick={() => handleOptionClick("Response Time Insight")}>Response Time Insight</button>
-        <button onClick={() => handleOptionClick("Status Code Educator")}>Status Code Educator</button>
-        <button onClick={() => handleAnalyzeFeature("header_silly_mistakes")}>Header Silly Mistakes</button>
-        <button onClick={() => handleAnalyzeFeature("retry_recommendation")}>Retry Recommendation</button>
-        <button onClick={() => handleAnalyzeFeature("api_usage_tips")}>API Usage Tips</button>
-        <button onClick={() => handleAnalyzeFeature("security_judge")}>Security Judge</button>
-        <button onClick={() => handleAnalyzeFeature("advanced_response_time")}>Advanced Response Time</button>
-      </div>
-
       {/* CHAT BODY */}
       <div className="bot-body" ref={botBodyRef}>
         {messages.map((msg, i) => (
           <div key={i} className={`bot-message ${msg.from}`}>
-            {/* cURL MESSAGE */}
-            {msg.type === "curl" && (
-              <div className="curl-box">
-                <pre>{formatCurlForDisplay(msg.text)}</pre>
-                <button
-                  className="copy-btn2"
-                  onClick={() => {
-                    const match = msg.text.match(/"(https?:\/\/[^"]+)"/);
-                    if (match) {
-                      navigator.clipboard.writeText(match[1]);
-                      setCopiedIndex(i);
-                      setTimeout(() => setCopiedIndex(null), 2100);
-                    }
-                  }}
-                >
-                  {copiedIndex === i ? "Copied!" : "Copy URL"}
-                </button>
-              </div>
-            )}
-
             {/* USER MESSAGE */}
             {msg.from === "user" && <div>{String(msg.text)}</div>}
 
@@ -909,7 +631,7 @@ export default function BotSidebar({
             )}
 
             {/* BOT MESSAGE (STRING OR FALLBACK OBJECT) */}
-            {msg.from === "bot" && msg.type !== "curl" && msg.type !== "failure_assist" && (
+            {msg.from === "bot" && msg.type !== "failure_assist" && (
               typeof msg.text === "string" ? (
                 parseBotMessage(msg.text)
               ) : (
@@ -931,7 +653,7 @@ export default function BotSidebar({
       <div className="bot-footer">
         <input
           type="text"
-          placeholder="Ask something..."
+          placeholder="Ask J.A.R.V.I.S. about API testing, headers, debugging..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyPress}

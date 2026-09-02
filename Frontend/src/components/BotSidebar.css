@@ -38,24 +38,6 @@
   gap: 10px !important;
 }
 
-.panel-toggle {
-  width: 22px !important;
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: space-between !important;
-  cursor: pointer !important;
-  height: 14px !important;
-}
-
-.panel-toggle span {
-  display: block !important;
-  height: 2px !important;
-  width: 100% !important;
-  background-color: var(--terminal-text-dim) !important;
-  border-radius: 1px !important;
-  transition: all 0.2s ease !important;
-}
-
 .close-btn {
   background: transparent !important;
   border: none !important;
@@ -75,56 +57,6 @@
 
 .refresh-btn {
   font-size: 18px !important;
-}
-
-/* SLIDING PANEL */
-.bot-panel {
-  position: absolute;
-  left: -260px;
-  top: 0;
-  width: 240px;
-  height: 100%;
-  background: #000000;
-  border-right: 1px solid var(--terminal-border);
-  display: flex;
-  flex-direction: column;
-  padding: 16px;
-  gap: 12px;
-  transition: left 0.3s ease;
-  z-index: 9999;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.bot-panel.open {
-  left: 0;
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.bot-panel h4 {
-  margin: 0 0 10px 0;
-  color: var(--terminal-white);
-  font-size: 14px;
-}
-
-.bot-panel button {
-  background: transparent;
-  border: 1px solid var(--terminal-border);
-  color: var(--terminal-text-dim);
-  padding: 8px;
-  border-radius: 4px;
-  cursor: pointer;
-  text-align: left;
-  font-family: var(--terminal-font);
-  font-size: 13px;
-  transition: all 0.15s ease;
-}
-
-.bot-panel button:hover {
-  border-color: var(--terminal-purple);
-  color: var(--terminal-white);
-  background: rgba(168, 85, 247, 0.1);
 }
 
 /* BODY */
