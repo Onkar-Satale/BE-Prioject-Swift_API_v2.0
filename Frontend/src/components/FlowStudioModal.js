@@ -213,16 +213,33 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
       setCurrentStepIdx(i);
       const step = localSteps[i];
 
-      // 1. Resolve variable interpolations
-      const resolvedUrl = interpolateVariables(step.url, localVars);
+      // 1. Resolve variable interpolations & sanitize URL
+      let rawResolvedUrl = interpolateVariables(step.url, localVars);
+      let cleanUrl = String(rawResolvedUrl || "").trim();
+      if (cleanUrl.match(/^(GET|POST|PUT|DELETE|PATCH)\s+/i)) {
+        cleanUrl = cleanUrl.replace(/^(GET|POST|PUT|DELETE|PATCH)\s+/i, "").trim();
+      }
+      if (!cleanUrl.startsWith("http://") && !cleanUrl.startsWith("https://")) {
+        cleanUrl = `https://${cleanUrl}`;
+      }
+      const resolvedUrl = cleanUrl;
+
       const resolvedHeaders = {};
       Object.entries(step.headers || {}).forEach(([k, v]) => {
-        resolvedHeaders[k] = interpolateVariables(v, localVars);
+        if (k) resolvedHeaders[k] = interpolateVariables(v, localVars);
       });
+      if (!resolvedHeaders["Content-Type"]) {
+        resolvedHeaders["Content-Type"] = "application/json";
+      }
 
       let resolvedBody = step.body;
-      if (typeof resolvedBody === "string") {
-        resolvedBody = interpolateVariables(resolvedBody, localVars);
+      if (typeof resolvedBody === "string" && resolvedBody.trim()) {
+        try {
+          const interpolatedStr = interpolateVariables(resolvedBody, localVars);
+          resolvedBody = JSON.parse(interpolatedStr);
+        } catch {
+          resolvedBody = interpolateVariables(resolvedBody, localVars);
+        }
       } else if (resolvedBody && typeof resolvedBody === "object") {
         resolvedBody = JSON.parse(interpolateVariables(JSON.stringify(resolvedBody), localVars));
       }
@@ -238,10 +255,10 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
         const res = await authenticatedFetch(`${BACKEND_URL}/api/request`, {
           method: "POST",
           body: JSON.stringify({
-            method: step.method || "GET",
+            method: (step.method || "GET").toUpperCase(),
             url: resolvedUrl,
             headers: resolvedHeaders,
-            body: resolvedBody,
+            body: resolvedBody || null,
             params: step.params || {}
           })
         });

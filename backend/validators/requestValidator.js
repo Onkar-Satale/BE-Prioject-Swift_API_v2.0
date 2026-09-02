@@ -16,7 +16,23 @@ export const validateRequest = (req, res, next) => {
 
 // Validation schema for proxy API requests (/api/request).
 export const requestProxyValidator = [
-  body("url").trim().notEmpty().withMessage("URL is required").isURL().withMessage("Must be a valid URL"),
+  body("url")
+    .trim()
+    .notEmpty()
+    .withMessage("URL is required")
+    .custom((val) => {
+      try {
+        let clean = String(val).trim();
+        if (clean.match(/^(GET|POST|PUT|DELETE|PATCH)\s+/i)) {
+          clean = clean.replace(/^(GET|POST|PUT|DELETE|PATCH)\s+/i, '');
+        }
+        const u = new URL(clean);
+        return u.protocol === "http:" || u.protocol === "https:";
+      } catch {
+        return false;
+      }
+    })
+    .withMessage("Must be a valid URL"),
   body("method").trim().notEmpty().withMessage("Method is required"),
   body("headers").optional(),
   body("params").optional(),
