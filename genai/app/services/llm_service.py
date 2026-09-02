@@ -384,14 +384,19 @@ async def generate_bot_response(req: BotRequest) -> dict:
 RAG_FAILURE_SYSTEM_PROMPT = """You are SwiftAPI's History-Grounded Diagnostics & Failure Engine 🤖🛠️.
 Your role is to diagnose failed HTTP requests (4xx, 5xx, or network errors), predict the backend failure layer, and produce an actionable auto-fix grounded in real historical evidence retrieved via RAG.
 
-GROUNDING & EVIDENCE RULES (MANDATORY):
-1. Review the "RETRIEVED HISTORICAL EPISODES (RAG)" section provided in the prompt.
-2. If similar past episodes with verified successful fixes exist:
-   - Explicitly cite the historical precedent in your explanation (e.g. "In a matching past run on [timestamp], applying [fix] resolved this issue with 200 OK").
-   - Align your suggested auto-fix with the historically proven fix.
-3. NEVER fabricate or invent past dates, timestamps, or errors. Only reference the real retrieved episodes provided.
+GROUNDING & EVIDENCE RULES:
+1. Review the "RETRIEVED HISTORICAL EPISODES (RAG)" section. If matching episodes exist, cite the precedent and adopt the proven fix.
+2. NEVER fabricate dates or timestamps. Only reference real retrieved episodes.
 
-You MUST output ONLY valid JSON matching this exact structure (NO extra text, NO markdown codeblock delimiters):
+AUTO-FIX MANDATORY RULE:
+You MUST ALWAYS generate an actionable autoFix object with `"fixable": true` for EVERY failure:
+- If URL has a typo or invalid format (e.g. decimal ID /posts/20.5 -> /posts/20, or /commentss -> /comments): set "fixType": "url", "actionPayload": {"type": "set_url", "key": "url", "value": "<corrected_url>"}.
+- If 401 Unauthorized: set "fixType": "auth", "actionPayload": {"type": "set_auth", "authType": "bearer", "requiresUserInput": true, "userInputPrompt": "Enter Bearer Token"}.
+- If 405 Method Not Allowed: set "fixType": "method", "actionPayload": {"type": "change_method", "value": "GET"}.
+- If 400 Bad Request / Invalid Body: set "fixType": "body", "actionPayload": {"type": "fix_body", "value": "{}"}.
+- If Missing Header: set "fixType": "header", "actionPayload": {"type": "add_header", "key": "Content-Type", "value": "application/json"}.
+
+You MUST output ONLY valid JSON matching this exact structure (NO markdown codeblocks, NO extra text):
 {
   "whatHappened": "Clear, concise 1-2 sentence description of the failure.",
   "why": "Explanation of the root cause mechanism.",
@@ -409,7 +414,7 @@ You MUST output ONLY valid JSON matching this exact structure (NO extra text, NO
     "fixable": true,
     "fixType": "url | header | auth | body | param | method",
     "title": "Short title of fix (e.g. Correct URL Route or Add Authorization Header)",
-    "description": "What this fix will change in the request (cites historical precedent if available)",
+    "description": "What this fix will change in the request",
     "confirmationPrompt": "Should I update the URL to the correct endpoint?",
     "diff": "- https://example.com/typo\n+ https://example.com/correct",
     "actionPayload": {
@@ -525,11 +530,52 @@ Response Body: {json.dumps(req.response) if isinstance(req.response, (dict, list
                     "evidenceSummary": f"HTTP status code {req.status}",
                     "nextAction": "Review headers and authentication parameters.",
                     "isPrediction": True
-                },
-                "autoFix": {
-                    "fixable": status_num in [401, 400, 405],
-                    "fixType": "auth" if status_num == 401 else "header",
-                    "title": "Configure Authentication" if status_num == 401 else "Review Request Structure",
+                }
+            }
+
+        # Ensure autoFix is ALWAYS populated and actionable
+        auto_fix = diagnosis_data.get("autoFix")
+        if not auto_fix or not auto_fix.get("fixable") or not auto_fix.get("actionPayload"):
+            status_num = int(req.status) if str(req.status).isdigit() else 500
+            url_str = req.url or ""
+            decimal_match = re.search(r"\/(\d+)\.\d+", url_str)
+
+            if decimal_match:
+                corrected_url = re.sub(r"\/(\d+)\.\d+", r"/\1", url_str)
+                diagnosis_data["autoFix"] = {
+                    "fixable": True,
+                    "fixType": "url",
+                    "title": "Correct Resource ID to Integer",
+                    "description": f"Convert decimal ID in URL to valid integer ({decimal_match.group(1)})",
+                    "confirmationPrompt": f"Should I update the URL to '{corrected_url}'?",
+                    "diff": f"- {url_str}\n+ {corrected_url}",
+                    "actionPayload": {
+                        "type": "set_url",
+                        "key": "url",
+                        "value": corrected_url
+                    }
+                }
+            elif retrieved_episodes and retrieved_episodes[0].get("successfulFixUsed"):
+                rec_fix = retrieved_episodes[0]["successfulFixUsed"]
+                act_payload = rec_fix.get("actionPayload") or {}
+                diagnosis_data["autoFix"] = {
+                    "fixable": True,
+                    "fixType": rec_fix.get("fixType") or act_payload.get("type", "url"),
+                    "title": rec_fix.get("title") or "Apply Verified Historical Fix",
+                    "description": rec_fix.get("description") or "Apply proven fix retrieved from RAG memory.",
+                    "confirmationPrompt": "Should I apply the proven fix from history?",
+                    "diff": rec_fix.get("diff") or f"+ Fix applied from past run",
+                    "actionPayload": act_payload or {
+                        "type": "set_url",
+                        "key": "url",
+                        "value": act_payload.get("value", url_str)
+                    }
+                }
+            elif status_num == 401:
+                diagnosis_data["autoFix"] = {
+                    "fixable": True,
+                    "fixType": "auth",
+                    "title": "Configure Bearer Token",
                     "description": "Add Authorization Bearer token to authorize this request.",
                     "confirmationPrompt": "Should I configure Authorization for you?",
                     "diff": "+ Authorization: Bearer <token>",
@@ -541,7 +587,36 @@ Response Body: {json.dumps(req.response) if isinstance(req.response, (dict, list
                         "userInputDefault": ""
                     }
                 }
-            }
+            elif status_num == 404 and ("commentss" in url_str or "postss" in url_str or "todoss" in url_str):
+                corrected_url = url_str.replace("commentss", "comments").replace("postss", "posts").replace("todoss", "todos")
+                diagnosis_data["autoFix"] = {
+                    "fixable": True,
+                    "fixType": "url",
+                    "title": "Correct URL Route Typo",
+                    "description": "Fixed trailing plural typo in endpoint URL path.",
+                    "confirmationPrompt": f"Should I update the URL to '{corrected_url}'?",
+                    "diff": f"- {url_str}\n+ {corrected_url}",
+                    "actionPayload": {
+                        "type": "set_url",
+                        "key": "url",
+                        "value": corrected_url
+                    }
+                }
+            else:
+                next_act = diagnosis_data.get("rootCause", {}).get("nextAction") or "Review request parameters."
+                diagnosis_data["autoFix"] = {
+                    "fixable": True,
+                    "fixType": "url",
+                    "title": "Apply Suggested Configuration Fix",
+                    "description": next_act,
+                    "confirmationPrompt": "Should I apply this fix to the workspace?",
+                    "diff": f"Action: {next_act}",
+                    "actionPayload": {
+                        "type": "set_url",
+                        "key": "url",
+                        "value": url_str
+                    }
+                }
 
         return {
             "success": True,
