@@ -19,41 +19,40 @@ export default function FlowsSidebar({ onOpenStudio, onRunFlow }) {
 
   const handleCreateDemo = async () => {
     const demoFlow = {
-      name: "User & Comments Self-Healing Pipeline",
-      description: "Demonstrates multi-step API chain: Fetches user -> retrieves posts -> tests comments route with auto-fix recovery.",
+      name: "Research Self-Healing API Chain",
+      description: "Step 1 extracts postId -> Step 2 fails with route typo -> Self-heals with RAG & resumes Step 3.",
       steps: [
         {
           stepId: "step_1",
-          name: "Fetch User Profile",
+          name: "Fetch Initial Post",
           method: "GET",
-          url: "https://jsonplaceholder.typicode.com/users/1",
+          url: "https://jsonplaceholder.typicode.com/posts/1",
           headers: {},
           params: {},
           body: null,
           extractVariables: [
-            { varName: "userId", jsonPath: "id" },
-            { varName: "userEmail", jsonPath: "email" }
+            { varName: "postId", jsonPath: "id" }
           ],
           expectedStatus: 200
         },
         {
           stepId: "step_2",
-          name: "Fetch User Posts by Dynamic ID",
+          name: "Fetch Post Comments (Intentional Typo)",
           method: "GET",
-          url: "https://jsonplaceholder.typicode.com/posts?userId={{userId}}",
+          url: "https://jsonplaceholder.typicode.com/commentss?postId={{postId}}",
           headers: {},
           params: {},
           body: null,
           extractVariables: [
-            { varName: "firstPostId", jsonPath: "0.id" }
+            { varName: "firstCommentId", jsonPath: "0.id" }
           ],
           expectedStatus: 200
         },
         {
           stepId: "step_3",
-          name: "Query Comments with Intentional Typo",
+          name: "Verify Healed Downstream Pipeline",
           method: "GET",
-          url: "https://jsonplaceholder.typicode.com/commentss?postId={{firstPostId}}",
+          url: "https://jsonplaceholder.typicode.com/posts/{{postId}}",
           headers: {},
           params: {},
           body: null,

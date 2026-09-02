@@ -315,11 +315,12 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
 
           // Call Existing GenAI RAG Failure Assist for diagnosis & auto-fix
           let diagnosis = null;
+          let retrievedEpisodes = [];
           try {
             const diagRes = await authenticatedFetch(`${BACKEND_URL}/api/ai/failure-assist`, {
               method: "POST",
               body: JSON.stringify({
-                method: step.method,
+                method: step.method || "GET",
                 url: resolvedUrl,
                 status: responseStatus,
                 response: responseData || errorMsg,
@@ -332,6 +333,7 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
             if (diagRes.ok) {
               const diagJson = await diagRes.json();
               diagnosis = diagJson.diagnosis || diagJson;
+              retrievedEpisodes = diagJson.retrievedEpisodes || [];
             }
           } catch (dErr) {
             console.error("Failure assist call error in flow runner:", dErr);
@@ -344,6 +346,7 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
             status: responseStatus,
             error: errorMsg,
             diagnosis,
+            retrievedEpisodes,
             currentVars: localVars,
             results,
             healedCount: healed,
@@ -745,6 +748,24 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
                           <div className="flow-healing-desc">
                             {pausedForHealing.diagnosis?.whatHappened || `Step failed with HTTP status ${pausedForHealing.status}.`}
                           </div>
+
+                          {/* 🏛️ Retrieved Historical Evidence (RAG) */}
+                          {pausedForHealing.retrievedEpisodes && pausedForHealing.retrievedEpisodes.length > 0 && (
+                            <div style={{ background: "#0d0d12", border: "1px solid #1f1f23", padding: "6px 8px", borderRadius: "4px" }}>
+                              <div style={{ fontSize: "10.5px", fontWeight: "700", color: "#f5c2e7", display: "flex", gap: "6px", alignItems: "center", marginBottom: "3px" }}>
+                                <span>🏛️</span>
+                                <span>Retrieved Historical Evidence (RAG):</span>
+                                <span style={{ color: "#34d399", fontSize: "9.5px", background: "rgba(16, 185, 129, 0.15)", padding: "1px 5px", borderRadius: "3px" }}>
+                                  {pausedForHealing.retrievedEpisodes.length} Precedent(s) Found
+                                </span>
+                              </div>
+                              {pausedForHealing.retrievedEpisodes.map((ep, epI) => (
+                                <div key={epI} style={{ fontSize: "10px", color: "#a1a1aa", marginTop: "2px" }}>
+                                  🎯 <strong>{ep.matchPercentage || 95}% Match</strong> — Proven Fix: <span style={{ color: "#34d399" }}>{ep.successfulFixUsed?.title || ep.successfulFixUsed?.description || "Route correction"}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
 
                           {pausedForHealing.diagnosis?.rootCause && (
                             <div style={{ fontSize: "11px", color: "#89b4fa" }}>
