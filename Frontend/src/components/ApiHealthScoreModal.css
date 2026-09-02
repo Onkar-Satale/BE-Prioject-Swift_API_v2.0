@@ -1,0 +1,375 @@
+/* ApiHealthScoreModal.css */
+
+.health-modal-container {
+  background: #0d0d11;
+  border: 1px solid #27272a;
+  border-radius: 12px;
+  width: 680px;
+  max-width: 92vw;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(59, 130, 246, 0.15);
+  animation: modalFadeIn 0.25s ease-out;
+  overflow: hidden;
+  font-family: var(--terminal-font);
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.health-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #1f1f23;
+  background: #121216;
+}
+
+.health-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.health-icon-pulse {
+  font-size: 22px;
+}
+
+.health-title {
+  margin: 0;
+  font-size: 15px !important;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.5px;
+}
+
+.health-subtitle {
+  margin: 2px 0 0 0;
+  font-size: 11px !important;
+  color: #a1a1aa;
+}
+
+.health-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.health-refresh-btn {
+  background: #18181b;
+  border: 1px solid #27272a;
+  color: #38bdf8;
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 11px !important;
+  transition: all 0.2s ease;
+}
+
+.health-refresh-btn:hover {
+  background: #27272a;
+  border-color: #38bdf8;
+}
+
+.health-close-btn {
+  background: none;
+  border: none;
+  color: #71717a;
+  font-size: 16px !important;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.health-close-btn:hover {
+  color: #fff;
+}
+
+.health-modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Hero Score Card */
+.health-score-hero {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  background: #13131a;
+  border: 1px solid #27272a;
+  border-radius: 10px;
+  padding: 18px 22px;
+}
+
+.health-gauge-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.health-gauge-circle {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 16px rgba(0, 0, 0, 0.5);
+}
+
+.health-gauge-inner {
+  width: 76px;
+  height: 76px;
+  background: #0d0d11;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.health-big-score {
+  font-size: 24px !important;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.health-score-out-of {
+  font-size: 9px !important;
+  color: #71717a;
+  margin-top: 2px;
+}
+
+.health-hero-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.health-grade-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.health-status-label {
+  font-size: 12px !important;
+  color: #a1a1aa;
+}
+
+.health-grade-badge {
+  font-size: 11px !important;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 12px;
+  letter-spacing: 0.5px;
+}
+
+.badge-excellent {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+}
+
+.badge-good {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+}
+
+.badge-fair {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.badge-critical {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.health-verdict-text {
+  margin: 0;
+  font-size: 12px !important;
+  color: #d4d4d8;
+  line-height: 1.4;
+}
+
+.section-heading {
+  margin: 6px 0 2px 0;
+  font-size: 12px !important;
+  font-weight: 700;
+  color: #a1a1aa;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+/* Category Grid */
+.health-categories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.health-category-card {
+  background: #141419;
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cat-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.cat-icon {
+  font-size: 14px;
+}
+
+.cat-title {
+  flex: 1;
+  font-size: 11px !important;
+  font-weight: 600;
+  color: #e4e4e7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cat-score-text {
+  font-size: 11px !important;
+  font-weight: 700;
+}
+
+.cat-progress-track {
+  height: 5px;
+  background: #27272a;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.cat-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+/* Deductions */
+.health-deductions-box {
+  background: #121216;
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.deduction-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #18181f;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border-left: 3px solid #ef4444;
+}
+
+.deduction-badge {
+  font-size: 10px !important;
+  font-weight: 600;
+  color: #a1a1aa;
+  background: #27272a;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.deduction-points {
+  font-size: 11px !important;
+  font-weight: 700;
+  color: #ef4444;
+}
+
+.deduction-reason {
+  flex: 1;
+  font-size: 11px !important;
+  color: #d4d4d8;
+}
+
+.no-deductions-msg {
+  color: #22c55e;
+  font-size: 12px !important;
+  padding: 8px;
+  text-align: center;
+}
+
+/* Recommendations */
+.health-recommendations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.recommendation-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+.rec-bullet {
+  font-size: 13px;
+}
+
+.rec-text {
+  font-size: 11.5px !important;
+  color: #93c5fd;
+  line-height: 1.35;
+}
+
+.health-modal-footer {
+  padding: 12px 20px;
+  border-top: 1px solid #1f1f23;
+  display: flex;
+  justify-content: flex-end;
+  background: #121216;
+}
+
+.health-dismiss-btn {
+  background: #27272a;
+  border: 1px solid #3f3f46;
+  color: #e4e4e7;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.health-dismiss-btn:hover {
+  background: #3f3f46;
+  color: #fff;
+}

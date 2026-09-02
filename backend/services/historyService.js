@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import User from '../models/userModel.js';
 
-// Service managing user API request history records.
+// Service managing user API request history records and RAG resolution memories.
 class HistoryService {
   // Fetches the 50 most recent request history entries for a user in reverse chronological order.
   async getHistory(userId) {
@@ -30,6 +30,33 @@ class HistoryService {
     });
 
     return newEntry;
+  }
+
+  // Appends a new verified resolution episode into the user's RAG memory
+  async pushResolutionEpisode(userId, episode) {
+    const newEpisode = {
+      ...episode,
+      _id: new mongoose.Types.ObjectId(),
+      timestamp: episode.timestamp || new Date()
+    };
+
+    await User.findByIdAndUpdate(userId, {
+      $push: {
+        resolutionEpisodes: {
+          $each: [newEpisode],
+          $slice: -100
+        }
+      }
+    });
+
+    return newEpisode;
+  }
+
+  // Retrieves stored resolution episodes for RAG initialization
+  async getResolutionEpisodes(userId) {
+    const user = await User.findById(userId, { resolutionEpisodes: { $slice: -50 } });
+    if (!user) return [];
+    return user.resolutionEpisodes || [];
   }
 
   // Deletes a specific history item by ID from the user document.

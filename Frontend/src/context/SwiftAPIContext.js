@@ -6,7 +6,17 @@ export const SwiftAPIProvider = ({ children }) => {
   // Load initial state from sessionStorage safely
   const getInitialState = () => {
     try {
-      return JSON.parse(sessionStorage.getItem("swiftApiState")) || {};
+      const parsed = JSON.parse(sessionStorage.getItem("swiftApiState")) || {};
+      if (parsed.url && (parsed.url.includes("?url=") || parsed.url.includes("&url="))) {
+        parsed.url = parsed.url.split("?")[0];
+      }
+      if (Array.isArray(parsed.paramsObj)) {
+        parsed.paramsObj = parsed.paramsObj.filter(p => p.key !== "url");
+        if (parsed.paramsObj.length === 0) {
+          parsed.paramsObj = [{ key: "", value: "", description: "" }];
+        }
+      }
+      return parsed;
     } catch {
       return {};
     }
@@ -36,15 +46,20 @@ export const SwiftAPIProvider = ({ children }) => {
     { from: "bot", text: "Hi 👋 I’m your J.A.R.V.I.S. API assistant! You can ask me questions about API testing, HTTP protocols, headers, status codes, or request structures. ⚠️ Please note that I only answer questions related to API testing and development." }
   ]);
 
+  // V2: Health score & applied fix state
+  const [healthScore, setHealthScore] = useState(saved.healthScore || null);
+  const [appliedFixInfo, setAppliedFixInfo] = useState(null);
+
   // Persist to sessionStorage whenever state changes
   useEffect(() => {
     const stateToSave = {
       method, url, headersObj, paramsObj, rawBody, activeTab,
       auth,
-      response, status, messages
+      response, status, messages,
+      healthScore
     };
     sessionStorage.setItem("swiftApiState", JSON.stringify(stateToSave));
-  }, [method, url, headersObj, paramsObj, rawBody, activeTab, auth, response, status, messages]);
+  }, [method, url, headersObj, paramsObj, rawBody, activeTab, auth, response, status, messages, healthScore]);
 
   // Reset Context for logout or new login
   const resetContext = () => {
@@ -62,6 +77,8 @@ export const SwiftAPIProvider = ({ children }) => {
     });
     setResponse("");
     setStatus(null);
+    setHealthScore(null);
+    setAppliedFixInfo(null);
     setMessages([
       { from: "bot", text: "Hi 👋 I’m your J.A.R.V.I.S. API assistant! You can ask me questions about API testing, HTTP protocols, headers, status codes, or request structures. ⚠️ Please note that I only answer questions related to API testing and development." }
     ]);
@@ -80,6 +97,8 @@ export const SwiftAPIProvider = ({ children }) => {
         response, setResponse,
         status, setStatus,
         messages, setMessages,
+        healthScore, setHealthScore,
+        appliedFixInfo, setAppliedFixInfo,
         resetContext
       }}
     >

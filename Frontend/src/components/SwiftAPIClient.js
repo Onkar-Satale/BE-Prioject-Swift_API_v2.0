@@ -13,17 +13,19 @@ import "./SwiftAPIClient.css";
 import RequestBar from "./RequestBar";
 import BotSidebar from "./BotSidebar";
 import AuthorizationTab from "./AuthorizationTab";
+import ApiHealthScoreModal from "./ApiHealthScoreModal";
+import TestingTimelineModal from "./TestingTimelineModal";
+import HistoryComparisonModal from "./HistoryComparisonModal";
 import { useContext } from "react";
 import { SwiftAPIContext } from "../context/SwiftAPIContext";
 import { showToast } from "../utils/toast";
-
 
 const getUserIdFromToken = () => {
   const token = localStorage.getItem("authToken");
   if (!token) return null;
   try {
     const payload = JSON.parse(atob(token.split(".")[1]));
-    return payload.id || payload._id || null;
+    return payload.userId || payload.id || payload._id || null;
   } catch {
     return null;
   }
@@ -39,11 +41,12 @@ export default function SwiftAPIClient() {
     activeTab, setActiveTab,
     response, setResponse,
     status, setStatus,
-    messages, setMessages,
-    auth, setAuth
+    setMessages,
+    auth, setAuth,
+    healthScore, setHealthScore,
+    appliedFixInfo, setAppliedFixInfo
   } = useContext(SwiftAPIContext);
 
-  const [currentUserId, setCurrentUserId] = useState(null);
   const [history, setHistory] = useState(() => {
     try {
       const userId = getUserIdFromToken();
@@ -61,6 +64,7 @@ export default function SwiftAPIClient() {
       localStorage.setItem(`userHistory_${userId}`, JSON.stringify(history));
     }
   }, [history]);
+
   const [activePanel, setActivePanel] = useState(
     sessionStorage.getItem("activePanel") || null
   );
@@ -72,6 +76,7 @@ export default function SwiftAPIClient() {
       sessionStorage.removeItem("activePanel");
     }
   }, [activePanel]);
+
   const [viewMode, setViewMode] = useState(
     sessionStorage.getItem("viewMode") || "pretty"
   );
@@ -79,15 +84,22 @@ export default function SwiftAPIClient() {
   useEffect(() => {
     sessionStorage.setItem("viewMode", viewMode);
   }, [viewMode]);
+
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+
+  // Modals state for V2
+  const [showHealthModal, setShowHealthModal] = useState(false);
+  const [showTimelineModal, setShowTimelineModal] = useState(false);
+  const [timelineTargetUrl, setTimelineTargetUrl] = useState("");
+  const [showCompareModal, setShowCompareModal] = useState(false);
+  const [compareAttemptA, setCompareAttemptA] = useState(null);
+  const [compareAttemptB, setCompareAttemptB] = useState(null);
 
   // Clear error message immediately when URL changes
   useEffect(() => {
     setErrorMsg("");
   }, [url]);
-
-  const [bodyContent, setBodyContent] = useState("");
 
   const navigate = useNavigate();
   const responseRef = useRef(null);
@@ -102,7 +114,7 @@ export default function SwiftAPIClient() {
   const [showBot, setShowBot] = useState(
     sessionStorage.getItem("showBot") === "true"
   );
-  
+
   useEffect(() => {
     sessionStorage.setItem("showBot", showBot);
   }, [showBot]);
@@ -115,7 +127,7 @@ export default function SwiftAPIClient() {
         return [
           ...otherHeaders,
           { key: "Authorization", value: `Bearer ${auth.token}` },
-          ...prev.filter(h => h.key === ""), // keep empty row
+          ...prev.filter(h => h.key === ""),
         ];
       });
     } else if (auth.type === "basic" && auth.username && auth.password) {
@@ -129,15 +141,12 @@ export default function SwiftAPIClient() {
         ];
       });
     } else if (auth.type === "none") {
-      // Remove Authorization header if no auth selected
       setHeadersObj(prev => prev.filter(h => h.key !== "Authorization"));
     }
   }, [auth, setHeadersObj]);
 
   const [bodyType, setBodyType] = useState("none");
-  const [requestBody, setRequestBody] = useState(null);
   const [apiContext, setApiContext] = useState(null);
-  const [aiLoading, setAiLoading] = useState(false);
 
   const startResizing = (e) => {
     e.preventDefault();
@@ -151,7 +160,7 @@ export default function SwiftAPIClient() {
       }
       const currentY = event.type === 'touchmove' ? event.touches[0].clientY : event.clientY;
       const newHeight = startHeight - (currentY - startY);
-      setResponseHeight(newHeight > 100 ? newHeight : 100); // minimum 100px
+      setResponseHeight(newHeight > 100 ? newHeight : 100);
     };
 
     const stopDrag = () => {
@@ -173,7 +182,6 @@ export default function SwiftAPIClient() {
     }
   };
 
-  // Ensure Swift API param rows: always keep 1 empty row
   const cleanParams = (arr) => {
     const filled = arr.filter(
       (p) =>
@@ -181,7 +189,6 @@ export default function SwiftAPIClient() {
         p.value.trim() !== "" ||
         p.description.trim() !== ""
     );
-
     return [...filled, { key: "", value: "", description: "" }];
   };
 
@@ -192,10 +199,9 @@ export default function SwiftAPIClient() {
         h.value.trim() !== "" ||
         (h.description && h.description.trim() !== "")
     );
-
     return [...filled, { key: "", value: "", description: "" }];
   };
-  // On mount: decode token, get userId, and load saved request count
+
   useEffect(() => {
     const token = localStorage.getItem("authToken");
     if (!token) return;
@@ -203,16 +209,14 @@ export default function SwiftAPIClient() {
     try {
       const payload = JSON.parse(atob(token.split(".")[1]));
       const userId = payload.id || payload._id;
-      setCurrentUserId(userId);
-      localStorage.setItem("currentUserId", userId);
-
-      const savedCount = localStorage.getItem(`requestCount_${userId}`);
+      if (userId) {
+        localStorage.setItem("currentUserId", userId);
+      }
     } catch (err) {
       console.error("Failed to decode token:", err);
     }
   }, []);
 
-  // 🔹 Keep height correct on mobile virtual keyboard resize
   useEffect(() => {
     const handleResize = () => {
       const vh = window.innerHeight * 0.01;
@@ -227,9 +231,6 @@ export default function SwiftAPIClient() {
     };
   }, []);
 
-  // ----------------------------
-  // RESTORE LAST RESPONSE
-  // ----------------------------
   const [lastResponse, setLastResponse] = useState(
     JSON.parse(sessionStorage.getItem("lastResponse") || "null")
   );
@@ -237,9 +238,6 @@ export default function SwiftAPIClient() {
     JSON.parse(sessionStorage.getItem("lastRequest") || "null")
   );
 
-  // -------------------------------------------
-  // LOAD HISTORY
-  // -------------------------------------------
   const loadUserHistory = async () => {
     try {
       const h = await getHistory();
@@ -261,13 +259,17 @@ export default function SwiftAPIClient() {
       if (lastRequest) setStatus(lastRequest.status ?? null);
     }
 
-    // Prefill last request if it exists
     if (lastRequest) {
       setMethod(lastRequest.method || "GET");
-      setUrl(lastRequest.url || "");
-      setBodyContent(lastRequest.body ? JSON.stringify(lastRequest.body, null, 2) : "");
+      let cleanInitUrl = lastRequest.url || "";
+      if (cleanInitUrl.includes("?url=") || cleanInitUrl.includes("&url=")) {
+        cleanInitUrl = cleanInitUrl.split("?")[0];
+      }
+      setUrl(cleanInitUrl);
+      if (lastRequest.body) {
+        setRawBody(typeof lastRequest.body === "object" ? JSON.stringify(lastRequest.body, null, 2) : String(lastRequest.body));
+      }
 
-      // 🔹 Initialize apiContext for BotSidebar
       setApiContext({
         method: lastRequest.method || "GET",
         url: lastRequest.url || "",
@@ -282,9 +284,6 @@ export default function SwiftAPIClient() {
     }
   }, []);
 
-  // -------------------------------------------
-  // URL Validator
-  // -------------------------------------------
   const isValidUrl = (str) => {
     try {
       new URL(str);
@@ -294,8 +293,117 @@ export default function SwiftAPIClient() {
     }
   };
 
+  // -------------------------------------------------------------
+  // 🔹 V2: AUTOMATIC AI FAILURE ASSISTANT TRIGGER
+  // -------------------------------------------------------------
+  const triggerAutoFailureAssistant = async ({
+    method,
+    url,
+    headers,
+    params,
+    body,
+    status,
+    duration,
+    response
+  }) => {
+    try {
+      setShowBot(true);
+
+      const previousAttempts = history
+        .filter((h) => {
+          try {
+            const u1 = new URL(h.url);
+            const u2 = new URL(url);
+            const clean1 = u1.pathname.toLowerCase().replace(/[^a-z0-9]/g, "");
+            const clean2 = u2.pathname.toLowerCase().replace(/[^a-z0-9]/g, "");
+            return u1.host === u2.host && (clean1.includes(clean2.slice(0, 4)) || clean2.includes(clean1.slice(0, 4)));
+          } catch {
+            return h.url?.includes(url.slice(0, 15)) || false;
+          }
+        })
+        .slice(0, 5);
+
+      const backendUrl = process.env.REACT_APP_BACKEND_URL;
+      const token = localStorage.getItem("authToken");
+      const currentUserId = localStorage.getItem("userId") || getUserIdFromToken() || "guest";
+
+      const assistPayload = {
+        userId: currentUserId,
+        method,
+        url,
+        headers,
+        params,
+        body,
+        status: status || 500,
+        duration,
+        response: typeof response === "object" ? response : { message: String(response) },
+        previousAttempts
+      };
+
+      const res = await fetch(`${backendUrl}/api/ai/failure-assist`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": token ? `Bearer ${token}` : ""
+        },
+        body: JSON.stringify(assistPayload)
+      });
+
+      const data = await res.json();
+      if (data.diagnosis) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            from: "bot",
+            type: "failure_assist",
+            status: status || 500,
+            diagnosis: data.diagnosis,
+            retrievedEpisodes: data.retrievedEpisodes || []
+          }
+        ]);
+      }
+    } catch (err) {
+      console.error("Auto failure assistant trigger failed:", err);
+    }
+  };
+
+  // -------------------------------------------------------------
+  // 🔹 V2: MEASURABLE API HEALTH SCORE COMPUTATION
+  // -------------------------------------------------------------
+  const fetchHealthScore = async ({ method, url, headers, params, body, status, duration, response }) => {
+    try {
+      const backendUrl = process.env.REACT_APP_BACKEND_URL;
+      const token = localStorage.getItem("authToken");
+
+      const res = await fetch(`${backendUrl}/api/ai/health-score`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": token ? `Bearer ${token}` : ""
+        },
+        body: JSON.stringify({
+          method,
+          url,
+          headers,
+          params,
+          body,
+          status,
+          duration,
+          response
+        })
+      });
+
+      const data = await res.json();
+      if (data && typeof data.totalScore === "number") {
+        setHealthScore(data);
+      }
+    } catch (err) {
+      console.error("Failed to compute health score:", err);
+    }
+  };
+
   // -------------------------------------------
-  // SEND REQUEST
+  // SEND REQUEST (V1 + V2 EVENT-DRIVEN FLOW)
   // -------------------------------------------
   const handleSend = async () => {
     setErrorMsg("");
@@ -349,21 +457,7 @@ export default function SwiftAPIClient() {
         }
       }
 
-      let finalUrl = url;
-      const validParams = paramsObj.filter((p) => p.key.trim() !== "");
-
-      if (validParams.length) {
-        const queryString = validParams
-          .map(
-            (p) =>
-              `${encodeURIComponent(p.key.trim())}=${encodeURIComponent(
-                p.value.trim()
-              )}`
-          )
-          .join("&");
-
-        finalUrl += finalUrl.includes("?") ? `&${queryString}` : `?${queryString}`;
-      }
+      const finalUrl = url.trim();
 
       const backendToken = localStorage.getItem("authToken");
       const backendUrl = process.env.REACT_APP_BACKEND_URL;
@@ -378,15 +472,34 @@ export default function SwiftAPIClient() {
           method,
           headers: headers,
           body: bodyPayload,
+          appliedFix: appliedFixInfo,
         }),
       });
 
       const data = await res.json();
+      const duration = Math.round(performance.now() - start);
 
       if (!data.success) {
-        setErrorMsg(data.error || "Request failed.");
-        setStatus("ERR");
-        setResponse({ error: data.error });
+        const errorText = data.message || data.error || (res.status === 401 ? "Session expired. Please log in again." : "Request failed.");
+        setErrorMsg(errorText);
+        setStatus(res.status === 401 ? 401 : "ERR");
+        setResponse({ error: errorText });
+
+        if (res.status === 401) {
+          showToast("⚠️ Your login session has expired. Please log in again.");
+        }
+
+        // V2: Auto-trigger failure workflow on proxy execution error
+        triggerAutoFailureAssistant({
+          method,
+          url: finalUrl,
+          headers,
+          params: paramsObj,
+          body: bodyPayload,
+          status: res.status === 401 ? 401 : "ERR",
+          duration,
+          response: { error: errorText }
+        });
         return;
       }
 
@@ -398,45 +511,126 @@ export default function SwiftAPIClient() {
         localStorage.setItem(`requestCount_${currentUserId}`, total);
       }
 
+      const statusCode = data.status ?? res.status ?? "OK";
       setResponse(respBody);
       setLastResponse(respBody);
-      setLastRequest({ url, method, body: bodyPayload, status: data.status ?? res.status ?? "OK" });
+      setLastRequest({ url, method, body: bodyPayload, status: statusCode });
       sessionStorage.setItem("lastResponse", JSON.stringify(respBody));
       sessionStorage.setItem(
         "lastRequest",
-        JSON.stringify({ url, method, body: bodyPayload, status: data.status ?? res.status ?? "OK" })
+        JSON.stringify({ url, method, body: bodyPayload, status: statusCode })
       );
 
-      setStatus(data.status ?? res.status ?? "OK");
-      const statusCode = data.status ?? res.status;
-
-      const duration = Math.round(performance.now() - start);
+      setStatus(statusCode);
 
       setApiContext({
         method,
-        url,
+        url: finalUrl,
         headers,
         status: statusCode,
         responseTime: duration,
         response: respBody || { error: "No response body available" }
       });
 
-      setHistory(prev => [
-        {
-          _id: data.historyId || "temp-" + Date.now(),
+      // Update history capsule
+      const newHistoryItem = {
+        _id: data.historyId || "temp-" + Date.now(),
+        method,
+        url: finalUrl,
+        status: statusCode,
+        duration,
+        headers,
+        params: paramsObj,
+        requestBody: bodyPayload,
+        responseBody: respBody,
+        appliedFix: appliedFixInfo,
+        time: new Date().toISOString()
+      };
+
+      setHistory(prev => [newHistoryItem, ...prev]);
+
+      // V2: Recalculate API Health Score
+      fetchHealthScore({
+        method,
+        url: finalUrl,
+        headers,
+        params: paramsObj,
+        body: bodyPayload,
+        status: statusCode,
+        duration,
+        response: respBody
+      });
+
+      // 🔹 V2: AUTOMATIC FAILURE ASSISTANT TRIGGER (4xx, 5xx, or ERR)
+      const isFailure =
+        String(statusCode).startsWith("4") ||
+        String(statusCode).startsWith("5") ||
+        String(statusCode) === "ERR";
+
+      if (isFailure) {
+        triggerAutoFailureAssistant({
           method,
           url: finalUrl,
+          headers,
+          params: paramsObj,
+          body: bodyPayload,
           status: statusCode,
           duration,
-          time: new Date().toISOString()
-        },
-        ...prev
-      ]);
+          response: respBody
+        });
+      } else {
+        // 🔹 V2 RAG: Index verified resolution episode into RAG memory if an auto-fix was resolved
+        if (appliedFixInfo) {
+          const backendToken = localStorage.getItem("authToken");
+          const backendUrl = process.env.REACT_APP_BACKEND_URL;
+          const userIdentifier = localStorage.getItem("userId") || getUserIdFromToken() || "guest";
+
+          fetch(`${backendUrl}/api/ai/rag/index-episode`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": backendToken ? `Bearer ${backendToken}` : ""
+            },
+            body: JSON.stringify({
+              userId: userIdentifier,
+              method,
+              url: finalUrl,
+              failedStatus: appliedFixInfo.originalStatus || 401,
+              errorSnippet: appliedFixInfo.errorSnippet || "Failure resolved via confirmed auto-fix",
+              rootCauseLayer: appliedFixInfo.rootCauseLayer || "General",
+              appliedFix: appliedFixInfo,
+              successStatus: statusCode,
+              successDuration: duration
+            })
+          })
+            .then(() => {
+              showToast("🧠 Resolution episode indexed into RAG memory!");
+            })
+            .catch((err) => {
+              console.error("Failed to index RAG resolution episode:", err);
+            });
+
+          setAppliedFixInfo(null);
+        }
+      }
+
     } catch (err) {
       console.error("Request failed:", err);
       setErrorMsg("Request failed: " + err.message);
       setStatus("ERR");
       setResponse({ error: err.message });
+
+      // V2: Auto-trigger failure workflow on catch exception
+      triggerAutoFailureAssistant({
+        method,
+        url,
+        headers,
+        params: paramsObj,
+        body: rawBody,
+        status: "ERR",
+        duration: 0,
+        response: { error: err.message }
+      });
     } finally {
       setLoading(false);
     }
@@ -478,6 +672,20 @@ export default function SwiftAPIClient() {
     setResponse("");
     setStatus(item.status ?? null);
 
+    if (item.headers && typeof item.headers === "object") {
+      const hdrs = Object.entries(item.headers).map(([key, value]) => ({
+        key,
+        value: String(value),
+        description: ""
+      }));
+      hdrs.push({ key: "", value: "", description: "" });
+      setHeadersObj(hdrs);
+    }
+
+    if (item.requestBody) {
+      setRawBody(typeof item.requestBody === "object" ? JSON.stringify(item.requestBody, null, 2) : String(item.requestBody));
+    }
+
     if (!fullUrlString) {
       setUrl("");
       setParamsObj([{ key: "", value: "", description: "" }]);
@@ -485,46 +693,49 @@ export default function SwiftAPIClient() {
     }
 
     try {
-      const parsedUrl = new URL(fullUrlString);
-      const baseUrl = parsedUrl.origin + parsedUrl.pathname;
-      setUrl(baseUrl);
+      setUrl(fullUrlString);
 
-      const searchParams = Array.from(parsedUrl.searchParams.entries());
-      if (searchParams.length > 0) {
-        const newParams = searchParams.map(([key, value]) => ({
-          key,
-          value,
-          description: ""
-        }));
+      if (fullUrlString.includes("?")) {
+        const queryPart = fullUrlString.substring(fullUrlString.indexOf("?") + 1);
+        const searchParams = new URLSearchParams(queryPart);
+        const newParams = [];
+        searchParams.forEach((val, key) => {
+          newParams.push({ key, value: val, description: "" });
+        });
         newParams.push({ key: "", value: "", description: "" });
         setParamsObj(newParams);
       } else {
         setParamsObj([{ key: "", value: "", description: "" }]);
       }
     } catch (e) {
-      if (fullUrlString.includes("?")) {
-        const parts = fullUrlString.split("?");
-        const baseUrl = parts[0];
-        setUrl(baseUrl);
-
-        const searchParams = new URLSearchParams(parts[1]);
-        const newParams = Array.from(searchParams.entries()).map(([key, value]) => ({
-          key,
-          value,
-          description: ""
-        }));
-        newParams.push({ key: "", value: "", description: "" });
-        setParamsObj(newParams);
-      } else {
-        setUrl(fullUrlString);
-        setParamsObj([{ key: "", value: "", description: "" }]);
-      }
+      setUrl(fullUrlString);
+      setParamsObj([{ key: "", value: "", description: "" }]);
     }
   };
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(typeof text === "string" ? text : JSON.stringify(text, null, 2));
     showToast("✅ Copied to clipboard!");
+  };
+
+  // Open Timeline Modal
+  const handleOpenTimeline = (targetUrl) => {
+    setTimelineTargetUrl(targetUrl || url);
+    setShowTimelineModal(true);
+  };
+
+  // Open Compare Modal
+  const handleOpenCompare = (attemptA, attemptB) => {
+    setCompareAttemptA(attemptA || history[0] || null);
+    setCompareAttemptB(attemptB || history[1] || history[0] || null);
+    setShowCompareModal(true);
+  };
+
+  const getScoreColor = (score) => {
+    if (score >= 85) return "#22c55e";
+    if (score >= 70) return "#3b82f6";
+    if (score >= 50) return "#f59e0b";
+    return "#ef4444";
   };
 
   return (
@@ -573,6 +784,8 @@ export default function SwiftAPIClient() {
           onSelect={handleHistorySelect}
           onDelete={handleHistoryDelete}
           onClear={handleHistoryClear}
+          onOpenTimeline={handleOpenTimeline}
+          onOpenCompare={handleOpenCompare}
         />
       </div>
 
@@ -593,7 +806,12 @@ export default function SwiftAPIClient() {
         >
           <MethodDropdown method={method} setMethod={setMethod} />
 
-          <RequestBar url={url} setUrl={setUrl} paramsObj={paramsObj} />
+          <RequestBar
+            url={url}
+            setUrl={setUrl}
+            paramsObj={paramsObj}
+            setParamsObj={setParamsObj}
+          />
 
           <button
             type="submit"
@@ -643,6 +861,8 @@ export default function SwiftAPIClient() {
               <ParamsTab
                 paramsObj={paramsObj}
                 setParamsObj={(updated) => setParamsObj(cleanParams(updated))}
+                url={url}
+                setUrl={setUrl}
               />
             )}
 
@@ -658,7 +878,7 @@ export default function SwiftAPIClient() {
                 setBodyType={setBodyType}
                 body={rawBody}
                 setBody={setRawBody}
-                onBodyChange={setRequestBody}
+                onBodyChange={(val) => setRawBody(val)}
               />
             )}
             {activeTab === "Authorization" && (
@@ -711,12 +931,54 @@ export default function SwiftAPIClient() {
                 </button>
               </div>
             </div>
+
             <div className="response-right" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              {/* V2: API Health Score Badge */}
+              {healthScore && (
+                <button
+                  type="button"
+                  className="health-score-pill-btn"
+                  onClick={() => setShowHealthModal(true)}
+                  style={{
+                    color: getScoreColor(healthScore.totalScore),
+                    borderColor: `${getScoreColor(healthScore.totalScore)}44`
+                  }}
+                  title="View API Health Score Breakdown"
+                >
+                  📊 Health: {healthScore.totalScore}/100
+                </button>
+              )}
+
+              {/* V2: Timeline Button */}
+              {history.length > 0 && (
+                <button
+                  type="button"
+                  className="v2-tool-pill-btn"
+                  onClick={() => handleOpenTimeline(url)}
+                  title="Open Testing Timeline"
+                >
+                  🧬 Timeline
+                </button>
+              )}
+
+              {/* V2: Compare Button */}
+              {history.length >= 2 && (
+                <button
+                  type="button"
+                  className="v2-tool-pill-btn"
+                  onClick={() => handleOpenCompare(history[1], history[0])}
+                  title="Compare History Capsules"
+                >
+                  ⚖️ Compare
+                </button>
+              )}
+
               {status !== null && <span className={`status-badge status-${status}`}>{status}</span>}
 
               <button className="copy-btn" onClick={() => response && copyToClipboard(response)}>Copy</button>
               <button
                 type="button"
+                className="help-bot-btn"
                 onClick={(e) => {
                   e.stopPropagation();
                   const token = localStorage.getItem("authToken");
@@ -736,6 +998,7 @@ export default function SwiftAPIClient() {
               </button>
             </div>
           </div>
+
           <div className="response-body" style={{ overflow: "auto", maxHeight: "585px" }}>
             {loading ? (
               <div style={{ padding: "20px", color: "#888", display: "flex", alignItems: "center", gap: "10px" }}>
@@ -793,15 +1056,67 @@ export default function SwiftAPIClient() {
           </div>
         </div>
       </div>
+
+      {/* AI Bot Sidebar with Confirmed Auto-Fix and Failure Assist */}
       {showBot && (
         <BotSidebar
           onClose={() => setShowBot(false)}
-          messages={messages}
-          setMessages={setMessages}
           currentApiContext={apiContext}
           setHeadersObj={setHeadersObj}
+          setAuth={setAuth}
+          setRawBody={setRawBody}
+          setParamsObj={setParamsObj}
+          setMethod={setMethod}
+          setUrl={setUrl}
           setActiveTab={setActiveTab}
           setShowBot={setShowBot}
+          onRerunRequest={handleSend}
+        />
+      )}
+
+      {/* V2: API Health Score Modal */}
+      {showHealthModal && (
+        <ApiHealthScoreModal
+          scoreData={healthScore}
+          onClose={() => setShowHealthModal(false)}
+          onRefresh={() => {
+            if (apiContext) {
+              fetchHealthScore({
+                method: apiContext.method,
+                url: apiContext.url,
+                headers: apiContext.headers,
+                params: paramsObj,
+                body: rawBody,
+                status: apiContext.status,
+                duration: apiContext.responseTime,
+                response: apiContext.response
+              });
+            }
+          }}
+        />
+      )}
+
+      {/* V2: Testing Timeline Modal */}
+      {showTimelineModal && (
+        <TestingTimelineModal
+          currentEndpoint={timelineTargetUrl || url}
+          historyItems={history}
+          onClose={() => setShowTimelineModal(false)}
+          onRestoreAttempt={handleHistorySelect}
+          onOpenCompare={(a, b) => {
+            setShowTimelineModal(false);
+            handleOpenCompare(a, b);
+          }}
+        />
+      )}
+
+      {/* V2: History Capsule Comparison Modal */}
+      {showCompareModal && (
+        <HistoryComparisonModal
+          attemptA={compareAttemptA}
+          attemptB={compareAttemptB}
+          allHistory={history}
+          onClose={() => setShowCompareModal(false)}
         />
       )}
     </div>

@@ -1,18 +1,18 @@
 """
 Pydantic Data Models & Validation Schemas
-Defines structured input payload requirements for /analyze and /bot AI service endpoints.
+Defines structured input payload requirements for AI service endpoints (V1 & V2 + RAG).
 """
 
 from pydantic import BaseModel, Field
-from typing import Dict, Any, Optional, Union
+from typing import Dict, Any, Optional, Union, List
 
 class AnalyzeRequest(BaseModel):
     """Payload schema for API analysis and diagnostic endpoints."""
     method: str
     url: str
-    headers: Dict[str, str] = Field(default_factory=dict)
+    headers: Dict[str, Any] = Field(default_factory=dict)
     body: Optional[Union[Dict, list, str, Any]] = None
-    status: int = Field(ge=100, le=599, description="Valid HTTP status code")
+    status: Union[int, str] = Field(default=200, description="Valid HTTP status code or status string")
     response: Optional[Union[Dict, list, str, Any]] = None
     feature: str = Field("root_cause", description="AI analysis feature identifier")
 
@@ -22,3 +22,55 @@ class BotRequest(BaseModel):
     message: str
     currentApiContext: Optional[Dict[str, Any]] = None
     requestHistory: Optional[list] = Field(default_factory=list)
+
+class FailureAssistRequest(BaseModel):
+    """Payload schema for the Automatic AI Failure Assistant & Auto-Fix workflow."""
+    userId: Optional[str] = "guest"
+    method: str
+    url: str
+    headers: Dict[str, Any] = Field(default_factory=dict)
+    params: Optional[Union[Dict, list, Any]] = None
+    body: Optional[Union[Dict, list, str, Any]] = None
+    status: Union[int, str] = Field(default=500)
+    response: Optional[Union[Dict, list, str, Any]] = None
+    duration: Optional[int] = 0
+    previousAttempts: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
+
+class CompareRequest(BaseModel):
+    """Payload schema for comparing two execution history capsules."""
+    attemptA: Dict[str, Any]
+    attemptB: Dict[str, Any]
+
+class HealthScoreRequest(BaseModel):
+    """Payload schema for computing the 0-100 API Health Score."""
+    method: str
+    url: str
+    headers: Dict[str, Any] = Field(default_factory=dict)
+    params: Optional[Union[Dict, list, Any]] = None
+    body: Optional[Union[Dict, list, str, Any]] = None
+    status: Union[int, str] = Field(default=200)
+    response: Optional[Union[Dict, list, str, Any]] = None
+    duration: Optional[int] = 0
+
+class IndexEpisodeRequest(BaseModel):
+    """Payload schema for recording a verified resolution episode (Failure -> Diagnosis -> Fix -> Success)."""
+    userId: Optional[str] = "guest"
+    method: str
+    url: str
+    failedStatus: Union[int, str] = 500
+    errorSnippet: Optional[str] = ""
+    rootCauseLayer: Optional[str] = "General"
+    appliedFix: Optional[Dict[str, Any]] = Field(default_factory=dict)
+    successStatus: Union[int, str] = 200
+    successDuration: Optional[int] = 0
+    customId: Optional[str] = None
+
+class RetrieveEpisodesRequest(BaseModel):
+    """Payload schema for retrieving grounded past historical episodes via RAG."""
+    userId: Optional[str] = "guest"
+    method: str
+    url: str
+    status: Union[int, str] = 500
+    errorText: Optional[str] = ""
+    headersKeys: Optional[List[str]] = Field(default_factory=list)
+    topK: Optional[int] = 2

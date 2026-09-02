@@ -38,9 +38,9 @@ ENV/
 **/.venv/
 **/.pytest_cache/
 
-# IDE / System files
-.vscode/
-.idea/
-.DS_Store
-Thumbs.db
+# Vector DB / Local data
+chroma_db/
+**/chroma_db/
+*.sqlite3
+
 

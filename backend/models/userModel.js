@@ -2,7 +2,21 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import historySchema from './historyModel.js';
 
-// User Schema definition for authentication, history logs, and access tokens.
+// Episode schema for History-Grounded RAG resolution memories (Failure -> Diagnosis -> Fix -> Success)
+const resolutionEpisodeSchema = new mongoose.Schema({
+  episodeId: { type: String, default: '' },
+  timestamp: { type: Date, default: Date.now },
+  method: { type: String, default: 'GET' },
+  url: { type: String, default: '' },
+  failedStatus: { type: mongoose.Schema.Types.Mixed, default: 500 },
+  errorSnippet: { type: String, default: '' },
+  rootCauseLayer: { type: String, default: 'General' },
+  appliedFix: { type: Object, default: {} },
+  successStatus: { type: mongoose.Schema.Types.Mixed, default: 200 },
+  successDuration: { type: Number, default: 0 }
+}, { _id: true });
+
+// User Schema definition for authentication, history logs, access tokens, and RAG resolution memories.
 const userSchema = new mongoose.Schema({
   firstName: {
     type: String,
@@ -35,6 +49,9 @@ const userSchema = new mongoose.Schema({
   },
   history: {
     type: [historySchema], default: []
+  },
+  resolutionEpisodes: {
+    type: [resolutionEpisodeSchema], default: []
   },
   refreshToken: {
     type: String,

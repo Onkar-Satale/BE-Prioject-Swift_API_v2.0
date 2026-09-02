@@ -1,17 +1,71 @@
 """
 Groq LLM Integration Service
-Manages system prompts, dynamic user prompt generation per feature (smart error translator,
-header analysis, security audit, etc.), and async calls to Groq (Llama-3.3-70b).
+Manages system prompts, dynamic user prompt generation per feature,
+async calls to Groq with model fallback (qwen/qwen3.8-27b, groq/compound, openai/gpt-oss-120b),
+History-Grounded RAG retrieval, Root Cause Prediction, History Comparison, and API Health Scoring.
 """
 
+import json
+import re
+from typing import Dict, Any, List
 from groq import AsyncGroq
 from app.config.settings import settings, logger
-from app.schemas.request import AnalyzeRequest, BotRequest
+from app.schemas.request import (
+    AnalyzeRequest,
+    BotRequest,
+    FailureAssistRequest,
+    CompareRequest,
+    HealthScoreRequest,
+    IndexEpisodeRequest,
+    RetrieveEpisodesRequest
+)
+from app.services.rag_service import rag_memory_store
 
 # Shared Groq async client instance
 groq_client = AsyncGroq(api_key=settings.GROQ_API_KEY)
 
-# ---------------- SYSTEM MESSAGES & PROMPTS ----------------
+# Supported active Groq models in prioritized order for minimum latency
+ACTIVE_MODELS = [
+    "llama-3.1-8b-instant",
+    "llama3-8b-8192",
+    "qwen/qwen3.8-27b",
+    "groq/compound",
+    "openai/gpt-oss-120b"
+]
+
+async def call_groq_with_fallback(
+    messages: List[Dict[str, str]],
+    temperature: float = 0.2,
+    max_tokens: int = 500,
+    is_json: bool = False
+) -> str:
+    """
+    Executes high-speed chat completion with Groq using automatic fallback across active models.
+    """
+    last_err = None
+    for model_name in ACTIVE_MODELS:
+        try:
+            kwargs = {
+                "model": model_name,
+                "messages": messages,
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+            }
+            if is_json:
+                kwargs["response_format"] = {"type": "json_object"}
+
+            res = await groq_client.chat.completions.create(**kwargs)
+            content = res.choices[0].message.content
+            if content and content.strip():
+                return content
+        except Exception as e:
+            logger.warning(f"Groq call with model '{model_name}' failed: {e}. Trying next fallback...")
+            last_err = e
+            continue
+
+    raise last_err or RuntimeError("All Groq model fallbacks failed.")
+
+# ---------------- SYSTEM MESSAGES & PROMPTS (V1) ----------------
 GLOBAL_SYSTEM_PROMPT = """You are J.A.R.V.I.S. 🤖✨ — a smart, friendly API assistant.
 STYLE REQUIREMENTS (MANDATORY):
 - Return ONLY plain text. Do NOT return JSON, markdown code blocks, or raw objects.
@@ -74,10 +128,6 @@ You ONLY assist with topics related to:
 
 If a question is outside these topics, politely refuse.
 
-Example:
-
-"I apologize, but I'm designed specifically to help with API testing, backend development, and related topics. Feel free to ask me anything about APIs, HTTP, debugging, or backend development! 🚀"
-
 Never answer unrelated questions.
 
 ==================================================
@@ -85,7 +135,6 @@ TONE
 ==================================================
 
 Be:
-
 • Friendly
 • Supportive
 • Encouraging
@@ -93,9 +142,6 @@ Be:
 • Patient
 
 Teach like you're helping a junior developer.
-
-Avoid sounding overly excited or repetitive.
-
 Use emojis naturally but sparingly.
 
 ==================================================
@@ -103,375 +149,19 @@ RESPONSE STYLE
 ==================================================
 
 Keep responses concise.
-
-Default length:
-
-• 2–6 short paragraphs
-• Use simple English
-• Avoid unnecessary details
-
-Only provide long explanations when the user explicitly asks for:
-
-• Detailed explanation
-• Step-by-step guide
-• Deep dive
-• Full tutorial
-
-Otherwise, keep answers short and focused.
-
-==================================================
-SMALL TALK
-==================================================
-
-For greetings:
-
-Examples:
-
-"Hello! 👋 Ready to test some APIs?"
-
-"Hi! What API can I help you with today? 🚀"
-
-For:
-
-• Thanks
-• Thank you
-• Great
-• Nice
-• Awesome
-• Cool
-• Perfect
-• Ok
-• Okay
-• Yep
-• Yes
-
-Reply in ONLY one short sentence.
-
-Examples:
-
-"You're welcome! Happy coding! 🚀"
-
-"Glad it helped! 😊"
-
-"Awesome! Let me know if you need anything else."
-
-Do NOT generate long explanations for casual replies.
-
-==================================================
-FORMATTING
-==================================================
-
-Return ONLY plain text.
-
-Never use markdown tables.
-
-Never wrap code inside markdown code fences unless the user explicitly asks.
-
-For lists always use:
-
-•
-
-Never use:
-
-*
-
-Keep formatting clean and readable.
-
-==================================================
-TECHNICAL EXPLANATIONS
-==================================================
-
-Always explain concepts simply.
-
-When explaining:
-
-• What happened
-• Why it happened
-• How to fix it
-
-Prefer practical explanations over theory.
-
-Avoid unnecessary jargon.
-
-If introducing technical terms, explain them briefly.
-
-==================================================
-DEBUGGING
-==================================================
-
-When helping debug:
-
-1. Identify the likely issue.
-
-2. Explain why it occurred.
-
-3. Suggest the simplest fix.
-
-4. Mention best practices if helpful.
-
-Never guess information not provided.
-
-If information is missing, clearly ask for only the required details.
-
-==================================================
-API CONTEXT
-==================================================
-
-If API context is available (URL, Method, Headers, Request Body, Response, Status Code, etc.), use it to answer.
-
-Do NOT repeat the entire API context unless necessary.
-
-Focus only on the relevant information.
-
-==================================================
-ACCURACY
-==================================================
-
-Never invent:
-
-• Endpoints
-• Headers
-• Parameters
-• JSON fields
-• Response bodies
-• Status codes
-
-If uncertain, clearly say you don't have enough information.
-
-Never hallucinate.
-
-==================================================
-SECURITY
-==================================================
-
-If the user shares:
-
-• API Keys
-• JWT Tokens
-• Bearer Tokens
-• Passwords
-• Secrets
-
-Advise them not to expose sensitive credentials publicly.
-
-==================================================
-BEST PRACTICES
-==================================================
-
-Whenever appropriate, encourage:
-
-• Proper status codes
-• Input validation
-• Error handling
-• Secure authentication
-• RESTful design
-• Meaningful error messages
-• Clean request structures
-
-Keep these recommendations brief unless the user requests more detail.
-
-==================================================
-IMPORTANT
-==================================================
-
-Stay focused on API testing and backend development.
-
-Do not answer unrelated questions.
-
-Be accurate.
-
-Be concise.
-
-Be educational.
-
-Be practical.
-
-==================================================
-CONCISE RESPONSE RULES (MANDATORY)
-==================================================
-
-1. Keep every response as short as possible while still answering correctly.
-
-2. Unless the user explicitly asks for a detailed explanation, tutorial, or step-by-step guide:
-• Limit responses to 3-8 short sentences.
-• Avoid unnecessary background information.
-• Focus only on the user's question.
-
-3. Answer first. Explain only if needed.
-
-Bad:
-User: "What is HTTP 404?"
-(Long explanation)
-
-Good:
-"404 Not Found 📄 means the requested resource couldn't be found on the server. Check the URL or ensure the endpoint exists. 🚀"
-
-4. Never repeat information the user already knows or provided.
-
-5. Never summarize the current API context unless the user asks.
-
-==================================================
-EMOJI RULES (MANDATORY)
-==================================================
-
-1. Use 1-3 relevant emojis naturally in every response.
-
-2. Prefer technical emojis like:
-🚀 💡 ✅ ❌ ⚠️ 🔍 🛠️ 📦 🌐 🔐 📄 📡 ⚡
-
-3. Do NOT overuse emojis.
-
-==================================================
-CASUAL MESSAGE RULES (MANDATORY)
-==================================================
-
-If the user's message is only:
-
-• ok
-• okay
-• yes
-• yep
-• thanks
-• thank you
-• cool
-• nice
-• awesome
-• great
-• perfect
-• understood
-• got it
-• 👍
-• 👌
-
-Reply with ONLY one short sentence (maximum 10 words).
-
-Examples:
-"You're welcome! 🚀"
-
-"Glad to help! 😊"
-
-"Awesome! Happy coding! 💻"
-
-"Great! Let me know anytime. 🚀"
-
-Do NOT provide explanations, tips, summaries, or extra information.
-
-==================================================
-QUESTION FILTER (MANDATORY)
-==================================================
-
-Answer ONLY questions related to:
-
-• APIs
-• API Testing
-• Backend Development
-• HTTP
-• REST
-• GraphQL
-• JSON/XML
-• Headers
-• Authentication
-• Status Codes
-• Request/Response Structures
-• API Security
-• API Debugging
-• Express.js
-• Node.js
-• FastAPI
-• Flask
-• Django REST
-• Spring Boot
-• ASP.NET APIs
-• Swift API
-• cURL
-• Axios
-• fetch()
-• Python requests
-
-If a question is unrelated, politely reply:
-
-"I'm designed to help only with API testing, HTTP, backend development, and related topics. Feel free to ask me anything in those areas! 🚀"
-
-Do not answer unrelated questions under any circumstance.
-
-==================================================
-WHEN DEBUGGING
-==================================================
-
-Always use this order:
-
-• Problem 🔍
-• Cause 💡
-• Fix ✅
-
-Keep each point to 1-2 short sentences.
-
-==================================================
-WHEN INFORMATION IS MISSING
-==================================================
-
-Never guess.
-
-Instead ask ONLY for the minimum information needed to help.
-
-Example:
-"Could you share the response body or error message? 🔍"
-
-==================================================
-FINAL RULE
-==================================================
-
-Be accurate.
-Be concise.
-Be helpful.
-Never be verbose unless the user explicitly requests a detailed explanation.
-
-==================================================
-GREETINGS & SMALL TALK (MANDATORY)
-==================================================
-
-If the user sends only a greeting or casual message such as:
-
-• Hi
-• Hello
-• Hey
-• Good morning
-• Good afternoon
-• Good evening
-• What's up
-• Wassup
-• Yo
-• Hi there
-
-Respond with a short, friendly greeting and invite them to ask an API-related question.
-
-Examples:
-
-"Hello! 👋 How can I help you with API testing or backend development today? 🚀"
-
-"Hi! 😊 I'm here to help with APIs, HTTP, debugging, and backend development. What would you like to work on? 💻"
-
-"Good morning! ☀️ How can I assist you with API testing or backend development today? 🚀"
-
-Do NOT immediately start explaining API concepts, debugging errors, or provide technical information unless the user asks.
-
-If the greeting contains no technical question, keep the response to 1–2 short sentences.
-
-Always prioritize helping the user understand APIs and solve their backend problems.
+Default length: 2–6 short paragraphs. Use simple English.
 """
 
-# ---------------- CORE SERVICE LOGIC ----------------
+# ---------------- CORE SERVICE LOGIC (V1) ----------------
 
 async def generate_analysis(req: AnalyzeRequest) -> dict:
     """
-    Constructs feature-specific user prompt and sends async request to Groq LLM API.
-    Returns structured dict containing feature type and AI output text.
+    Constructs feature-specific user prompt and sends async request to Groq LLM API (V1).
     """
     user_content = build_user_prompt(req)
 
     try:
-        res = await groq_client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+        explanation = await call_groq_with_fallback(
             messages=[
                 {"role": "system", "content": GLOBAL_SYSTEM_PROMPT},
                 {"role": "user", "content": user_content}
@@ -479,7 +169,6 @@ async def generate_analysis(req: AnalyzeRequest) -> dict:
             temperature=0.5,
             max_tokens=400
         )
-        explanation = res.choices[0].message.content
 
         return {
             "type": req.feature,
@@ -493,10 +182,6 @@ async def generate_analysis(req: AnalyzeRequest) -> dict:
         }
 
 def build_user_prompt(req: AnalyzeRequest) -> str:
-    """
-    Constructs structured user prompts formatted with markdown section headers
-    based on the requested analysis feature type.
-    """
     error_content = req.response or "No response body provided."
     base_request_info = f"""
 Request:
@@ -646,10 +331,6 @@ Now analyze this API call:
 {base_request_info}"""
 
 async def generate_bot_response(req: BotRequest) -> dict:
-    """
-    Generates a conversational response for developer queries using Groq LLM,
-    attaching current API context and previous conversation history when provided.
-    """
     context_str = ""
 
     if req.currentApiContext:
@@ -678,13 +359,11 @@ async def generate_bot_response(req: BotRequest) -> dict:
     messages.append({"role": "user", "content": user_content})
 
     try:
-        res = await groq_client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+        explanation = await call_groq_with_fallback(
             messages=messages,
             temperature=0.5,
             max_tokens=500
         )
-        explanation = res.choices[0].message.content
 
         return {
             "type": "bot_response",
@@ -696,3 +375,479 @@ async def generate_bot_response(req: BotRequest) -> dict:
             "type": "bot_response",
             "text": "❌ An error occurred while generating a response. Please try again."
         }
+
+
+# ============================================================================
+# 🔹 V2: HISTORY-GROUNDED RAG FAILURE ASSISTANT & AUTO-FIX
+# ============================================================================
+
+RAG_FAILURE_SYSTEM_PROMPT = """You are SwiftAPI's History-Grounded Diagnostics & Failure Engine 🤖🛠️.
+Your role is to diagnose failed HTTP requests (4xx, 5xx, or network errors), predict the backend failure layer, and produce an actionable auto-fix grounded in real historical evidence retrieved via RAG.
+
+GROUNDING & EVIDENCE RULES (MANDATORY):
+1. Review the "RETRIEVED HISTORICAL EPISODES (RAG)" section provided in the prompt.
+2. If similar past episodes with verified successful fixes exist:
+   - Explicitly cite the historical precedent in your explanation (e.g. "In a matching past run on [timestamp], applying [fix] resolved this issue with 200 OK").
+   - Align your suggested auto-fix with the historically proven fix.
+3. NEVER fabricate or invent past dates, timestamps, or errors. Only reference the real retrieved episodes provided.
+
+You MUST output ONLY valid JSON matching this exact structure (NO extra text, NO markdown codeblock delimiters):
+{
+  "whatHappened": "Clear, concise 1-2 sentence description of the failure.",
+  "why": "Explanation of the root cause mechanism.",
+  "evidence": ["Evidence point 1 from status/headers/body", "Evidence point 2"],
+  "whatToDo": ["Action step 1", "Action step 2"],
+  "rootCause": {
+    "predictedLayer": "Database | JWT / Authentication | Authorization | Validation | Server / Business Logic | External Service | Network | Configuration",
+    "confidence": 85,
+    "probableCause": "Concise summary of the probable cause within this backend layer",
+    "evidenceSummary": "Specific signals supporting this layer prediction",
+    "nextAction": "Recommended backend or client action to resolve",
+    "isPrediction": true
+  },
+  "autoFix": {
+    "fixable": true,
+    "fixType": "url | header | auth | body | param | method",
+    "title": "Short title of fix (e.g. Correct URL Route or Add Authorization Header)",
+    "description": "What this fix will change in the request (cites historical precedent if available)",
+    "confirmationPrompt": "Should I update the URL to the correct endpoint?",
+    "diff": "- https://example.com/typo\n+ https://example.com/correct",
+    "actionPayload": {
+      "type": "set_url | add_header | update_header | set_auth | fix_body | set_param | change_method",
+      "key": "url",
+      "value": "https://example.com/correct",
+      "requiresUserInput": false,
+      "userInputPrompt": "",
+      "userInputDefault": ""
+    }
+  },
+  "historyEvolutionInsight": "Explanation of how this attempt compares with past history or retrieved RAG episodes."
+}
+"""
+
+def extract_json_from_llm(raw_text: str) -> dict:
+    cleaned = raw_text.strip()
+    if cleaned.startswith("```"):
+        cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned)
+        cleaned = re.sub(r"\s*```$", "", cleaned)
+    try:
+        return json.loads(cleaned)
+    except Exception:
+        match = re.search(r"(\{.*\})", cleaned, re.DOTALL)
+        if match:
+            try:
+                return json.loads(match.group(1))
+            except Exception:
+                pass
+        return {}
+
+async def generate_failure_diagnosis(req: FailureAssistRequest) -> dict:
+    """
+    Executes automated failure diagnosis grounded with RAG-retrieved historical episodes.
+    """
+    # 1. RAG Vector Retrieval: Retrieve top-k matching historical episodes
+    error_str = str(req.response or "")
+    headers_keys = list(req.headers.keys()) if isinstance(req.headers, dict) else []
+    
+    retrieved_episodes = rag_memory_store.retrieve_relevant_episodes(
+        user_id=req.userId or "guest",
+        method=req.method,
+        url=req.url,
+        status=req.status,
+        error_text=error_str,
+        headers_keys=headers_keys,
+        top_k=2
+    )
+
+    rag_context_str = ""
+    if retrieved_episodes:
+        rag_context_str = "\n=== RETRIEVED HISTORICAL EPISODES (RAG MEMORY) ===\n"
+        for idx, ep in enumerate(retrieved_episodes):
+            rag_context_str += (
+                f"Episode #{idx+1} (Match Score: {ep['matchPercentage']}% | Timestamp: {ep['timestamp']}):\n"
+                f"- Endpoint: {ep['endpoint']}\n"
+                f"- Failed Status: {ep['failedStatus']} | Previous Error: {ep['previousError']}\n"
+                f"- Root Cause Layer: {ep['rootCauseLayer']}\n"
+                f"- Verified Successful Fix Used: {json.dumps(ep['successfulFixUsed'])}\n"
+                f"- Resolved To: Status {ep['resultStatus']} in {ep.get('resultDuration', 0)}ms\n\n"
+            )
+    else:
+        rag_context_str = "\n=== RETRIEVED HISTORICAL EPISODES (RAG MEMORY) ===\nNo prior matching failure episodes found in memory for this endpoint pattern.\n"
+
+    # Add previous attempts from active session
+    prev_attempts_str = ""
+    if req.previousAttempts and len(req.previousAttempts) > 0:
+        prev_attempts_str = f"\nRecent Active Session Attempts:\n"
+        for idx, att in enumerate(req.previousAttempts[-3:]):
+            prev_attempts_str += f"Attempt {idx+1}: Status {att.get('status')} | Duration {att.get('duration')}ms | Time {att.get('time')}\n"
+
+    user_prompt = f"""
+Diagnose this failed API request using the grounded RAG history:
+
+CURRENT FAILED REQUEST:
+Method: {req.method}
+URL: {req.url}
+Headers: {json.dumps(req.headers or {})}
+Params: {json.dumps(req.params or {})}
+Body: {json.dumps(req.body) if req.body else 'None'}
+Status Code: {req.status}
+Duration: {req.duration}ms
+Response Body: {json.dumps(req.response) if isinstance(req.response, (dict, list)) else str(req.response or '')}
+{prev_attempts_str}
+{rag_context_str}
+"""
+
+    try:
+        content = await call_groq_with_fallback(
+            messages=[
+                {"role": "system", "content": RAG_FAILURE_SYSTEM_PROMPT},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.2,
+            max_tokens=550,
+            is_json=True
+        )
+        diagnosis_data = extract_json_from_llm(content)
+
+        if not diagnosis_data or "whatHappened" not in diagnosis_data:
+            status_num = int(req.status) if str(req.status).isdigit() else 500
+            layer = "JWT / Authentication" if status_num == 401 else ("Authorization" if status_num == 403 else ("Validation" if status_num == 400 else "Server / Business Logic"))
+            
+            diagnosis_data = {
+                "whatHappened": f"The request failed with status {req.status}.",
+                "why": f"The target server rejected the request in the {layer} layer.",
+                "evidence": [f"Status code: {req.status}", f"Target URL: {req.url}"],
+                "whatToDo": ["Review headers and authentication parameters."],
+                "rootCause": {
+                    "predictedLayer": layer,
+                    "confidence": 85,
+                    "probableCause": f"Status {req.status} indicates an issue in the {layer} layer.",
+                    "evidenceSummary": f"HTTP status code {req.status}",
+                    "nextAction": "Review headers and authentication parameters.",
+                    "isPrediction": True
+                },
+                "autoFix": {
+                    "fixable": status_num in [401, 400, 405],
+                    "fixType": "auth" if status_num == 401 else "header",
+                    "title": "Configure Authentication" if status_num == 401 else "Review Request Structure",
+                    "description": "Add Authorization Bearer token to authorize this request.",
+                    "confirmationPrompt": "Should I configure Authorization for you?",
+                    "diff": "+ Authorization: Bearer <token>",
+                    "actionPayload": {
+                        "type": "set_auth",
+                        "authType": "bearer",
+                        "requiresUserInput": True,
+                        "userInputPrompt": "Enter Bearer Token",
+                        "userInputDefault": ""
+                    }
+                }
+            }
+
+        return {
+            "success": True,
+            "diagnosis": diagnosis_data,
+            "retrievedEpisodes": retrieved_episodes
+        }
+
+    except Exception as e:
+        logger.error(f"Error generating failure diagnosis: {str(e)}", exc_info=True)
+        return {
+            "success": False,
+            "error": str(e),
+            "diagnosis": {
+                "whatHappened": f"Request failed with status {req.status}.",
+                "why": "Unable to connect with AI diagnostics service.",
+                "evidence": [f"Status code {req.status}"],
+                "whatToDo": ["Inspect headers and body parameters manually."],
+                "rootCause": {
+                    "predictedLayer": "Server / Business Logic",
+                    "confidence": 70,
+                    "probableCause": "Backend error response received.",
+                    "evidenceSummary": f"Status: {req.status}",
+                    "nextAction": "Check API logs.",
+                    "isPrediction": True
+                },
+                "autoFix": {
+                    "fixable": False,
+                    "title": "Manual Review Needed",
+                    "description": "Please review the request configuration."
+                }
+            },
+            "retrievedEpisodes": retrieved_episodes
+        }
+
+
+# ============================================================================
+# 🔹 V2: HISTORY-AWARE COMPARISON & API HEALTH SCORE
+# ============================================================================
+
+COMPARE_SYSTEM_PROMPT = """You are SwiftAPI's History-Aware Comparison Engine 🤖⚖️.
+Your role is to compare two execution attempts (Attempt A vs Attempt B) of an API request, identify every key difference, and explain WHY the outcome changed.
+
+You MUST return ONLY valid JSON:
+{
+  "statusComparison": {
+    "attemptAStatus": "401",
+    "attemptBStatus": "200",
+    "statusChanged": true,
+    "summary": "Outcome improved from 401 Unauthorized to 200 OK."
+  },
+  "timingComparison": {
+    "attemptADuration": 450,
+    "attemptBDuration": 120,
+    "differenceMs": -330,
+    "insight": "Attempt B was 330ms faster."
+  },
+  "detectedChanges": [
+    {
+      "field": "Headers / Authorization",
+      "attemptA": "Missing",
+      "attemptB": "Bearer token included",
+      "impact": "Crucial: Provided required authentication."
+    }
+  ],
+  "aiExplanation": "Clear, developer-friendly 2-3 paragraph explanation of why the two attempts had different results."
+}
+"""
+
+def truncate_val_for_prompt(val, max_len=400):
+    if val is None:
+        return "None"
+    if isinstance(val, list):
+        if len(val) > 2:
+            return f"[{len(val)} items, sample: {json.dumps(val[0])[:150]}...]"
+        return json.dumps(val)[:max_len]
+    if isinstance(val, dict):
+        dumped = json.dumps(val)
+        return dumped[:max_len] + ("..." if len(dumped) > max_len else "")
+    s = str(val)
+    return s[:max_len] + ("..." if len(s) > max_len else "")
+
+async def generate_history_comparison(req: CompareRequest) -> dict:
+    user_prompt = f"""
+Compare these two API execution attempts:
+
+--- ATTEMPT A ---
+Method: {req.attemptA.get('method')}
+URL: {req.attemptA.get('url')}
+Status: {req.attemptA.get('status')}
+Duration: {req.attemptA.get('duration')}ms
+Headers: {truncate_val_for_prompt(req.attemptA.get('headers', {}))}
+Params: {truncate_val_for_prompt(req.attemptA.get('params', {}))}
+Body: {truncate_val_for_prompt(req.attemptA.get('body', {}))}
+Response: {truncate_val_for_prompt(req.attemptA.get('response'))}
+
+--- ATTEMPT B ---
+Method: {req.attemptB.get('method')}
+URL: {req.attemptB.get('url')}
+Status: {req.attemptB.get('status')}
+Duration: {req.attemptB.get('duration')}ms
+Headers: {truncate_val_for_prompt(req.attemptB.get('headers', {}))}
+Params: {truncate_val_for_prompt(req.attemptB.get('params', {}))}
+Body: {truncate_val_for_prompt(req.attemptB.get('body', {}))}
+Response: {truncate_val_for_prompt(req.attemptB.get('response'))}
+"""
+
+    # Build intelligent fallback diff in case LLM is overloaded
+    status_a = str(req.attemptA.get('status', 'ERR'))
+    status_b = str(req.attemptB.get('status', 'ERR'))
+    url_a = req.attemptA.get('url', '')
+    url_b = req.attemptB.get('url', '')
+    dur_a = int(req.attemptA.get('duration') or 0)
+    dur_b = int(req.attemptB.get('duration') or 0)
+
+    changes = []
+    if url_a != url_b:
+        changes.append({
+            "field": "URL Endpoint",
+            "attemptA": url_a,
+            "attemptB": url_b,
+            "impact": "Crucial: Fixed incorrect route path or endpoint typo."
+        })
+    if req.attemptA.get('method') != req.attemptB.get('method'):
+        changes.append({
+            "field": "HTTP Method",
+            "attemptA": str(req.attemptA.get('method')),
+            "attemptB": str(req.attemptB.get('method')),
+            "impact": "Adjusted HTTP method for the endpoint."
+        })
+    
+    diff_ms = dur_b - dur_a
+    time_insight = f"Attempt B was {abs(diff_ms)}ms {'faster' if diff_ms < 0 else 'slower'} than Attempt A."
+    
+    status_summary = f"Outcome transitioned from status {status_a} to {status_b}."
+    if status_a != "200" and status_b == "200":
+        status_summary = f"Resolution verified: Successfully fixed status {status_a} error to 200 OK."
+
+    explanation = f"In Attempt A, the request returned HTTP {status_a} on '{url_a}'. In Attempt B, the request was executed with '{url_b}' returning HTTP {status_b}. The key difference was resolving the endpoint configuration, resulting in a successful response payload."
+    
+    fallback_data = {
+        "statusComparison": {
+            "attemptAStatus": status_a,
+            "attemptBStatus": status_b,
+            "statusChanged": status_a != status_b,
+            "summary": status_summary
+        },
+        "timingComparison": {
+            "attemptADuration": dur_a,
+            "attemptBDuration": dur_b,
+            "differenceMs": diff_ms,
+            "insight": time_insight
+        },
+        "detectedChanges": changes,
+        "aiExplanation": explanation
+    }
+
+    try:
+        content = await call_groq_with_fallback(
+            messages=[
+                {"role": "system", "content": COMPARE_SYSTEM_PROMPT},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.2,
+            max_tokens=450,
+            is_json=True
+        )
+        data = extract_json_from_llm(content)
+        if data and "aiExplanation" in data:
+            return {
+                "success": True,
+                "comparison": data
+            }
+        return {
+            "success": True,
+            "comparison": fallback_data
+        }
+    except Exception as e:
+        logger.error(f"Error in history comparison: {str(e)}", exc_info=True)
+        return {
+            "success": True,
+            "comparison": fallback_data
+        }
+
+def compute_measurable_health_score(req: HealthScoreRequest) -> dict:
+    deductions = []
+    recommendations = []
+    
+    # 1. SECURITY (20 pts max)
+    sec_score = 20
+    is_https = req.url.lower().startswith("https://")
+    if not is_https:
+        sec_score -= 8
+        deductions.append({"category": "Security", "points": -8, "reason": "Request sent over unencrypted HTTP protocol instead of HTTPS."})
+        recommendations.append("Enforce HTTPS on all API endpoints to encrypt transit data.")
+    
+    url_lower = req.url.lower()
+    if any(k in url_lower for k in ["token=", "password=", "secret=", "apikey=", "api_key="]):
+        sec_score -= 6
+        deductions.append({"category": "Security", "points": -6, "reason": "Sensitive credentials detected in URL query parameters."})
+        recommendations.append("Move secrets and tokens from URL query strings into Authorization headers.")
+
+    has_auth = False
+    if req.headers and isinstance(req.headers, dict):
+        has_auth = any(k.lower() == "authorization" for k in req.headers.keys())
+    if not has_auth and req.method.upper() in ["POST", "PUT", "PATCH", "DELETE"]:
+        sec_score -= 4
+        deductions.append({"category": "Security", "points": -4, "reason": "State-mutating request sent without an Authorization header."})
+        recommendations.append("Secure mutating endpoints with JWT or API Key authorization.")
+    
+    sec_score = max(0, min(20, sec_score))
+
+    # 2. PERFORMANCE (20 pts max)
+    perf_score = 20
+    duration = req.duration or 0
+    if duration <= 250:
+        perf_score = 20
+    elif duration <= 600:
+        perf_score = 16
+        deductions.append({"category": "Performance", "points": -4, "reason": f"Response latency is moderate ({duration} ms). Target is < 250 ms."})
+    elif duration <= 1200:
+        perf_score = 11
+        deductions.append({"category": "Performance", "points": -9, "reason": f"Response latency is slow ({duration} ms). Target is < 250 ms."})
+        recommendations.append("Optimize backend query execution, database indexes, or introduce caching.")
+    elif duration <= 2500:
+        perf_score = 6
+        deductions.append({"category": "Performance", "points": -14, "reason": f"Response latency is critical ({duration} ms)."})
+        recommendations.append("Investigate backend bottleneck, unoptimized database joins, or network hop delays.")
+    else:
+        perf_score = 2
+        deductions.append({"category": "Performance", "points": -18, "reason": f"Response took excessive time ({duration} ms)."})
+        recommendations.append("Implement async background jobs or pagination to avoid huge synchronous payloads.")
+
+    # 3. DOCUMENTATION & SPECS (20 pts max)
+    doc_score = 20
+    headers_dict = req.headers if isinstance(req.headers, dict) else {}
+    has_content_type = any(k.lower() == "content-type" for k in headers_dict.keys())
+    has_accept = any(k.lower() == "accept" for k in headers_dict.keys())
+    
+    if req.method.upper() in ["POST", "PUT", "PATCH"] and not has_content_type:
+        doc_score -= 8
+        deductions.append({"category": "Documentation", "points": -8, "reason": "Missing 'Content-Type' header on payload request."})
+        recommendations.append("Explicitly declare 'Content-Type: application/json' in request headers.")
+        
+    if not has_accept:
+        doc_score -= 4
+        deductions.append({"category": "Documentation", "points": -4, "reason": "Missing 'Accept' header for explicit content negotiation."})
+        recommendations.append("Include 'Accept: application/json' header to ensure consistent response formatting.")
+
+    if "_" in req.url.split("?")[0] or "%20" in req.url:
+        doc_score -= 4
+        deductions.append({"category": "Documentation", "points": -4, "reason": "URL path contains underscores or encoded spaces; violates REST naming conventions."})
+        recommendations.append("Use lowercase kebab-case (hyphens) for RESTful API endpoint paths.")
+        
+    doc_score = max(0, min(20, doc_score))
+
+    # 4. ERROR HANDLING (20 pts max)
+    err_score = 20
+    status_num = int(req.status) if str(req.status).isdigit() else 500
+    
+    if status_num >= 500:
+        err_score -= 15
+        deductions.append({"category": "Error Handling", "points": -15, "reason": f"Server crashed with 5xx Internal Server Error (HTTP {status_num})."})
+        recommendations.append("Catch unhandled exceptions and return structured 4xx or safe operational error responses.")
+    elif status_num >= 400:
+        err_score -= 8
+        deductions.append({"category": "Error Handling", "points": -8, "reason": f"Client request error received (HTTP {status_num})."})
+        recommendations.append("Verify required parameters, auth tokens, and payload schema before sending.")
+
+    if isinstance(req.response, str) and ("<!DOCTYPE html>" in req.response or "<html>" in req.response.lower()):
+        err_score -= 5
+        deductions.append({"category": "Error Handling", "points": -5, "reason": "Received raw HTML error stack dump instead of structured JSON."})
+        recommendations.append("Configure backend error handlers to return structured JSON error envelopes.")
+
+    err_score = max(0, min(20, err_score))
+
+    # 5. BEST PRACTICES (20 pts max)
+    bp_score = 20
+    if req.method.upper() == "GET" and req.body:
+        bp_score -= 8
+        deductions.append({"category": "Best Practices", "points": -8, "reason": "HTTP GET requests should not carry request payloads according to HTTP spec."})
+        recommendations.append("Pass parameters in query string instead of body for GET requests.")
+        
+    if req.body:
+        body_str = json.dumps(req.body) if isinstance(req.body, (dict, list)) else str(req.body)
+        if len(body_str) > 100000:
+            bp_score -= 6
+            deductions.append({"category": "Best Practices", "points": -6, "reason": "Request payload exceeds 100KB without pagination/compression."})
+            recommendations.append("Implement pagination (limit/offset) or payload compression (gzip).")
+            
+    bp_score = max(0, min(20, bp_score))
+
+    total_score = sec_score + perf_score + doc_score + err_score + bp_score
+    total_score = max(0, min(100, total_score))
+
+    grade = "Excellent" if total_score >= 85 else ("Good" if total_score >= 70 else ("Fair" if total_score >= 50 else "Critical"))
+
+    return {
+        "totalScore": total_score,
+        "grade": grade,
+        "categories": {
+            "security": { "score": sec_score, "max": 20, "percentage": int((sec_score / 20) * 100) },
+            "performance": { "score": perf_score, "max": 20, "percentage": int((perf_score / 20) * 100) },
+            "documentation": { "score": doc_score, "max": 20, "percentage": int((doc_score / 20) * 100) },
+            "errorHandling": { "score": err_score, "max": 20, "percentage": int((err_score / 20) * 100) },
+            "bestPractices": { "score": bp_score, "max": 20, "percentage": int((bp_score / 20) * 100) },
+        },
+        "deductions": deductions,
+        "recommendations": recommendations if recommendations else ["Request adheres to REST API standards and best practices! 🚀"]
+    }
