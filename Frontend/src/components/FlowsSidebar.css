@@ -1,0 +1,213 @@
+/* Flows Sidebar Styles */
+.flows-sidebar {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg-secondary, #1e1e2e);
+  color: var(--text-primary, #cdd6f4);
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.flows-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.flows-header h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #cdd6f4;
+}
+
+.new-flow-btn {
+  background: linear-gradient(135deg, #a855f7, #6366f1);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+
+.new-flow-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
+}
+
+.flows-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.flows-empty-state {
+  text-align: center;
+  padding: 30px 16px;
+  color: #89b4fa;
+}
+
+.empty-flow-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.create-demo-flow-btn {
+  margin-top: 14px;
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  color: #c084fc;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.create-demo-flow-btn:hover {
+  background: rgba(168, 85, 247, 0.25);
+  border-color: #c084fc;
+}
+
+.flow-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.flow-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(168, 85, 247, 0.4);
+  transform: translateY(-1px);
+}
+
+.flow-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.flow-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f5c2e7;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flow-card-desc {
+  font-size: 11px;
+  color: #a6adc8;
+  margin-bottom: 10px;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.flow-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+}
+
+.flow-steps-pill {
+  background: rgba(137, 180, 250, 0.15);
+  color: #89b4fa;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.flow-status-pill {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 10px;
+}
+
+.flow-status-pill.passed {
+  background: rgba(166, 227, 161, 0.15);
+  color: #a6e3a1;
+}
+
+.flow-status-pill.healed {
+  background: rgba(249, 226, 175, 0.15);
+  color: #f9e2af;
+  border: 1px solid rgba(249, 226, 175, 0.3);
+}
+
+.flow-status-pill.failed {
+  background: rgba(243, 139, 168, 0.15);
+  color: #f38ba8;
+}
+
+.flow-card-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.flow-action-btn {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cdd6f4;
+  padding: 5px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.flow-action-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.flow-action-btn.run {
+  background: rgba(168, 85, 247, 0.2);
+  border-color: rgba(168, 85, 247, 0.5);
+  color: #c084fc;
+}
+
+.flow-action-btn.run:hover {
+  background: rgba(168, 85, 247, 0.35);
+}
+
+.flow-action-btn.delete {
+  color: #f38ba8;
+}
+
+.flow-action-btn.delete:hover {
+  background: rgba(243, 139, 168, 0.2);
+}

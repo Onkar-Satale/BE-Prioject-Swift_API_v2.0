@@ -15,6 +15,7 @@ import { authRateLimiter, apiRateLimiter } from './middlewares/rateLimiterMiddle
 import authRoutes from './routes/authRoute.js';
 import historyRoutes from './routes/historyRoute.js';
 import aiRoutes from './routes/aiRoute.js';
+import flowRoutes from './routes/flowRoute.js';
 import { proxyRequestHandler } from './controllers/requestController.js';
 import { requestProxyValidator } from './validators/requestValidator.js';
 import auth from './middlewares/authMiddleware.js';
@@ -62,6 +63,7 @@ app.post('/api/request', apiRateLimiter, auth, requestProxyValidator, proxyReque
 app.use('/api', authRoutes);
 app.use('/api/history', historyRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/flows', flowRoutes);
 
 // Health check endpoint
 app.get('/', (req, res) => {

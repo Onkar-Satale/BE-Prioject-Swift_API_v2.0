@@ -17,6 +17,8 @@ import AuthorizationTab from "./AuthorizationTab";
 import ApiHealthScoreModal from "./ApiHealthScoreModal";
 import TestingTimelineModal from "./TestingTimelineModal";
 import HistoryComparisonModal from "./HistoryComparisonModal";
+import FlowsSidebar from "./FlowsSidebar";
+import FlowStudioModal from "./FlowStudioModal";
 import { useContext } from "react";
 import { SwiftAPIContext } from "../context/SwiftAPIContext";
 import { showToast } from "../utils/toast";
@@ -96,6 +98,7 @@ export default function SwiftAPIClient() {
   const [showCompareModal, setShowCompareModal] = useState(false);
   const [compareAttemptA, setCompareAttemptA] = useState(null);
   const [compareAttemptB, setCompareAttemptB] = useState(null);
+  const [flowStudioModal, setFlowStudioModal] = useState(null); // { flow, initialMode: "builder" | "runner" }
 
   // Clear error message immediately when URL changes
   useEffect(() => {
@@ -776,6 +779,15 @@ export default function SwiftAPIClient() {
         />
       </div>
 
+      {activePanel === "flows" && (
+        <div className="sidebar-large">
+          <FlowsSidebar
+            onOpenStudio={(flow) => setFlowStudioModal({ flow, initialMode: "builder" })}
+            onRunFlow={(flow) => setFlowStudioModal({ flow, initialMode: "runner" })}
+          />
+        </div>
+      )}
+
       {activePanel === "account" && (
         <div className="sidebar-large">
           <AccountPage onClose={() => setActivePanel(null)} />
@@ -1104,6 +1116,19 @@ export default function SwiftAPIClient() {
           attemptB={compareAttemptB}
           allHistory={history}
           onClose={() => setShowCompareModal(false)}
+        />
+      )}
+
+      {/* V2.1: Multi-Step Flow Studio & Autonomous Self-Healing Runner */}
+      {flowStudioModal && (
+        <FlowStudioModal
+          flow={flowStudioModal.flow}
+          initialMode={flowStudioModal.initialMode || "builder"}
+          onClose={() => setFlowStudioModal(null)}
+          onSaved={(savedFlow) => {
+            showToast("💾 Flow saved successfully!");
+            setFlowStudioModal(null);
+          }}
         />
       )}
     </div>
