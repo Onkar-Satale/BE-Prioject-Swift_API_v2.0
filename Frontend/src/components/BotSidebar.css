@@ -1,5 +1,3 @@
-/* frontend/src/components/BotSidebar.css */
-
 .bot-sidebar {
   position: fixed;
   top: 0;
@@ -16,7 +14,9 @@
   color: var(--terminal-text-bright);
   z-index: 999;
   border-radius: 0;
-  overflow: hidden;
+  overflow-x: hidden !important;
+  overflow-y: hidden !important;
+  box-sizing: border-box !important;
   transition: all 0.3s ease;
 }
 
@@ -132,21 +132,27 @@
   flex: 1;
   min-height: 0 !important;
   padding: 12px;
-  overflow-y: auto;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
   display: flex;
   flex-direction: column;
   gap: 12px;
   background: var(--terminal-bg);
+  box-sizing: border-box !important;
+  max-width: 100% !important;
 }
 
 /* MESSAGE BUBBLES */
 .bot-message {
   padding: 10px 14px;
   border-radius: 6px;
-  max-width: 95%;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
   word-wrap: break-word;
+  word-break: break-word;
   font-size: 12.5px;
   line-height: 1.4;
+  overflow-x: hidden !important;
 }
 
 .bot-message.bot {
@@ -154,7 +160,7 @@
   border: 1px solid var(--terminal-border);
   align-self: flex-start;
   color: var(--terminal-text-bright);
-  width: 95%;
+  width: 100% !important;
 }
 
 .bot-message.user {
@@ -162,6 +168,7 @@
   border: 1px solid var(--terminal-purple);
   color: var(--terminal-white);
   align-self: flex-end;
+  max-width: 90% !important;
 }
 
 /* FOOTER */
@@ -171,10 +178,15 @@
   padding: 10px 12px;
   border-top: 1px solid var(--terminal-border);
   background: #000000;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: hidden !important;
 }
 
 .bot-footer input {
   flex: 1;
+  min-width: 0 !important;
   padding: 10px 12px;
   border-radius: 4px;
   border: 1px solid var(--terminal-border);
@@ -183,6 +195,7 @@
   font-family: var(--terminal-font);
   font-size: 12.5px !important;
   outline: none;
+  box-sizing: border-box !important;
   transition: all 0.15s ease;
 }
 
@@ -200,6 +213,8 @@
   font-weight: bold;
   font-size: 12.5px !important;
   cursor: pointer;
+  flex-shrink: 0 !important;
+  box-sizing: border-box !important;
   transition: all 0.15s ease;
 }
 
