@@ -242,7 +242,7 @@ export default function SwiftAPIClient() {
   const loadUserHistory = async () => {
     try {
       const h = await getHistory();
-      setHistory(Array.isArray(h) ? [...h].reverse() : []);
+      setHistory(Array.isArray(h) ? h : []);
     } catch (err) {
       console.error("Failed to load history:", err);
       setHistory([]);

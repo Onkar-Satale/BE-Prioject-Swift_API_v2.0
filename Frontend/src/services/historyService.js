@@ -1,37 +1,55 @@
+import { authenticatedFetch } from "./authService";
+
 const HISTORY_API = `${process.env.REACT_APP_BACKEND_URL}/api/history`;
+const HISTORY_CACHE_KEY = "swift_api_history_cache";
 
+// Get user history with instant local cache + authenticated fetch
 export const getHistory = async () => {
+  // 1. Check local backup cache first for instant UI render
+  let cached = [];
   try {
-    const token = localStorage.getItem("authToken"); // ✅ corrected
-    if (!token) return [];
+    const raw = localStorage.getItem(HISTORY_CACHE_KEY);
+    if (raw) cached = JSON.parse(raw);
+  } catch {}
 
-    const res = await fetch(`${HISTORY_API}?t=${Date.now()}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+  const token = localStorage.getItem("authToken");
+  if (!token) {
+    return Array.isArray(cached) ? cached : [];
+  }
+
+  try {
+    const res = await authenticatedFetch(`${HISTORY_API}?t=${Date.now()}`, {
       cache: "no-store",
     });
 
-    if (!res.ok) throw new Error(`Failed to fetch history: ${res.status}`);
-    return await res.json();
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        // Update local cache
+        localStorage.setItem(HISTORY_CACHE_KEY, JSON.stringify(data));
+        return data;
+      }
+    }
   } catch (err) {
-    console.error("getHistory error:", err);
-    return [];
+    console.warn("getHistory network fetch failed, using local cache:", err);
   }
+
+  return Array.isArray(cached) ? cached : [];
 };
 
 // Save a new history entry
 export const saveHistory = async (entry) => {
   try {
-    const token = localStorage.getItem("authToken"); // ✅ corrected
-    if (!token) return { success: false, error: "User not logged in" };
+    // Optimistically update local cache
+    try {
+      const raw = localStorage.getItem(HISTORY_CACHE_KEY);
+      const list = raw ? JSON.parse(raw) : [];
+      const updated = [entry, ...list.filter(x => x._id !== entry._id)].slice(0, 100);
+      localStorage.setItem(HISTORY_CACHE_KEY, JSON.stringify(updated));
+    } catch {}
 
-    const res = await fetch(HISTORY_API, {
+    const res = await authenticatedFetch(HISTORY_API, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
       body: JSON.stringify(entry),
     });
 
@@ -46,14 +64,18 @@ export const saveHistory = async (entry) => {
 // Delete a single history item
 export const deleteHistoryItem = async (historyId) => {
   try {
-    const token = localStorage.getItem("authToken"); // ✅ corrected
-    if (!token) return { success: false, error: "User not logged in" };
+    // Optimistically remove from local cache
+    try {
+      const raw = localStorage.getItem(HISTORY_CACHE_KEY);
+      if (raw) {
+        const list = JSON.parse(raw);
+        const filtered = list.filter(item => (item._id !== historyId && item.id !== historyId));
+        localStorage.setItem(HISTORY_CACHE_KEY, JSON.stringify(filtered));
+      }
+    } catch {}
 
-    const res = await fetch(`${HISTORY_API}/${historyId}`, {
+    const res = await authenticatedFetch(`${HISTORY_API}/${historyId}`, {
       method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
     });
 
     if (!res.ok) throw new Error("Failed to delete history item");
@@ -67,14 +89,10 @@ export const deleteHistoryItem = async (historyId) => {
 // Clear all history
 export const clearHistory = async () => {
   try {
-    const token = localStorage.getItem("authToken"); // ✅ corrected
-    if (!token) return { success: false, error: "User not logged in" };
+    localStorage.removeItem(HISTORY_CACHE_KEY);
 
-    const res = await fetch(`${HISTORY_API}/clear`, {
+    const res = await authenticatedFetch(`${HISTORY_API}/clear`, {
       method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
     });
 
     if (!res.ok) throw new Error("Failed to clear history");
