@@ -140,6 +140,27 @@
   background: var(--terminal-bg);
   box-sizing: border-box !important;
   max-width: 100% !important;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(168, 85, 247, 0.4) transparent;
+}
+
+/* Custom Visible Vertical Scrollbar */
+.bot-body::-webkit-scrollbar {
+  width: 6px !important;
+  height: 0px !important; /* Completely eliminates horizontal scrollbar */
+}
+
+.bot-body::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.bot-body::-webkit-scrollbar-thumb {
+  background: rgba(168, 85, 247, 0.35);
+  border-radius: 4px;
+}
+
+.bot-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 85, 247, 0.7);
 }
 
 /* MESSAGE BUBBLES */
