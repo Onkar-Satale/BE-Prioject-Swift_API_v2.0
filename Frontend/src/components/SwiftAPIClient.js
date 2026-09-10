@@ -153,6 +153,12 @@ export default function SwiftAPIClient() {
   }, [auth, setHeadersObj]);
 
   const [bodyType, setBodyType] = useState("none");
+  const [formDataList, setFormDataList] = useState([
+    { key: "", value: "", description: "" }
+  ]);
+  const [urlencodedList, setUrlencodedList] = useState([
+    { key: "", value: "", description: "" }
+  ]);
   const [apiContext, setApiContext] = useState(null);
 
   const startResizing = (e) => {
@@ -449,14 +455,34 @@ export default function SwiftAPIClient() {
     const start = performance.now();
 
     try {
-      let bodyPayload;
-      if (["POST", "PUT", "PATCH", "DELETE"].includes(method) && rawBody?.trim()) {
-        try {
-          bodyPayload = JSON.parse(rawBody);
-        } catch (err) {
-          setErrorMsg("Invalid JSON in body: " + err.message);
-          setLoading(false);
-          return;
+      let bodyPayload = null;
+      if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+        if (bodyType === "raw" && rawBody?.trim()) {
+          try {
+            bodyPayload = JSON.parse(rawBody);
+          } catch (err) {
+            setErrorMsg("Invalid JSON in body: " + err.message);
+            setLoading(false);
+            return;
+          }
+        } else if (bodyType === "form-data") {
+          const formObj = {};
+          formDataList.forEach(item => {
+            if (item.key?.trim()) {
+              formObj[item.key.trim()] = item.value;
+            }
+          });
+          bodyPayload = formObj;
+          if (!headers["Content-Type"]) headers["Content-Type"] = "application/json";
+        } else if (bodyType === "x-www-form-urlencoded") {
+          const urlEncodedObj = {};
+          urlencodedList.forEach(item => {
+            if (item.key?.trim()) {
+              urlEncodedObj[item.key.trim()] = item.value;
+            }
+          });
+          bodyPayload = urlEncodedObj;
+          headers["Content-Type"] = "application/x-www-form-urlencoded";
         }
       }
 
@@ -884,6 +910,10 @@ export default function SwiftAPIClient() {
                 body={rawBody}
                 setBody={setRawBody}
                 onBodyChange={(val) => setRawBody(val)}
+                formData={formDataList}
+                setFormData={setFormDataList}
+                urlencoded={urlencodedList}
+                setUrlencoded={setUrlencodedList}
               />
             )}
             {activeTab === "Authorization" && (

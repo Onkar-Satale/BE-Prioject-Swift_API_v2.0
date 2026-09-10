@@ -268,16 +268,74 @@
   transition: all 0.2s ease;
 }
 
-.change-type-btn:hover {
-  background: rgba(168, 85, 247, 0.1);
-  color: var(--terminal-white);
-  border-color: var(--terminal-purple);
+/* Toolbar for Raw JSON Editor */
+.raw-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  background-color: #181825;
+  border-bottom: 1px solid #313244;
+  border-radius: 6px 6px 0 0;
+  margin-top: 8px;
 }
 
-/* Force Ace Editor background to be black */
+.format-json-btn,
+.clear-body-btn {
+  background: #313244;
+  border: 1px solid #45475a;
+  color: #cdd6f4;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11.5px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.format-json-btn:hover {
+  background: #45475a;
+  color: #89b4fa;
+  border-color: #89b4fa;
+}
+
+.clear-body-btn:hover {
+  background: rgba(243, 139, 168, 0.2);
+  color: #f38ba8;
+  border-color: #f38ba8;
+}
+
+/* Table body editor styling for form-data and x-www-form-urlencoded */
+.table-body-editor {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+
+.add-param-row-btn {
+  align-self: flex-start;
+  background: #1e1e2e;
+  border: 1px dashed #45475a;
+  color: #89b4fa;
+  padding: 6px 14px;
+  font-size: 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.add-param-row-btn:hover {
+  background: rgba(137, 180, 250, 0.1);
+  border-color: #89b4fa;
+}
+
+/* Force Ace Editor background to be dark */
 #json-editor,
 #json-editor .ace_gutter,
 #json-editor .ace_scroller,
 #json-editor .ace_content {
-  background-color: var(--terminal-bg) !important;
+  background-color: #11111b !important;
 }
