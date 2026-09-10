@@ -1,9 +1,18 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import AceEditor from "react-ace";
+import "ace-builds/src-noconflict/mode-json";
+import "ace-builds/src-noconflict/theme-twilight";
+
 import { saveFlowRunResults, createFlow, updateFlow } from "../services/flowService";
 import { authenticatedFetch } from "../services/authService";
+import { showToast } from "../utils/toast";
 import "./FlowStudioModal.css";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
+
+// ============================================================================
+// 🛠️ HELPER FUNCTIONS (VARIABLE EXTRACTION, INTERPOLATION & NORMALIZATION)
+// ============================================================================
 
 // Helper to safely extract nested properties from response data or full response wrapper
 export function getValueByPath(obj, path, fullResponse = null) {
@@ -45,27 +54,33 @@ export function getValueByPath(obj, path, fullResponse = null) {
   let val = resolve(obj, rawPath);
   if (val !== undefined && val !== null) return val;
 
-  // 2. Strip common prefixes (response.body., response.data., response., body., data.) and resolve on obj
-  const cleanedPath = rawPath
-    .replace(/^response\.body\./i, '')
-    .replace(/^response\.data\./i, '')
-    .replace(/^response\./i, '')
-    .replace(/^body\./i, '')
-    .replace(/^data\./i, '');
+  // 2. Try candidate stripped paths sequentially (do NOT chain all replacements)
+  const candidatePrefixes = [
+    /^response\.body\./i,
+    /^response\.data\./i,
+    /^response\./i,
+    /^body\./i,
+    /^data\./i,
+  ];
 
-  if (cleanedPath !== rawPath) {
-    val = resolve(obj, cleanedPath);
-    if (val !== undefined && val !== null) return val;
+  for (const prefix of candidatePrefixes) {
+    if (prefix.test(rawPath)) {
+      const stripped = rawPath.replace(prefix, '');
+      val = resolve(obj, stripped);
+      if (val !== undefined && val !== null) return val;
+    }
   }
 
   // 3. Array / Object Cross-Compatibility Fallbacks:
-  // 3A. If obj is an Array and user didn't specify array index (e.g. user typed "name" or "updated_at" on an array response)
+  const cleanedPath = rawPath.replace(/^response\.(body|data)\./i, '').replace(/^response\./i, '');
+
+  // 3A. If obj is an Array and user didn't specify array index
   if (Array.isArray(obj) && obj.length > 0) {
-    const arrayItemVal = resolve(obj[0], cleanedPath);
+    const arrayItemVal = resolve(obj[0], cleanedPath) || resolve(obj[0], rawPath);
     if (arrayItemVal !== undefined && arrayItemVal !== null) return arrayItemVal;
   }
 
-  // 3B. If obj is a single Object and user specified array index (e.g. user typed "0.updated_at" on a single object response)
+  // 3B. If obj is a single Object and user specified array index
   if (typeof obj === "object" && !Array.isArray(obj)) {
     const strippedIndex = cleanedPath.replace(/^0\./, '').replace(/^\[0\]\./, '');
     if (strippedIndex !== cleanedPath) {
@@ -83,7 +98,7 @@ export function getValueByPath(obj, path, fullResponse = null) {
     if (val !== undefined && val !== null) return val;
 
     if (fullResponse.body) {
-      val = resolve(fullResponse.body, cleanedPath);
+      val = resolve(fullResponse.body, cleanedPath) || resolve(fullResponse.body, rawPath);
       if (val !== undefined && val !== null) return val;
       if (Array.isArray(fullResponse.body) && fullResponse.body.length > 0) {
         val = resolve(fullResponse.body[0], cleanedPath);
@@ -91,7 +106,7 @@ export function getValueByPath(obj, path, fullResponse = null) {
       }
     }
     if (fullResponse.data) {
-      val = resolve(fullResponse.data, cleanedPath);
+      val = resolve(fullResponse.data, cleanedPath) || resolve(fullResponse.data, rawPath);
       if (val !== undefined && val !== null) return val;
       if (Array.isArray(fullResponse.data) && fullResponse.data.length > 0) {
         val = resolve(fullResponse.data[0], cleanedPath);
@@ -103,21 +118,38 @@ export function getValueByPath(obj, path, fullResponse = null) {
   return undefined;
 }
 
-// Helper to interpolate {{varName}} in string URLs, headers, params, and body
+// Helper to interpolate {{varName}} in strings, headers, params, and body
 export function interpolateVariables(template, variables) {
   if (!template || !variables || typeof variables !== "object") return template;
 
   const replaceString = (str) => {
     if (typeof str !== "string") return str;
-    return str.replace(/\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g, (match, rawKey) => {
+    return str.replace(/\{\{\s*([a-zA-Z0-9_$.-]+)\s*\}\}/g, (match, rawKey) => {
       const key = rawKey.trim();
+
+      // 0. Built-in dynamic variables ($timestamp, $random, $uuid, $isoDate)
+      if (key === "$timestamp" || key === "timestamp") {
+        return String(Date.now());
+      }
+      if (key === "$random" || key === "random") {
+        return String(Math.floor(1000 + Math.random() * 9000));
+      }
+      if (key === "$uuid" || key === "$guid" || key === "uuid") {
+        return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
+          const r = Math.random() * 16 | 0;
+          return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+        });
+      }
+      if (key === "$isoDate" || key === "$isoTimestamp") {
+        return new Date().toISOString();
+      }
 
       // 1. Direct key match
       if (variables[key] !== undefined && variables[key] !== null) {
         return typeof variables[key] === "object" ? JSON.stringify(variables[key]) : String(variables[key]);
       }
 
-      // 2. Stripped prefix key match (e.g. response.body.login -> login)
+      // 2. Stripped prefix key match (e.g. response.body.token -> token)
       const cleanKey = key
         .replace(/^response\.body\./i, '')
         .replace(/^response\.data\./i, '')
@@ -206,7 +238,7 @@ export function renderHighlightedTemplate(template, variables = {}) {
       <span
         key={idx}
         className="flow-var-tag unresolved"
-        title="Unresolved: Variable not yet extracted in preceding steps"
+        title="Unresolved: Variable not yet in variable pool"
       >
         {`{{${rawKey}}}`}
         <span className="flow-var-preview unres">unresolved</span>
@@ -215,34 +247,135 @@ export function renderHighlightedTemplate(template, variables = {}) {
   });
 }
 
+// Helper to normalize step objects into rich editor format
+export function normalizeStep(step, idx = 0) {
+  // Normalize params array
+  let paramsArr = [{ key: "", value: "", description: "" }];
+  if (Array.isArray(step.params) && step.params.length > 0) {
+    paramsArr = step.params.map(p => ({
+      key: p.key || "",
+      value: p.value || "",
+      description: p.description || ""
+    }));
+    if (paramsArr.every(p => p.key.trim() !== "" || p.value.trim() !== "")) {
+      paramsArr.push({ key: "", value: "", description: "" });
+    }
+  } else if (step.params && typeof step.params === "object") {
+    paramsArr = Object.entries(step.params).map(([key, value]) => ({
+      key,
+      value: typeof value === "object" ? JSON.stringify(value) : String(value),
+      description: ""
+    }));
+    paramsArr.push({ key: "", value: "", description: "" });
+  }
+
+  // Normalize headers array
+  let headersArr = [{ key: "", value: "", description: "" }];
+  if (Array.isArray(step.headers) && step.headers.length > 0) {
+    headersArr = step.headers.map(h => ({
+      key: h.key || "",
+      value: h.value || "",
+      description: h.description || ""
+    }));
+    if (headersArr.every(h => h.key.trim() !== "" || h.value.trim() !== "")) {
+      headersArr.push({ key: "", value: "", description: "" });
+    }
+  } else if (step.headers && typeof step.headers === "object") {
+    headersArr = Object.entries(step.headers).map(([key, value]) => ({
+      key,
+      value: typeof value === "object" ? JSON.stringify(value) : String(value),
+      description: ""
+    }));
+    headersArr.push({ key: "", value: "", description: "" });
+  }
+
+  // Normalize body & bodyType
+  let bodyContent = "";
+  let bodyType = step.bodyType || "none";
+  if (step.body !== null && step.body !== undefined) {
+    bodyContent = typeof step.body === "object" ? JSON.stringify(step.body, null, 2) : String(step.body);
+    if (!step.bodyType && bodyContent.trim()) {
+      bodyType = "raw";
+    }
+  }
+
+  // Normalize auth
+  const authObj = {
+    type: step.auth?.type || "none",
+    token: step.auth?.token || "",
+    username: step.auth?.username || "",
+    password: step.auth?.password || ""
+  };
+
+  // Normalize settings
+  const settingsObj = {
+    expectedStatus: step.settings?.expectedStatus || step.expectedStatus || 200,
+    timeout: step.settings?.timeout || 15000,
+    description: step.settings?.description || ""
+  };
+
+  return {
+    stepId: step.stepId || `step_${Date.now()}_${idx}`,
+    name: step.name || `Step ${idx + 1}`,
+    method: (step.method || "GET").toUpperCase(),
+    url: step.url || "https://jsonplaceholder.typicode.com/posts",
+    params: paramsArr,
+    headers: headersArr,
+    body: bodyContent,
+    bodyType,
+    auth: authObj,
+    settings: settingsObj,
+    extractVariables: Array.isArray(step.extractVariables) ? step.extractVariables : [],
+    expectedStatus: settingsObj.expectedStatus,
+    activeStepTab: step.activeStepTab || (["POST", "PUT", "PATCH"].includes((step.method || "GET").toUpperCase()) ? "Body" : "Params"),
+    collapsed: step.collapsed || false
+  };
+}
+
+// Convert table array into clean key-value object
+function convertTableToObject(arr) {
+  if (!Array.isArray(arr)) return {};
+  const obj = {};
+  arr.forEach(item => {
+    if (item && item.key && item.key.trim() !== "") {
+      obj[item.key.trim()] = item.value !== undefined ? String(item.value).trim() : "";
+    }
+  });
+  return obj;
+}
+
+// ============================================================================
+// 🚀 MAIN FLOW STUDIO COMPONENT
+// ============================================================================
+
 export default function FlowStudioModal({ flow, initialMode = "builder", onClose, onSaved }) {
+  const [currentFlow, setCurrentFlow] = useState(flow || null);
   const [activeTab, setActiveTab] = useState(initialMode); // "builder" | "runner"
   const [name, setName] = useState(flow?.name || "New API Pipeline Flow");
   const [description, setDescription] = useState(flow?.description || "");
-  const [steps, setSteps] = useState(
-    flow?.steps?.length > 0
-      ? flow.steps
-      : [
-          {
-            stepId: "step_1",
-            name: "Initial Step",
-            method: "GET",
-            url: "https://jsonplaceholder.typicode.com/posts/1",
-            headers: {},
-            params: {},
-            body: null,
-            extractVariables: [{ varName: "postId", jsonPath: "id" }],
-            expectedStatus: 200
-          }
-        ]
-  );
+  const [steps, setSteps] = useState(() => {
+    if (Array.isArray(flow?.steps) && flow.steps.length > 0) {
+      return flow.steps.map((s, idx) => normalizeStep(s, idx));
+    }
+    return [
+      normalizeStep({
+        stepId: "step_1",
+        name: "Login / Authenticate",
+        method: "POST",
+        url: "http://localhost:5000/api/auth/login",
+        bodyType: "raw",
+        body: JSON.stringify({ email: "test@example.com", password: "Password123" }, null, 2),
+        extractVariables: [{ varName: "authToken", jsonPath: "token" }]
+      }, 0)
+    ];
+  });
 
   // Runner state
   const [running, setRunning] = useState(false);
   const [currentStepIdx, setCurrentStepIdx] = useState(-1);
   const [stepResults, setStepResults] = useState([]);
   const [runtimeVars, setRuntimeVars] = useState(flow?.initialVariables || {});
-  const [pausedForHealing, setPausedForHealing] = useState(null); // { stepIdx, diagnosis, step }
+  const [pausedForHealing, setPausedForHealing] = useState(null); // { stepIdx, diagnosis, step, ... }
   const [healedCount, setHealedCount] = useState(0);
   const [saving, setSaving] = useState(false);
   const [expandedResponses, setExpandedResponses] = useState({});
@@ -254,12 +387,13 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
   const isCancelledRef = useRef(false);
 
   // Sync state when flow prop changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (flow) {
+      setCurrentFlow(flow);
       setName(flow.name || "New API Pipeline Flow");
       setDescription(flow.description || "");
       if (Array.isArray(flow.steps) && flow.steps.length > 0) {
-        setSteps(flow.steps);
+        setSteps(flow.steps.map((s, idx) => normalizeStep(s, idx)));
       }
       if (flow.initialVariables) {
         setRuntimeVars(flow.initialVariables);
@@ -273,40 +407,57 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
     const flowData = {
       name: name.trim() || "Untitled Flow",
       description: description.trim(),
-      steps,
+      steps: steps.map(s => ({
+        stepId: s.stepId,
+        name: s.name,
+        method: s.method,
+        url: s.url,
+        params: s.params,
+        headers: s.headers,
+        body: s.body,
+        bodyType: s.bodyType,
+        auth: s.auth,
+        settings: s.settings,
+        extractVariables: s.extractVariables,
+        expectedStatus: s.settings?.expectedStatus || s.expectedStatus || 200
+      })),
       initialVariables: runtimeVars
     };
 
     let saved = null;
-    if (flow?._id) {
-      saved = await updateFlow(flow._id, flowData);
+    const targetId = currentFlow?._id || flow?._id;
+    if (targetId) {
+      saved = await updateFlow(targetId, flowData);
     } else {
       saved = await createFlow(flowData);
     }
 
     setSaving(false);
-    if (saved && onSaved) {
-      onSaved(saved);
+    if (saved) {
+      setCurrentFlow(saved);
+      showToast("💾 Flow saved successfully!");
+      if (onSaved) onSaved(saved);
+    } else {
+      showToast("⚠️ Could not save flow to server. Saved to local state.");
     }
   };
 
   // Add Step in Builder
   const handleAddStep = () => {
-    const newId = `step_${Date.now()}`;
-    setSteps(prev => [
-      ...prev,
-      {
-        stepId: newId,
-        name: `Step ${prev.length + 1}`,
-        method: "GET",
-        url: "https://jsonplaceholder.typicode.com/posts",
-        headers: {},
-        params: {},
-        body: null,
-        extractVariables: [],
-        expectedStatus: 200
-      }
-    ]);
+    const newIdx = steps.length;
+    const newStep = normalizeStep({
+      stepId: `step_${Date.now()}`,
+      name: `Step ${newIdx + 1}`,
+      method: "GET",
+      url: "https://jsonplaceholder.typicode.com/posts/1",
+      params: [{ key: "", value: "", description: "" }],
+      headers: [{ key: "", value: "", description: "" }],
+      body: "",
+      bodyType: "none",
+      extractVariables: []
+    }, newIdx);
+
+    setSteps(prev => [...prev, newStep]);
   };
 
   const handleUpdateStep = (idx, field, val) => {
@@ -318,9 +469,175 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
   };
 
   const handleDeleteStep = (idx) => {
+    if (steps.length <= 1) {
+      showToast("⚠️ A flow requires at least 1 step.");
+      return;
+    }
     setSteps(prev => prev.filter((_, i) => i !== idx));
   };
 
+  const handleDuplicateStep = (idx) => {
+    const target = steps[idx];
+    const duplicated = normalizeStep({
+      ...JSON.parse(JSON.stringify(target)),
+      stepId: `step_${Date.now()}`,
+      name: `${target.name} (Copy)`
+    }, steps.length);
+    setSteps(prev => [...prev, duplicated]);
+    showToast(`📋 Duplicated ${target.name}`);
+  };
+
+  const handleToggleCollapse = (idx) => {
+    setSteps(prev => {
+      const copy = [...prev];
+      copy[idx] = { ...copy[idx], collapsed: !copy[idx].collapsed };
+      return copy;
+    });
+  };
+
+  // -------------------------------------------------------------
+  // 📋 Step Params Handlers (with URL sync)
+  // -------------------------------------------------------------
+  const handleParamChange = (stepIdx, pIdx, field, val) => {
+    setSteps(prev => {
+      const copy = [...prev];
+      const step = { ...copy[stepIdx] };
+      const params = [...(step.params || [])];
+      params[pIdx] = { ...params[pIdx], [field]: val };
+
+      // Ensure last empty row exists
+      const filled = params.filter(p => p.key.trim() !== "" || p.value.trim() !== "" || p.description.trim() !== "");
+      step.params = [...filled, { key: "", value: "", description: "" }];
+
+      // Sync URL query string
+      const baseUrl = (step.url || "").split("?")[0].trim();
+      const valid = step.params.filter(p => p.key && p.key.trim() !== "");
+      if (valid.length > 0) {
+        const qs = valid.map(p => `${encodeURIComponent(p.key.trim())}=${encodeURIComponent(p.value ? p.value.trim() : "")}`).join("&");
+        step.url = `${baseUrl}?${qs}`;
+      } else {
+        step.url = baseUrl;
+      }
+
+      copy[stepIdx] = step;
+      return copy;
+    });
+  };
+
+  const handleRemoveParam = (stepIdx, pIdx) => {
+    setSteps(prev => {
+      const copy = [...prev];
+      const step = { ...copy[stepIdx] };
+      const params = [...(step.params || [])];
+      params.splice(pIdx, 1);
+      if (params.length === 0) params.push({ key: "", value: "", description: "" });
+      step.params = params;
+
+      const baseUrl = (step.url || "").split("?")[0].trim();
+      const valid = step.params.filter(p => p.key && p.key.trim() !== "");
+      step.url = valid.length > 0 ? `${baseUrl}?${valid.map(p => `${encodeURIComponent(p.key.trim())}=${encodeURIComponent(p.value ? p.value.trim() : "")}`).join("&")}` : baseUrl;
+
+      copy[stepIdx] = step;
+      return copy;
+    });
+  };
+
+  const handleClearAllParams = (stepIdx) => {
+    setSteps(prev => {
+      const copy = [...prev];
+      const step = { ...copy[stepIdx] };
+      step.params = [{ key: "", value: "", description: "" }];
+      step.url = (step.url || "").split("?")[0].trim();
+      copy[stepIdx] = step;
+      return copy;
+    });
+  };
+
+  // -------------------------------------------------------------
+  // 🏷️ Step Headers Handlers
+  // -------------------------------------------------------------
+  const handleHeaderChange = (stepIdx, hIdx, field, val) => {
+    setSteps(prev => {
+      const copy = [...prev];
+      const step = { ...copy[stepIdx] };
+      const headers = [...(step.headers || [])];
+      headers[hIdx] = { ...headers[hIdx], [field]: val };
+
+      const filled = headers.filter(h => h.key.trim() !== "" || h.value.trim() !== "" || (h.description && h.description.trim() !== ""));
+      step.headers = [...filled, { key: "", value: "", description: "" }];
+      copy[stepIdx] = step;
+      return copy;
+    });
+  };
+
+  const handleRemoveHeader = (stepIdx, hIdx) => {
+    setSteps(prev => {
+      const copy = [...prev];
+      const step = { ...copy[stepIdx] };
+      const headers = [...(step.headers || [])];
+      headers.splice(hIdx, 1);
+      if (headers.length === 0) headers.push({ key: "", value: "", description: "" });
+      step.headers = headers;
+      copy[stepIdx] = step;
+      return copy;
+    });
+  };
+
+  // -------------------------------------------------------------
+  // 📦 Step Body & Auth Handlers
+  // -------------------------------------------------------------
+  const handleBodyChange = (stepIdx, bodyVal) => {
+    handleUpdateStep(stepIdx, "body", bodyVal);
+  };
+
+  const handleBodyTypeChange = (stepIdx, type) => {
+    setSteps(prev => {
+      const copy = [...prev];
+      copy[stepIdx] = { ...copy[stepIdx], bodyType: type };
+      return copy;
+    });
+  };
+
+  const handleFormatJsonBody = (stepIdx) => {
+    const raw = steps[stepIdx].body;
+    try {
+      const parsed = JSON.parse(raw);
+      handleUpdateStep(stepIdx, "body", JSON.stringify(parsed, null, 2));
+      showToast("✨ JSON Formatted successfully!");
+    } catch (e) {
+      showToast("⚠️ Invalid JSON syntax. Could not format.");
+    }
+  };
+
+  const handleAuthChange = (stepIdx, field, val) => {
+    setSteps(prev => {
+      const copy = [...prev];
+      const step = { ...copy[stepIdx] };
+      step.auth = { ...(step.auth || { type: "none" }), [field]: val };
+      copy[stepIdx] = step;
+      return copy;
+    });
+  };
+
+  // -------------------------------------------------------------
+  // ⚙️ Step Settings Handlers
+  // -------------------------------------------------------------
+  const handleSettingsChange = (stepIdx, field, val) => {
+    setSteps(prev => {
+      const copy = [...prev];
+      const step = { ...copy[stepIdx] };
+      step.settings = { ...(step.settings || { expectedStatus: 200 }), [field]: val };
+      if (field === "expectedStatus") {
+        step.expectedStatus = parseInt(val, 10) || 200;
+      }
+      copy[stepIdx] = step;
+      return copy;
+    });
+  };
+
+  // -------------------------------------------------------------
+  // 📥 Variable Extraction Handlers
+  // -------------------------------------------------------------
   const handleAddExtractVar = (stepIdx) => {
     setSteps(prev => {
       const copy = [...prev];
@@ -329,7 +646,7 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
         ...copy[stepIdx],
         extractVariables: [
           ...existing,
-          { varName: `var_${existing.length + 1}`, jsonPath: "id" }
+          { varName: `var_${existing.length + 1}`, jsonPath: "id", description: "" }
         ]
       };
       return copy;
@@ -357,7 +674,23 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
     });
   };
 
-  // 🚀 Flow Execution Engine
+  // Helper to gather all variables extracted before a given step index
+  const getAvailableVariablesForStep = (stepIdx) => {
+    const vars = new Set(Object.keys(runtimeVars || {}));
+    for (let i = 0; i < stepIdx; i++) {
+      (steps[i].extractVariables || []).forEach(v => {
+        if (v.varName && v.varName.trim()) {
+          vars.add(v.varName.trim());
+        }
+      });
+    }
+    return Array.from(vars);
+  };
+
+  // ============================================================================
+  // 🚀 SEQUENTIAL FLOW EXECUTION ENGINE
+  // ============================================================================
+
   const startFlowRun = async () => {
     setActiveTab("runner");
     setRunning(true);
@@ -399,42 +732,63 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
       }
       const resolvedUrl = cleanUrl;
 
+      // 2. Resolve Authorization & Headers
       const resolvedHeaders = {};
-      Object.entries(step.headers || {}).forEach(([k, v]) => {
+      const rawHeadersObj = convertTableToObject(step.headers);
+      Object.entries(rawHeadersObj).forEach(([k, v]) => {
         if (k) resolvedHeaders[k] = interpolateVariables(v, localVars);
       });
-      if (!resolvedHeaders["Content-Type"]) {
+
+      // Synthesize Authorization header from Auth settings if configured
+      if (step.auth && step.auth.type === "bearer" && step.auth.token) {
+        const resolvedToken = interpolateVariables(step.auth.token, localVars);
+        resolvedHeaders["Authorization"] = `Bearer ${resolvedToken}`;
+      } else if (step.auth && step.auth.type === "basic" && step.auth.username) {
+        const resolvedUser = interpolateVariables(step.auth.username, localVars);
+        const resolvedPass = interpolateVariables(step.auth.password || "", localVars);
+        const encoded = btoa(`${resolvedUser}:${resolvedPass}`);
+        resolvedHeaders["Authorization"] = `Basic ${encoded}`;
+      }
+
+      if (!resolvedHeaders["Content-Type"] && ["POST", "PUT", "PATCH"].includes(step.method)) {
         resolvedHeaders["Content-Type"] = "application/json";
       }
       if (!resolvedHeaders["User-Agent"]) {
-        resolvedHeaders["User-Agent"] = "SwiftAPIClient/1.0";
+        resolvedHeaders["User-Agent"] = "SwiftAPIClient/2.0";
       }
 
+      // 3. Resolve Query Params
       const resolvedParams = {};
-      Object.entries(step.params || {}).forEach(([k, v]) => {
+      const rawParamsObj = convertTableToObject(step.params);
+      Object.entries(rawParamsObj).forEach(([k, v]) => {
         if (k) resolvedParams[k] = interpolateVariables(v, localVars);
       });
 
-      let resolvedBody = step.body;
-      if (typeof resolvedBody === "string" && resolvedBody.trim()) {
-        try {
-          const interpolatedStr = interpolateVariables(resolvedBody, localVars);
-          resolvedBody = JSON.parse(interpolatedStr);
-        } catch {
-          resolvedBody = interpolateVariables(resolvedBody, localVars);
+      // 4. Resolve Body
+      let resolvedBody = null;
+      if (["POST", "PUT", "PATCH", "DELETE"].includes(step.method) && step.body && step.bodyType !== "none") {
+        if (typeof step.body === "string" && step.body.trim()) {
+          const interpolatedStr = interpolateVariables(step.body, localVars);
+          try {
+            resolvedBody = JSON.parse(interpolatedStr);
+          } catch {
+            resolvedBody = interpolatedStr;
+          }
+        } else if (typeof step.body === "object") {
+          resolvedBody = interpolateVariables(step.body, localVars);
         }
-      } else if (resolvedBody && typeof resolvedBody === "object") {
-        resolvedBody = interpolateVariables(resolvedBody, localVars);
       }
 
-      // 🔍 Debug Logging: Step Details, Template URL, Current Pool, and Resolved URL
+      // 🔍 Debug Logging
       console.log(`\n=================== [FlowRunner] STEP ${i + 1}: "${step.name || step.stepId}" ===================`);
-      console.log(`[FlowRunner] Step ${i + 1} Template URL:`, rawTemplateUrl);
-      console.log(`[FlowRunner] Step ${i + 1} Configured Extraction Rules:`, step.extractVariables || []);
-      console.log(`[FlowRunner] Current execution variable pool:`, JSON.parse(JSON.stringify(localVars)));
-      console.log(`[FlowRunner] Step ${i + 1} Resolved URL:`, resolvedUrl);
+      console.log(`[FlowRunner] Method:`, step.method);
+      console.log(`[FlowRunner] Template URL:`, rawTemplateUrl);
+      console.log(`[FlowRunner] Resolved URL:`, resolvedUrl);
+      console.log(`[FlowRunner] Resolved Headers:`, resolvedHeaders);
+      console.log(`[FlowRunner] Resolved Body:`, resolvedBody);
+      console.log(`[FlowRunner] Variable Pool at Step Start:`, JSON.parse(JSON.stringify(localVars)));
 
-      // 2. Execute Step via Backend Proxy
+      // 5. Execute Step via Backend Proxy
       const startTime = Date.now();
       let responseStatus = 0;
       let responseData = null;
@@ -448,8 +802,8 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
             method: (step.method || "GET").toUpperCase(),
             url: resolvedUrl,
             headers: resolvedHeaders,
-            body: resolvedBody || null,
-            params: resolvedParams || {}
+            body: resolvedBody,
+            params: resolvedParams
           })
         });
 
@@ -457,17 +811,16 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
         const duration = Date.now() - startTime;
         responseStatus = json.status || res.status;
         
-        // Extract body correctly from json.body or json.data
         responseData = json.body !== undefined ? json.body : (json.data !== undefined ? json.data : json);
 
-        const expected = step.expectedStatus || 200;
+        const expected = step.settings?.expectedStatus || step.expectedStatus || 200;
         stepPassed = responseStatus === expected || (expected === 200 && responseStatus >= 200 && responseStatus < 300);
 
         if (!stepPassed) {
           errorMsg = `Status ${responseStatus} did not match expected ${expected}`;
         }
 
-        // 3. If Step Passed -> Extract Variables into localVars ONLY from user-configured extractVariables
+        // 6. If Step Passed -> Extract Variables into localVars
         const extractedThisStep = {};
         if (stepPassed && responseData !== undefined && responseData !== null) {
           (step.extractVariables || []).forEach(vRule => {
@@ -484,10 +837,9 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
           setRuntimeVars({ ...localVars });
         }
 
-        // 🔍 Debug Logging: Response Data, Extracted Variables, and Updated Pool
-        console.log(`[FlowRunner] Step ${i + 1} Response (Status ${responseStatus}):`, responseData);
-        console.log(`[FlowRunner] Extracted variables from Step ${i + 1}:`, JSON.parse(JSON.stringify(extractedThisStep)));
-        console.log(`[FlowRunner] Current execution variable pool (after extraction):`, JSON.parse(JSON.stringify(localVars)));
+        console.log(`[FlowRunner] Step ${i + 1} Status:`, responseStatus);
+        console.log(`[FlowRunner] Extracted from Step ${i + 1}:`, extractedThisStep);
+        console.log(`[FlowRunner] Updated Variable Pool:`, JSON.parse(JSON.stringify(localVars)));
         console.log(`=================================================================================\n`);
 
         const stepResultItem = {
@@ -507,11 +859,10 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
         results[i] = stepResultItem;
         setStepResults([...results]);
 
-        // 4. Autonomous Failure Pause & RAG Self-Healing Trigger
+        // 7. Autonomous Failure Pause & RAG Self-Healing Trigger
         if (!stepPassed) {
           setRunning(false);
 
-          // Call Existing GenAI RAG Failure Assist for diagnosis & auto-fix
           let diagnosis = null;
           let retrievedEpisodes = [];
           try {
@@ -550,7 +901,7 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
             healedCount: healed,
             currentSteps: localSteps
           });
-          return; // Pause runner here!
+          return; // Pause runner for intervention
         }
       } catch (execErr) {
         console.error("Step execution error:", execErr);
@@ -587,8 +938,12 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
       stepResults: results
     };
 
-    if (flow?._id) {
-      await saveFlowRunResults(flow._id, lastRunSummary, localSteps);
+    const flowIdToSave = currentFlow?._id || flow?._id;
+    if (flowIdToSave) {
+      await saveFlowRunResults(flowIdToSave, lastRunSummary, localSteps);
+      if (onSaved) {
+        onSaved({ ...(currentFlow || flow), lastRun: lastRunSummary, steps: localSteps });
+      }
     }
   };
 
@@ -602,17 +957,24 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
     const mutatedSteps = [...curSteps];
     const targetStep = { ...mutatedSteps[stepIdx] };
 
-    // Apply auto-fix mutation to step configuration
     if (autoFix && autoFix.actionPayload) {
       const act = autoFix.actionPayload;
       if (act.type === "set_url" && act.value) {
         targetStep.url = act.value;
       } else if (act.type === "add_header" && act.key) {
-        targetStep.headers = { ...(targetStep.headers || {}), [act.key]: act.value };
+        const headers = [...(targetStep.headers || [])];
+        const existingIdx = headers.findIndex(h => h.key.toLowerCase() === act.key.toLowerCase());
+        if (existingIdx >= 0) {
+          headers[existingIdx].value = act.value;
+        } else {
+          headers.unshift({ key: act.key, value: act.value, description: "Auto-Fix added" });
+        }
+        targetStep.headers = headers;
       } else if (act.type === "change_method" && act.value) {
         targetStep.method = act.value;
       } else if (act.type === "fix_body" && act.value) {
-        targetStep.body = act.value;
+        targetStep.body = typeof act.value === "object" ? JSON.stringify(act.value, null, 2) : String(act.value);
+        targetStep.bodyType = "raw";
       }
     }
 
@@ -638,7 +1000,6 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
       console.warn("Could not index healed episode into ChromaDB:", idxErr);
     }
 
-    // Mark step as healed in result list
     const updatedResults = [...results];
     if (updatedResults[stepIdx]) {
       updatedResults[stepIdx].healed = true;
@@ -653,7 +1014,6 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
     setPausedForHealing(null);
     setRunning(true);
 
-    // Seamlessly re-execute from this step and continue remaining flow!
     await executeFlowFromStep(stepIdx, currentVars, updatedResults, newHealedCount, mutatedSteps);
   };
 
@@ -681,9 +1041,9 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
               {running ? "⏳ Running..." : "🚀 Run Flow"}
             </button>
             <button className="studio-save-btn" onClick={handleSaveFlow} disabled={saving}>
-              {saving ? "Saving..." : "💾 Save"}
+              {saving ? "Saving..." : "💾 Save Flow"}
             </button>
-            <button className="studio-close-btn" onClick={onClose}>
+            <button className="studio-close-btn" onClick={onClose} title="Close Studio">
               ✕
             </button>
           </div>
@@ -695,13 +1055,13 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
             className={`studio-tab-btn ${activeTab === "builder" ? "active" : ""}`}
             onClick={() => setActiveTab("builder")}
           >
-            🛠️ Flow Builder
+            🛠️ Flow Builder (Multi-Step Pipeline)
           </button>
           <button
             className={`studio-tab-btn ${activeTab === "runner" ? "active" : ""}`}
             onClick={() => setActiveTab("runner")}
           >
-            ⚡ Autonomous Runner & Self-Healing
+            ⚡ Autonomous Runner & Dynamic Variables
           </button>
         </div>
 
@@ -710,139 +1070,564 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
           {activeTab === "builder" ? (
             /* BUILDER MODE */
             <>
+              {/* Flow Meta Form */}
               <div className="flow-meta-form">
-                <div className="flow-input-group">
-                  <label>Flow Name</label>
-                  <input
-                    type="text"
-                    className="flow-text-input"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. E-Commerce Checkout Pipeline"
-                  />
-                </div>
-                <div className="flow-input-group">
-                  <label>Description</label>
-                  <input
-                    type="text"
-                    className="flow-text-input"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Brief summary of this multi-step flow..."
-                  />
+                <div style={{ display: "flex", gap: "12px", width: "100%" }}>
+                  <div className="flow-input-group" style={{ flex: 1 }}>
+                    <label>Pipeline Name</label>
+                    <input
+                      type="text"
+                      className="flow-text-input"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="e.g. User Auth -> Trip Itinerary -> Packing List Flow"
+                    />
+                  </div>
+                  <div className="flow-input-group" style={{ flex: 2 }}>
+                    <label>Description / Notes</label>
+                    <input
+                      type="text"
+                      className="flow-text-input"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="Executes login, extracts token, creates trip itinerary, and queries packing list..."
+                    />
+                  </div>
                 </div>
               </div>
 
+              {/* Steps List */}
               <div className="flow-steps-section">
                 <div className="flow-steps-header">
                   <h4>Pipeline Steps ({steps.length})</h4>
                   <button className="add-step-btn" onClick={handleAddStep}>
-                    + Add Step
+                    + Add New Step
                   </button>
                 </div>
 
-                {steps.map((step, idx) => (
-                  <div key={step.stepId || idx} className="step-card">
-                    <div className="step-card-header">
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <span className="step-number-badge">{idx + 1}</span>
+                {steps.map((step, idx) => {
+                  const availableVars = getAvailableVariablesForStep(idx);
+                  const activeStepTab = step.activeStepTab || "Params";
+
+                  const nonZeroParamsCount = (step.params || []).filter(p => p.key && p.key.trim() !== "").length;
+                  const nonZeroHeadersCount = (step.headers || []).filter(h => h.key && h.key.trim() !== "").length;
+                  const extractCount = (step.extractVariables || []).length;
+
+                  return (
+                    <div key={step.stepId || idx} className={`step-card ${step.collapsed ? "collapsed" : ""}`}>
+                      {/* Step Card Top Bar */}
+                      <div className="step-card-header">
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: 1 }}>
+                          <span className="step-number-badge">{idx + 1}</span>
+                          <input
+                            type="text"
+                            className="step-name-input"
+                            value={step.name}
+                            onChange={(e) => handleUpdateStep(idx, "name", e.target.value)}
+                            placeholder={`Step ${idx + 1} Name`}
+                          />
+                        </div>
+
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                          <button
+                            className="step-icon-btn"
+                            onClick={() => handleDuplicateStep(idx)}
+                            title="Duplicate Step"
+                          >
+                            📋
+                          </button>
+                          <button
+                            className="step-icon-btn"
+                            onClick={() => handleToggleCollapse(idx)}
+                            title={step.collapsed ? "Expand Step" : "Collapse Step"}
+                          >
+                            {step.collapsed ? "▼" : "▲"}
+                          </button>
+                          <button
+                            className="step-icon-btn delete"
+                            onClick={() => handleDeleteStep(idx)}
+                            title="Delete Step"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Method + URL Bar */}
+                      <div className="step-row-top">
+                        <select
+                          className={`step-method-select method-${step.method}`}
+                          value={step.method}
+                          onChange={(e) => {
+                            const newMethod = e.target.value;
+                            handleUpdateStep(idx, "method", newMethod);
+                            if (["POST", "PUT", "PATCH"].includes(newMethod) && step.bodyType === "none") {
+                              handleUpdateStep(idx, "bodyType", "raw");
+                              handleUpdateStep(idx, "activeStepTab", "Body");
+                            }
+                          }}
+                        >
+                          <option value="GET">GET</option>
+                          <option value="POST">POST</option>
+                          <option value="PUT">PUT</option>
+                          <option value="PATCH">PATCH</option>
+                          <option value="DELETE">DELETE</option>
+                        </select>
+
                         <input
                           type="text"
-                          className="flow-text-input"
-                          style={{ padding: "4px 8px", fontSize: "12px", width: "220px" }}
-                          value={step.name}
-                          onChange={(e) => handleUpdateStep(idx, "name", e.target.value)}
-                          placeholder="Step Name"
+                          className="step-url-input"
+                          value={step.url}
+                          onChange={(e) => handleUpdateStep(idx, "url", e.target.value)}
+                          placeholder="http://localhost:5000/api/trips/{{tripId}}"
                         />
                       </div>
-                      <button
-                        className="step-delete-btn"
-                        onClick={() => handleDeleteStep(idx)}
-                        title="Delete Step"
-                      >
-                        🗑️
-                      </button>
-                    </div>
 
-                    <div className="step-row-top">
-                      <select
-                        className="step-method-select"
-                        value={step.method}
-                        onChange={(e) => handleUpdateStep(idx, "method", e.target.value)}
-                      >
-                        <option value="GET">GET</option>
-                        <option value="POST">POST</option>
-                        <option value="PUT">PUT</option>
-                        <option value="DELETE">DELETE</option>
-                        <option value="PATCH">PATCH</option>
-                      </select>
-
-                      <input
-                        type="text"
-                        className="step-url-input"
-                        value={step.url}
-                        onChange={(e) => handleUpdateStep(idx, "url", e.target.value)}
-                        placeholder="https://api.example.com/items/{{itemId}}"
-                      />
-                    </div>
-                    {step.url && step.url.includes("{{") && (
-                      <div style={{ fontSize: "11px", color: "#a1a1aa", marginTop: "4px", display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
-                        <span style={{ color: "#71717a" }}>Variable Preview:</span>
-                        <span>{renderHighlightedTemplate(step.url, runtimeVars)}</span>
-                      </div>
-                    )}
-
-                    {/* Variable Extractions for this step */}
-                    <div className="variables-extraction-box">
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span className="var-extract-title">
-                          📥 Extract Response Variables (Passed to downstream steps)
-                        </span>
-                        <button
-                          className="add-step-btn"
-                          style={{ padding: "2px 6px", fontSize: "10px" }}
-                          onClick={() => handleAddExtractVar(idx)}
-                        >
-                          + Extract Var
-                        </button>
-                      </div>
-
-                      {(!step.extractVariables || step.extractVariables.length === 0) && (
-                        <div style={{ fontSize: "10.5px", color: "#71717a", marginTop: "4px", fontStyle: "italic" }}>
-                          💡 No extraction rules yet. Click "+ Extract Var" to map any JSON response field (e.g. userId = user.id, token = token, orderId = order.id).
+                      {/* Real-time Dynamic Variable Highlighting Preview */}
+                      {step.url && step.url.includes("{{") && (
+                        <div className="step-url-var-preview">
+                          <span style={{ color: "#71717a" }}>Dynamic URL Preview:</span>
+                          <span>{renderHighlightedTemplate(step.url, runtimeVars)}</span>
                         </div>
                       )}
 
-                      {(step.extractVariables || []).map((vRule, vIdx) => (
-                        <div key={vIdx} className="var-extract-row">
-                          <input
-                            type="text"
-                            className="var-extract-input"
-                            style={{ width: "130px" }}
-                            placeholder="Variable (e.g. userId, token)"
-                            value={vRule.varName}
-                            onChange={(e) => handleUpdateExtractVar(idx, vIdx, "varName", e.target.value)}
-                          />
-                          <span style={{ color: "#6c7086" }}>= response.body.</span>
-                          <input
-                            type="text"
-                            className="var-extract-input"
-                            style={{ flex: 1 }}
-                            placeholder="JSON Path (e.g. user.id, data.token, 0.name)"
-                            value={vRule.jsonPath}
-                            onChange={(e) => handleUpdateExtractVar(idx, vIdx, "jsonPath", e.target.value)}
-                          />
-                          <button
-                            className="step-delete-btn"
-                            onClick={() => handleDeleteExtractVar(idx, vIdx)}
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      ))}
+                      {!step.collapsed && (
+                        <>
+                          {/* Step Request Editor Sub-Tabs */}
+                          <div className="step-subtabs-nav">
+                            <button
+                              type="button"
+                              className={`step-subtab-btn ${activeStepTab === "Params" ? "active" : ""}`}
+                              onClick={() => handleUpdateStep(idx, "activeStepTab", "Params")}
+                            >
+                              📋 Params {nonZeroParamsCount > 0 && <span className="subtab-count">{nonZeroParamsCount}</span>}
+                            </button>
+                            <button
+                              type="button"
+                              className={`step-subtab-btn ${activeStepTab === "Headers" ? "active" : ""}`}
+                              onClick={() => handleUpdateStep(idx, "activeStepTab", "Headers")}
+                            >
+                              🏷️ Headers {nonZeroHeadersCount > 0 && <span className="subtab-count">{nonZeroHeadersCount}</span>}
+                            </button>
+                            <button
+                              type="button"
+                              className={`step-subtab-btn ${activeStepTab === "Body" ? "active" : ""}`}
+                              onClick={() => handleUpdateStep(idx, "activeStepTab", "Body")}
+                            >
+                              📦 Body {step.bodyType !== "none" && <span className="subtab-badge-sm">{step.bodyType}</span>}
+                            </button>
+                            <button
+                              type="button"
+                              className={`step-subtab-btn ${activeStepTab === "Authorization" ? "active" : ""}`}
+                              onClick={() => handleUpdateStep(idx, "activeStepTab", "Authorization")}
+                            >
+                              🔐 Authorization {step.auth?.type !== "none" && <span className="subtab-badge-sm">{step.auth.type}</span>}
+                            </button>
+                            <button
+                              type="button"
+                              className={`step-subtab-btn ${activeStepTab === "Settings" ? "active" : ""}`}
+                              onClick={() => handleUpdateStep(idx, "activeStepTab", "Settings")}
+                            >
+                              ⚙️ Settings
+                            </button>
+                            <button
+                              type="button"
+                              className={`step-subtab-btn ${activeStepTab === "Extract" ? "active" : ""}`}
+                              onClick={() => handleUpdateStep(idx, "activeStepTab", "Extract")}
+                            >
+                              📥 Extract Var {extractCount > 0 && <span className="subtab-count highlight">{extractCount}</span>}
+                            </button>
+                          </div>
+
+                          {/* SUBTAB: PARAMS */}
+                          {activeStepTab === "Params" && (
+                            <div className="step-subtab-content">
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                                <span style={{ fontSize: "11px", color: "#888" }}>Query Parameters (Synced to URL)</span>
+                                {nonZeroParamsCount > 0 && (
+                                  <button
+                                    type="button"
+                                    className="step-clear-btn"
+                                    onClick={() => handleClearAllParams(idx)}
+                                  >
+                                    🧹 Clear Params
+                                  </button>
+                                )}
+                              </div>
+
+                              <table className="step-editor-table">
+                                <thead>
+                                  <tr>
+                                    <th>Key</th>
+                                    <th>Value (Supports {`{{var}}`})</th>
+                                    <th>Description</th>
+                                    <th style={{ width: "30px" }}></th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {(step.params || []).map((param, pIdx) => (
+                                    <tr key={pIdx}>
+                                      <td>
+                                        <input
+                                          type="text"
+                                          placeholder="key"
+                                          value={param.key}
+                                          onChange={(e) => handleParamChange(idx, pIdx, "key", e.target.value)}
+                                        />
+                                      </td>
+                                      <td>
+                                        <input
+                                          type="text"
+                                          placeholder="value or {{varName}}"
+                                          value={param.value}
+                                          onChange={(e) => handleParamChange(idx, pIdx, "value", e.target.value)}
+                                        />
+                                      </td>
+                                      <td>
+                                        <input
+                                          type="text"
+                                          placeholder="description"
+                                          value={param.description || ""}
+                                          onChange={(e) => handleParamChange(idx, pIdx, "description", e.target.value)}
+                                        />
+                                      </td>
+                                      <td>
+                                        {pIdx !== (step.params || []).length - 1 && (
+                                          <button
+                                            type="button"
+                                            className="step-row-del-btn"
+                                            onClick={() => handleRemoveParam(idx, pIdx)}
+                                          >
+                                            ✕
+                                          </button>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+
+                          {/* SUBTAB: HEADERS */}
+                          {activeStepTab === "Headers" && (
+                            <div className="step-subtab-content">
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                                <span style={{ fontSize: "11px", color: "#888" }}>Custom HTTP Request Headers</span>
+                              </div>
+
+                              <table className="step-editor-table">
+                                <thead>
+                                  <tr>
+                                    <th>Header Key</th>
+                                    <th>Value (Supports {`{{var}}`})</th>
+                                    <th>Description</th>
+                                    <th style={{ width: "30px" }}></th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {(step.headers || []).map((header, hIdx) => (
+                                    <tr key={hIdx}>
+                                      <td>
+                                        <input
+                                          type="text"
+                                          placeholder="e.g. Content-Type, Authorization"
+                                          value={header.key}
+                                          onChange={(e) => handleHeaderChange(idx, hIdx, "key", e.target.value)}
+                                        />
+                                      </td>
+                                      <td>
+                                        <input
+                                          type="text"
+                                          placeholder="e.g. Bearer {{authToken}}"
+                                          value={header.value}
+                                          onChange={(e) => handleHeaderChange(idx, hIdx, "value", e.target.value)}
+                                        />
+                                      </td>
+                                      <td>
+                                        <input
+                                          type="text"
+                                          placeholder="description"
+                                          value={header.description || ""}
+                                          onChange={(e) => handleHeaderChange(idx, hIdx, "description", e.target.value)}
+                                        />
+                                      </td>
+                                      <td>
+                                        {hIdx !== (step.headers || []).length - 1 && (
+                                          <button
+                                            type="button"
+                                            className="step-row-del-btn"
+                                            onClick={() => handleRemoveHeader(idx, hIdx)}
+                                          >
+                                            ✕
+                                          </button>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+
+                          {/* SUBTAB: BODY */}
+                          {activeStepTab === "Body" && (
+                            <div className="step-subtab-content">
+                              <div className="body-mode-selector">
+                                {["none", "raw", "form-data", "x-www-form-urlencoded"].map((bOption) => (
+                                  <label key={bOption} className="body-radio-label">
+                                    <input
+                                      type="radio"
+                                      name={`step_body_${idx}`}
+                                      value={bOption}
+                                      checked={step.bodyType === bOption}
+                                      onChange={() => handleBodyTypeChange(idx, bOption)}
+                                    />
+                                    <span>{bOption}</span>
+                                  </label>
+                                ))}
+
+                                {step.bodyType === "raw" && (
+                                  <button
+                                    type="button"
+                                    className="format-json-btn"
+                                    onClick={() => handleFormatJsonBody(idx)}
+                                  >
+                                    ✨ Format JSON
+                                  </button>
+                                )}
+                              </div>
+
+                              {/* Available variables insertion bar */}
+                              {availableVars.length > 0 && step.bodyType === "raw" && (
+                                <div className="step-var-quickbar">
+                                  <span style={{ fontSize: "10px", color: "#a1a1aa" }}>Insert Variable:</span>
+                                  {availableVars.map(vName => (
+                                    <button
+                                      key={vName}
+                                      type="button"
+                                      className="insert-var-btn"
+                                      onClick={() => {
+                                        const append = `{{${vName}}}`;
+                                        const cur = step.body || "";
+                                        handleBodyChange(idx, cur ? `${cur}\n"${vName}": "${append}"` : `{\n  "${vName}": "${append}"\n}`);
+                                      }}
+                                    >
+                                      + {`{{${vName}}}`}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+
+                              {step.bodyType === "none" && (
+                                <div className="step-empty-body-hint">
+                                  This step sends no request body. Suitable for GET or simple DELETE requests.
+                                </div>
+                              )}
+
+                              {step.bodyType === "raw" && (
+                                <div className="step-code-editor-box">
+                                  <AceEditor
+                                    mode="json"
+                                    theme="twilight"
+                                    value={step.body || ""}
+                                    onChange={(val) => handleBodyChange(idx, val)}
+                                    name={`step_editor_${idx}`}
+                                    fontSize={12}
+                                    width="100%"
+                                    height="160px"
+                                    setOptions={{
+                                      useWorker: false,
+                                      showLineNumbers: true,
+                                      tabSize: 2
+                                    }}
+                                  />
+                                </div>
+                              )}
+
+                              {(step.bodyType === "form-data" || step.bodyType === "x-www-form-urlencoded") && (
+                                <div className="step-code-editor-box">
+                                  <textarea
+                                    className="step-textarea"
+                                    value={step.body || ""}
+                                    onChange={(e) => handleBodyChange(idx, e.target.value)}
+                                    placeholder="key1=value1&key2={{myVar}}"
+                                    rows={5}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* SUBTAB: AUTHORIZATION */}
+                          {activeStepTab === "Authorization" && (
+                            <div className="step-subtab-content">
+                              <div className="step-auth-form">
+                                <div className="step-auth-row">
+                                  <label className="step-auth-label">Auth Type</label>
+                                  <select
+                                    className="step-auth-select"
+                                    value={step.auth?.type || "none"}
+                                    onChange={(e) => handleAuthChange(idx, "type", e.target.value)}
+                                  >
+                                    <option value="none">No Auth</option>
+                                    <option value="bearer">Bearer Token</option>
+                                    <option value="basic">Basic Auth</option>
+                                  </select>
+                                </div>
+
+                                {step.auth?.type === "bearer" && (
+                                  <div className="step-auth-row">
+                                    <label className="step-auth-label">Bearer Token</label>
+                                    <input
+                                      type="text"
+                                      className="step-auth-input"
+                                      placeholder="e.g. {{authToken}} or eyJhbGci..."
+                                      value={step.auth?.token || ""}
+                                      onChange={(e) => handleAuthChange(idx, "token", e.target.value)}
+                                    />
+                                    {availableVars.length > 0 && (
+                                      <div style={{ display: "flex", gap: "4px", flexWrap: "wrap", marginTop: "4px" }}>
+                                        {availableVars.map(vName => (
+                                          <button
+                                            key={vName}
+                                            type="button"
+                                            className="insert-var-btn"
+                                            onClick={() => handleAuthChange(idx, "token", `{{${vName}}}`)}
+                                          >
+                                            Use {`{{${vName}}}`}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
+                                {step.auth?.type === "basic" && (
+                                  <>
+                                    <div className="step-auth-row">
+                                      <label className="step-auth-label">Username</label>
+                                      <input
+                                        type="text"
+                                        className="step-auth-input"
+                                        placeholder="Username or {{userVar}}"
+                                        value={step.auth?.username || ""}
+                                        onChange={(e) => handleAuthChange(idx, "username", e.target.value)}
+                                      />
+                                    </div>
+                                    <div className="step-auth-row">
+                                      <label className="step-auth-label">Password</label>
+                                      <input
+                                        type="password"
+                                        className="step-auth-input"
+                                        placeholder="Password or {{passVar}}"
+                                        value={step.auth?.password || ""}
+                                        onChange={(e) => handleAuthChange(idx, "password", e.target.value)}
+                                      />
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* SUBTAB: SETTINGS */}
+                          {activeStepTab === "Settings" && (
+                            <div className="step-subtab-content">
+                              <div className="step-settings-grid">
+                                <div className="step-input-group">
+                                  <label>Expected HTTP Status Code</label>
+                                  <input
+                                    type="number"
+                                    className="flow-text-input"
+                                    style={{ width: "120px" }}
+                                    value={step.settings?.expectedStatus || step.expectedStatus || 200}
+                                    onChange={(e) => handleSettingsChange(idx, "expectedStatus", e.target.value)}
+                                  />
+                                  <span style={{ fontSize: "10.5px", color: "#71717a" }}>
+                                    Step passes if response status matches this code (e.g. 200, 201).
+                                  </span>
+                                </div>
+
+                                <div className="step-input-group">
+                                  <label>Request Timeout (ms)</label>
+                                  <input
+                                    type="number"
+                                    className="flow-text-input"
+                                    style={{ width: "120px" }}
+                                    value={step.settings?.timeout || 15000}
+                                    onChange={(e) => handleSettingsChange(idx, "timeout", e.target.value)}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* SUBTAB: EXTRACT VARIABLES */}
+                          {activeStepTab === "Extract" && (
+                            <div className="step-subtab-content">
+                              <div className="variables-extraction-box">
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                  <span className="var-extract-title">
+                                    📥 Extract Response Variables (Passed to downstream steps)
+                                  </span>
+                                  <button
+                                    className="add-step-btn"
+                                    style={{ padding: "3px 8px", fontSize: "10.5px" }}
+                                    onClick={() => handleAddExtractVar(idx)}
+                                  >
+                                    + Add Extraction Rule
+                                  </button>
+                                </div>
+
+                                {(!step.extractVariables || step.extractVariables.length === 0) && (
+                                  <div style={{ fontSize: "11px", color: "#71717a", fontStyle: "italic", marginTop: "4px" }}>
+                                    💡 No extraction rules configured. Click "+ Add Extraction Rule" to extract tokens, IDs, or data fields (e.g. <code>authToken = token</code>, <code>tripId = data.id</code>).
+                                  </div>
+                                )}
+
+                                {(step.extractVariables || []).map((vRule, vIdx) => (
+                                  <div key={vIdx} className="var-extract-row">
+                                    <span style={{ fontSize: "11px", color: "#38bdf8", fontWeight: "600" }}>
+                                      {`{{`}
+                                    </span>
+                                    <input
+                                      type="text"
+                                      className="var-extract-input"
+                                      style={{ width: "140px" }}
+                                      placeholder="varName (e.g. authToken)"
+                                      value={vRule.varName}
+                                      onChange={(e) => handleUpdateExtractVar(idx, vIdx, "varName", e.target.value)}
+                                    />
+                                    <span style={{ fontSize: "11px", color: "#38bdf8", fontWeight: "600" }}>
+                                      {`}}`}
+                                    </span>
+                                    <span style={{ color: "#6c7086", fontSize: "11px" }}>= response.body.</span>
+                                    <input
+                                      type="text"
+                                      className="var-extract-input"
+                                      style={{ flex: 1 }}
+                                      placeholder="JSON Path (e.g. token, data.id, 0.id)"
+                                      value={vRule.jsonPath}
+                                      onChange={(e) => handleUpdateExtractVar(idx, vIdx, "jsonPath", e.target.value)}
+                                    />
+                                    <button
+                                      className="step-delete-btn"
+                                      onClick={() => handleDeleteExtractVar(idx, vIdx)}
+                                      title="Remove Rule"
+                                    >
+                                      ✕
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </>
           ) : (
@@ -850,9 +1635,9 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
             <>
               <div className="runner-status-bar">
                 <div>
-                  <strong>Status: </strong>
+                  <strong>Pipeline Status: </strong>
                   {running ? (
-                    <span style={{ color: "#89b4fa" }}>⏳ Executing Step {currentStepIdx + 1}...</span>
+                    <span style={{ color: "#89b4fa" }}>⏳ Executing Step {currentStepIdx + 1} of {steps.length}...</span>
                   ) : pausedForHealing ? (
                     <span style={{ color: "#f9e2af" }}>🛠️ Paused for Autonomous Self-Healing</span>
                   ) : stepResults.length > 0 ? (
@@ -880,7 +1665,7 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
                   <div className="runner-context-tags">
                     {Object.entries(runtimeVars).map(([k, v]) => (
                       <div key={k} className="runner-ctx-pill">
-                        <strong>{`{{${k}}}`}</strong>: {JSON.stringify(v)}
+                        <strong>{`{{${k}}}`}</strong>: {typeof v === "object" ? JSON.stringify(v) : String(v)}
                       </div>
                     ))}
                   </div>
@@ -951,7 +1736,7 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
                         </div>
                       )}
 
-                      {/* 📥 Output Variables from this Step (Only Explicitly Extracted) */}
+                      {/* 📥 Output Variables from this Step */}
                       {result && (
                         <div className="runner-step-outputs-box">
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2px" }}>
@@ -969,6 +1754,7 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
                                   onClick={() => {
                                     if (navigator.clipboard) {
                                       navigator.clipboard.writeText(`{{${outKey}}}`);
+                                      showToast(`Copied {{${outKey}}} to clipboard!`);
                                     }
                                   }}
                                 >
@@ -979,7 +1765,7 @@ export default function FlowStudioModal({ flow, initialMode = "builder", onClose
                             </div>
                           ) : (
                             <div style={{ fontSize: "10.5px", color: "#71717a", fontStyle: "italic" }}>
-                              No variables extracted.
+                              No variables extracted from this step.
                             </div>
                           )}
                         </div>

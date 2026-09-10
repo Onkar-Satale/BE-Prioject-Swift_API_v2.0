@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { getFlows, createFlow, deleteFlow } from "../services/flowService";
 import "./FlowsSidebar.css";
 
-export default function FlowsSidebar({ onOpenStudio, onRunFlow }) {
+export default function FlowsSidebar({ onOpenStudio, onRunFlow, refreshKey }) {
   const [flows, setFlows] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -15,7 +15,7 @@ export default function FlowsSidebar({ onOpenStudio, onRunFlow }) {
 
   useEffect(() => {
     loadFlows();
-  }, []);
+  }, [refreshKey]);
 
   const handleCreateDemo = async () => {
     const demoFlow = {

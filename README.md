@@ -26,33 +26,40 @@
 └────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-1. 🏛️ **History-Grounded RAG System**:
+1. 🔀 **Multi-Step API Flow Studio & Pipeline Runner**:
+   - Visual multi-step pipeline builder with complete request editors per step (Params, Headers, JSON Body Editor, Auth, Settings, Variable Extraction).
+   - **Dynamic Variable Chaining**: Extract response fields (e.g. `authToken = data.token`, `tripId = data._id`) and interpolate them into downstream step URLs (`/api/trips/{{tripId}}`), headers (`Bearer {{authToken}}`), parameters, or body payloads.
+   - **Built-in Dynamic Generators**: Native support for `{{$timestamp}}`, `{{$random}}`, `{{$uuid}}`, and `{{$isoDate}}` for zero-collision registration & unique test payloads.
+   - **Autonomous Self-Healing Execution**: Pauses on intermediate step failures, retrieves RAG precedents, repairs broken routes/headers/bodies with 1-click, and auto-resumes downstream execution.
+   - **Dual-Layer Persistence**: Cloud MongoDB storage with instant `localStorage` offline/guest fallback.
+
+2. 🏛️ **History-Grounded RAG System**:
    - Stores resolution episodes (*Failure ➔ Diagnosis ➔ Applied Fix ➔ Success*) in a persistent **ChromaDB Vector Store** (`genai/chroma_db/`).
    - Generates normalized dense semantic embeddings (`dim=64`) per request in real-time ($< 0.1\text{ ms}$).
    - Retrieves historical precedents with exact match percentages and previous error evidence to eliminate LLM hallucinations.
 
-2. 🤖 **Confirmed AI Auto-Fix**:
+3. 🤖 **Confirmed AI Auto-Fix**:
    - Detects route typos, missing query params, expired auth tokens, invalid JSON payloads, or wrong HTTP methods.
    - 1-Click **`[ ✅ Apply Fix to Workspace ]`** dynamically corrects your active URL, headers, params, or body.
    - 1-Click **`[ 🚀 Re-run Request Now ]`** re-executes the fixed request instantly.
 
-3. ⚖️ **History Capsule Comparison**:
+4. ⚖️ **History Capsule Comparison**:
    - Compare any two historical API attempts side-by-side (e.g. Attempt A `404` vs Attempt B `200`).
    - Differential visual diff highlighting URL, timing differences, headers, and AI progression explanation.
 
-4. 📈 **Interactive API Testing Timeline**:
+5. 📈 **Interactive API Testing Timeline**:
    - Time-series progression grouped by endpoint path.
    - Tracks response latencies, status transitions, and fix history over time.
 
-5. 🛡️ **0–100 API Health Score Engine**:
+6. 🛡️ **0–100 API Health Score Engine**:
    - Grades requests across 5 dimensions: **Security**, **Reliability**, **Performance**, **Spec Compliance**, and **Error Handling**.
    - Identifies actionable vulnerabilities (missing auth, slow TTFB, uncompressed payloads).
 
-6. ⚡ **Ultra-Low Latency Groq LPU**:
+7. ⚡ **Ultra-Low Latency Groq LPU**:
    - Powered by Groq's high-speed inference engine (`llama-3.1-8b-instant` / `qwen/qwen3.8-27b`) with native JSON mode.
    - End-to-end failure diagnosis and fix generation delivered in **~180–300 ms**.
 
-7. 🔄 **Automatic Silent Token Refresh**:
+8. 🔄 **Automatic Silent Token Refresh**:
    - Intercepts `401 Unauthorized` responses silently.
    - Rotates access tokens via HTTP-only cookies and automatically retries requests without session drops.
 
@@ -223,6 +230,11 @@ npm start
 | `/api/refresh-token` | `POST` | Express | Silent access token refresh via cookie |
 | `/api/request` | `POST` | Express | Proxy & execute target API requests |
 | `/api/history` | `GET` | Express | Retrieve user request history |
+| `/api/flows` | `GET` | Express | Retrieve all user multi-step flows |
+| `/api/flows` | `POST` | Express | Create a new multi-step API pipeline |
+| `/api/flows/:id` | `PUT` | Express | Update existing flow steps and settings |
+| `/api/flows/:id` | `DELETE` | Express | Delete an API pipeline flow |
+| `/api/flows/:id/run-results` | `POST` | Express | Save execution history & self-healing logs |
 | `/api/ai/failure-assist` | `POST` | GenAI | History-Grounded RAG failure diagnosis & fix |
 | `/api/ai/bot` | `POST` | GenAI | Context-aware conversational developer assistant |
 | `/api/ai/compare` | `POST` | GenAI | Differential comparison between 2 attempts |

@@ -19,11 +19,12 @@ class RequestService {
 
   /**
    * Executes an outgoing HTTP request on behalf of the client.
-   * Prevents SSRF attacks targeting localhost, internal IPs, and file protocol.
+   * Prevents SSRF attacks targeting file protocol while allowing testing of local APIs.
    */
   async executeProxyRequest({ url, method, headers, params, body }) {
-    if (url.includes('localhost') || url.includes('127.0.0.1') || url.startsWith('file://')) {
-      throw new ApiError(403, 'Access to internal networks is forbidden.');
+    // Only prevent dangerous file system protocols
+    if (url.startsWith('file://')) {
+      throw new ApiError(403, 'Access to local file protocol is forbidden.');
     }
 
     const axiosConfig = {

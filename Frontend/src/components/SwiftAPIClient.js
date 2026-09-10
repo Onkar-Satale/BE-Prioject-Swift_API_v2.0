@@ -1,27 +1,29 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useContext, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import ReactJson from "react-json-view";
 
 import MethodDropdown from "./MethodDropdown";
 import HeadersTab from "./HeadersTab";
 import BodyTab from "./BodyTab";
-import AccountPage from "./AccountPage";
 import HistorySidebar from "../components/HistorySidebar";
 import ParamsTab from "./ParamsTab";
+import RequestBar from "./RequestBar";
+import AuthorizationTab from "./AuthorizationTab";
+import FlowsSidebar from "./FlowsSidebar";
 import { getHistory, deleteHistoryItem, clearHistory } from "../services/historyService";
 import { authenticatedFetch } from "../services/authService";
-import "./SwiftAPIClient.css";
-import RequestBar from "./RequestBar";
-import BotSidebar from "./BotSidebar";
-import AuthorizationTab from "./AuthorizationTab";
-import ApiHealthScoreModal from "./ApiHealthScoreModal";
-import TestingTimelineModal from "./TestingTimelineModal";
-import HistoryComparisonModal from "./HistoryComparisonModal";
-import FlowsSidebar from "./FlowsSidebar";
-import FlowStudioModal from "./FlowStudioModal";
-import { useContext } from "react";
 import { SwiftAPIContext } from "../context/SwiftAPIContext";
 import { showToast } from "../utils/toast";
+import "./SwiftAPIClient.css";
+
+// ⚡ Lazy loaded heavy modals to minimize initial bundle size and accelerate startup
+const AccountPage = lazy(() => import("./AccountPage"));
+const BotSidebar = lazy(() => import("./BotSidebar"));
+const ApiHealthScoreModal = lazy(() => import("./ApiHealthScoreModal"));
+const TestingTimelineModal = lazy(() => import("./TestingTimelineModal"));
+const HistoryComparisonModal = lazy(() => import("./HistoryComparisonModal"));
+const FlowStudioModal = lazy(() => import("./FlowStudioModal"));
+
 
 const getUserIdFromToken = () => {
   const token = localStorage.getItem("authToken");
@@ -71,6 +73,7 @@ export default function SwiftAPIClient() {
   const [activePanel, setActivePanel] = useState(
     sessionStorage.getItem("activePanel") || null
   );
+  const [flowsRefreshKey, setFlowsRefreshKey] = useState(0);
 
   useEffect(() => {
     if (activePanel) {
@@ -782,6 +785,7 @@ export default function SwiftAPIClient() {
       {activePanel === "flows" && (
         <div className="sidebar-large">
           <FlowsSidebar
+            refreshKey={flowsRefreshKey}
             onOpenStudio={(flow) => setFlowStudioModal({ flow, initialMode: "builder" })}
             onRunFlow={(flow) => setFlowStudioModal({ flow, initialMode: "runner" })}
           />
@@ -790,7 +794,9 @@ export default function SwiftAPIClient() {
 
       {activePanel === "account" && (
         <div className="sidebar-large">
-          <AccountPage onClose={() => setActivePanel(null)} />
+          <Suspense fallback={<div style={{ padding: "20px", color: "#888" }}>Loading Account...</div>}>
+            <AccountPage onClose={() => setActivePanel(null)} />
+          </Suspense>
         </div>
       )}
 
@@ -1056,81 +1062,83 @@ export default function SwiftAPIClient() {
         </div>
       </div>
 
-      {/* AI Bot Sidebar with Confirmed Auto-Fix and Failure Assist */}
-      {showBot && (
-        <BotSidebar
-          onClose={() => setShowBot(false)}
-          currentApiContext={apiContext}
-          setHeadersObj={setHeadersObj}
-          setAuth={setAuth}
-          setRawBody={setRawBody}
-          setParamsObj={setParamsObj}
-          setMethod={setMethod}
-          setUrl={setUrl}
-          setActiveTab={setActiveTab}
-          setShowBot={setShowBot}
-          onRerunRequest={handleSend}
-        />
-      )}
+      {/* Lazy Suspense Modal Container */}
+      <Suspense fallback={null}>
+        {/* AI Bot Sidebar with Confirmed Auto-Fix and Failure Assist */}
+        {showBot && (
+          <BotSidebar
+            onClose={() => setShowBot(false)}
+            currentApiContext={apiContext}
+            setHeadersObj={setHeadersObj}
+            setAuth={setAuth}
+            setRawBody={setRawBody}
+            setParamsObj={setParamsObj}
+            setMethod={setMethod}
+            setUrl={setUrl}
+            setActiveTab={setActiveTab}
+            setShowBot={setShowBot}
+            onRerunRequest={handleSend}
+          />
+        )}
 
-      {/* V2: API Health Score Modal */}
-      {showHealthModal && (
-        <ApiHealthScoreModal
-          scoreData={healthScore}
-          onClose={() => setShowHealthModal(false)}
-          onRefresh={() => {
-            if (apiContext) {
-              fetchHealthScore({
-                method: apiContext.method,
-                url: apiContext.url,
-                headers: apiContext.headers,
-                params: paramsObj,
-                body: rawBody,
-                status: apiContext.status,
-                duration: apiContext.responseTime,
-                response: apiContext.response
-              });
-            }
-          }}
-        />
-      )}
+        {/* V2: API Health Score Modal */}
+        {showHealthModal && (
+          <ApiHealthScoreModal
+            scoreData={healthScore}
+            onClose={() => setShowHealthModal(false)}
+            onRefresh={() => {
+              if (apiContext) {
+                fetchHealthScore({
+                  method: apiContext.method,
+                  url: apiContext.url,
+                  headers: apiContext.headers,
+                  params: paramsObj,
+                  body: rawBody,
+                  status: apiContext.status,
+                  duration: apiContext.responseTime,
+                  response: apiContext.response
+                });
+              }
+            }}
+          />
+        )}
 
-      {/* V2: Testing Timeline Modal */}
-      {showTimelineModal && (
-        <TestingTimelineModal
-          currentEndpoint={timelineTargetUrl || url}
-          historyItems={history}
-          onClose={() => setShowTimelineModal(false)}
-          onRestoreAttempt={handleHistorySelect}
-          onOpenCompare={(a, b) => {
-            setShowTimelineModal(false);
-            handleOpenCompare(a, b);
-          }}
-        />
-      )}
+        {/* V2: Testing Timeline Modal */}
+        {showTimelineModal && (
+          <TestingTimelineModal
+            currentEndpoint={timelineTargetUrl || url}
+            historyItems={history}
+            onClose={() => setShowTimelineModal(false)}
+            onRestoreAttempt={handleHistorySelect}
+            onOpenCompare={(a, b) => {
+              setShowTimelineModal(false);
+              handleOpenCompare(a, b);
+            }}
+          />
+        )}
 
-      {/* V2: History Capsule Comparison Modal */}
-      {showCompareModal && (
-        <HistoryComparisonModal
-          attemptA={compareAttemptA}
-          attemptB={compareAttemptB}
-          allHistory={history}
-          onClose={() => setShowCompareModal(false)}
-        />
-      )}
+        {/* V2: History Capsule Comparison Modal */}
+        {showCompareModal && (
+          <HistoryComparisonModal
+            attemptA={compareAttemptA}
+            attemptB={compareAttemptB}
+            allHistory={history}
+            onClose={() => setShowCompareModal(false)}
+          />
+        )}
 
-      {/* V2.1: Multi-Step Flow Studio & Autonomous Self-Healing Runner */}
-      {flowStudioModal && (
-        <FlowStudioModal
-          flow={flowStudioModal.flow}
-          initialMode={flowStudioModal.initialMode || "builder"}
-          onClose={() => setFlowStudioModal(null)}
-          onSaved={(savedFlow) => {
-            showToast("💾 Flow saved successfully!");
-            setFlowStudioModal(null);
-          }}
-        />
-      )}
+        {/* V2.1: Multi-Step Flow Studio & Autonomous Self-Healing Runner */}
+        {flowStudioModal && (
+          <FlowStudioModal
+            flow={flowStudioModal.flow}
+            initialMode={flowStudioModal.initialMode || "builder"}
+            onClose={() => setFlowStudioModal(null)}
+            onSaved={(savedFlow) => {
+              setFlowsRefreshKey(prev => prev + 1);
+            }}
+          />
+        )}
+      </Suspense>
     </div>
   );
 }

@@ -17,12 +17,15 @@ const flowStepSchema = new mongoose.Schema({
     default: 'GET'
   },
   url: { type: String, required: true }, // supports {{varName}} placeholders
-  headers: { type: Object, default: {} },
-  params: { type: Object, default: {} },
+  headers: { type: mongoose.Schema.Types.Mixed, default: [] },
+  params: { type: mongoose.Schema.Types.Mixed, default: [] },
   body: { type: mongoose.Schema.Types.Mixed, default: null },
+  bodyType: { type: String, default: 'none' },
+  auth: { type: mongoose.Schema.Types.Mixed, default: { type: 'none', token: '', username: '', password: '' } },
+  settings: { type: mongoose.Schema.Types.Mixed, default: { expectedStatus: 200 } },
   extractVariables: { type: [variableExtractionSchema], default: [] },
   expectedStatus: { type: Number, default: 200 }
-}, { _id: false });
+}, { _id: false, strict: false });
 
 // Schema for individual execution step run results
 const stepRunResultSchema = new mongoose.Schema({
